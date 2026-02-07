@@ -1,0 +1,439 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Plantillas</title>
+    <style>
+        /* Estilos generales */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f4;
+            color: #333;
+        }
+
+        header {
+            background-color: #004080; /* Azul sobrio inspirado en Real Sociedad */
+            color: white;
+            text-align: center;
+            padding: 20px;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 2em;
+        }
+
+        /* Controles */
+        .controls {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            padding: 20px;
+            background-color: white;
+            border-bottom: 1px solid #ddd;
+        }
+
+        .filters, .sorting {
+            display: flex;
+            gap: 10px;
+        }
+
+        input, select {
+            padding: 8px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+        }
+
+        .counter {
+            font-weight: bold;
+            color: #004080;
+        }
+
+        /* Grid de tarjetas */
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            gap: 20px;
+            padding: 20px;
+        }
+
+        .card {
+            background-color: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .card:hover {
+            transform: scale(1.05);
+        }
+
+        .card img {
+            width: 100%;
+            height: 150px;
+            object-fit: cover;
+        }
+
+        .card-content {
+            padding: 15px;
+        }
+
+        .card h3 {
+            margin: 0 0 10px 0;
+            font-size: 1.2em;
+        }
+
+        .card p {
+            margin: 5px 0;
+        }
+
+        .rating {
+            color: #ffd700; /* Dorado para estrellas */
+            font-size: 1.2em;
+        }
+
+        /* Modal */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.5);
+        }
+
+        .modal-content {
+            background-color: white;
+            margin: 10% auto;
+            padding: 20px;
+            border-radius: 8px;
+            width: 80%;
+            max-width: 600px;
+            position: relative;
+        }
+
+        .close {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 28px;
+            cursor: pointer;
+        }
+
+        .modal img {
+            width: 100%;
+            max-height: 300px;
+            object-fit: cover;
+            margin-bottom: 15px;
+        }
+
+        /* Responsividad */
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            .grid {
+                grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Catálogo de Plantillas de Photoshop - Real Sociedad</h1>
+        <p>Organiza y visualiza tus plantillas para Instagram.</p>
+    </header>
+
+    <main>
+        <!-- Controles de filtros y ordenación -->
+        <section class="controls">
+            <div class="filters">
+                <input type="text" id="search" placeholder="Buscar por nombre...">
+                <select id="type-filter">
+                    <option value="">Todos los tipos</option>
+                    <!-- Opciones se llenarán dinámicamente con JS -->
+                </select>
+                <select id="rating-filter">
+                    <option value="0">Valoración mínima: 0</option>
+                    <option value="1">1</option>
+                    <option value="2">2</option>
+                    <option value="3">3</option>
+                    <option value="4">4</option>
+                    <option value="5">5</option>
+                    <option value="6">6</option>
+                    <option value="7">7</option>
+                    <option value="8">8</option>
+                    <option value="9">9</option>
+                    <option value="10">10</option>
+                </select>
+            </div>
+            <div class="sorting">
+                <select id="sort">
+                    <option value="name-asc">Nombre (A-Z)</option>
+                    <option value="name-desc">Nombre (Z-A)</option>
+                    <option value="rating-desc">Valoración (Mayor a Menor)</option>
+                    <option value="rating-asc">Valoración (Menor a Mayor)</option>
+                    <option value="date-desc">Fecha (Más Reciente)</option>
+                    <option value="date-asc">Fecha (Más Antigua)</option>
+                    <option value="type-asc">Tipo (A-Z)</option>
+                    <option value="random">Aleatorio</option>
+                </select>
+            </div>
+            <div class="counter">
+                <span id="visible-count">0</span> plantillas visibles
+            </div>
+        </section>
+
+        <!-- Grid de tarjetas -->
+        <section class="grid" id="grid">
+            <!-- Las tarjetas se renderizarán aquí dinámicamente -->
+        </section>
+    </main>
+
+    <!-- Modal para detalles -->
+    <div id="modal" class="modal">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <div id="modal-details">
+                <!-- Detalles se llenarán aquí dinámicamente -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // app.js incrustado - Lógica principal para la aplicación de plantillas
+
+        // JSON incrustado directamente (en lugar de fetch externo)
+        const plantillasData = [
+            {
+                "id": 1,
+                "nombre": "Previa Jornada 1",
+                "tipo": "Previa",
+                "fecha": "2023-08-20",
+                "valoracion": 8,
+                "ruta_psd": "files/previa_j1.psd",
+                "imagen_preview": "images/previa_j1.jpg",
+                "notas": "Plantilla básica para previas de partido."
+            },
+            {
+                "id": 2,
+                "nombre": "Resultado Victoria",
+                "tipo": "Resultado",
+                "fecha": "2023-08-21",
+                "valoracion": 9,
+                "ruta_psd": "files/resultado_victoria.psd",
+                "imagen_preview": "images/resultado_victoria.jpg"
+            },
+            {
+                "id": 3,
+                "nombre": "Fichaje Nuevo Jugador",
+                "tipo": "Fichaje",
+                "fecha": "2023-07-15",
+                "valoracion": 7,
+                "ruta_psd": "files/fichaje_nuevo.psd",
+                "imagen_preview": "images/fichaje_nuevo.jpg",
+                "notas": "Incluye placeholders para foto y datos."
+            },
+            {
+                "id": 4,
+                "nombre": "Alineación Titular",
+                "tipo": "Alineación",
+                "fecha": "2023-08-25",
+                "valoracion": 10,
+                "ruta_psd": "files/alineacion_titular.psd",
+                "imagen_preview": "images/alineacion_titular.jpg"
+            },
+            {
+                "id": 5,
+                "nombre": "Estadísticas Temporada",
+                "tipo": "Estadística",
+                "fecha": "2023-12-01",
+                "valoracion": 6,
+                "ruta_psd": "files/estadisticas_temporada.psd",
+                "imagen_preview": "images/estadisticas_temporada.jpg",
+                "notas": "Editable para diferentes métricas."
+            },
+            {
+                "id": 6,
+                "nombre": "Previa Clásico",
+                "tipo": "Previa",
+                "fecha": "2023-10-10",
+                "valoracion": 9,
+                "ruta_psd": "files/previa_clasico.psd",
+                "imagen_preview": "images/previa_clasico.jpg"
+            },
+            {
+                "id": 7,
+                "nombre": "Resultado Empate",
+                "tipo": "Resultado",
+                "fecha": "2023-09-05",
+                "valoracion": 7,
+                "ruta_psd": "files/resultado_empate.psd",
+                "imagen_preview": "images/resultado_empate.jpg"
+            },
+            {
+                "id": 8,
+                "nombre": "Fichaje Juvenil",
+                "tipo": "Fichaje",
+                "fecha": "2023-06-20",
+                "valoracion": 8,
+                "ruta_psd": "files/fichaje_juvenil.psd",
+                "imagen_preview": "images/fichaje_juvenil.jpg"
+            },
+            {
+                "id": 9,
+                "nombre": "Alineación Suplentes",
+                "tipo": "Alineación",
+                "fecha": "2023-11-15",
+                "valoracion": 5,
+                "ruta_psd": "files/alineacion_suplentes.psd",
+                "imagen_preview": "images/alineacion_suplentes.jpg",
+                "notas": "Versión simplificada."
+            },
+            {
+                "id": 10,
+                "nombre": "Estadísticas Jugador",
+                "tipo": "Estadística",
+                "fecha": "2023-08-30",
+                "valoracion": 9,
+                "ruta_psd": "files/estadisticas_jugador.psd",
+                "imagen_preview": "images/estadisticas_jugador.jpg"
+            }
+        ];
+
+        // Variables globales
+        let plantillas = [];
+        let filteredPlantillas = [];
+
+        // Función para cargar el JSON (ahora usa la variable incrustada)
+        function loadPlantillas() {
+            plantillas = plantillasData;
+            filteredPlantillas = [...plantillas];
+            populateTypeFilter(); // Llenar opciones de tipo dinámicamente
+            renderGrid();
+        }
+
+        // Función para poblar el filtro de tipos
+        function populateTypeFilter() {
+            const types = [...new Set(plantillas.map(p => p.tipo))].sort();
+            const select = document.getElementById('type-filter');
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                select.appendChild(option);
+            });
+        }
+
+        // Función para renderizar el grid de tarjetas
+        function renderGrid() {
+            const grid = document.getElementById('grid');
+            grid.innerHTML = '';
+            filteredPlantillas.forEach(plantilla => {
+                const card = document.createElement('div');
+                card.className = 'card';
+                card.onclick = () => openModal(plantilla);
+                card.innerHTML = `
+                    <img src="${plantilla.imagen_preview}" alt="${plantilla.nombre}">
+                    <div class="card-content">
+                        <h3>${plantilla.nombre}</h3>
+                        <p><strong>Tipo:</strong> ${plantilla.tipo}</p>
+                        <p class="rating">${generateStars(plantilla.valoracion)}</p>
+                    </div>
+                `;
+                grid.appendChild(card);
+            });
+            updateCounter();
+        }
+
+        // Función para generar estrellas de valoración
+        function generateStars(rating) {
+            let stars = '';
+            for (let i = 1; i <= 10; i++) {
+                stars += i <= rating ? '★' : '☆';
+            }
+            return stars;
+        }
+
+        // Función para actualizar el contador
+        function updateCounter() {
+            document.getElementById('visible-count').textContent = filteredPlantillas.length;
+        }
+
+        // Función para abrir el modal
+        function openModal(plantilla) {
+            const modal = document.getElementById('modal');
+            const details = document.getElementById('modal-details');
+            details.innerHTML = `
+                <img src="${plantilla.imagen_preview}" alt="${plantilla.nombre}">
+                <h2>${plantilla.nombre}</h2>
+                <p><strong>Fecha:</strong> ${plantilla.fecha}</p>
+                <p><strong>Tipo:</strong> ${plantilla.tipo}</p>
+                <p><strong>Valoración:</strong> ${generateStars(plantilla.valoracion)} (${plantilla.valoracion}/10)</p>
+                <p><strong>Ruta PSD:</strong> <a href="${plantilla.ruta_psd}" target="_blank">${plantilla.ruta_psd}</a></p>
+                ${plantilla.notas ? `<p><strong>Notas:</strong> ${plantilla.notas}</p>` : ''}
+            `;
+            modal.style.display = 'block';
+        }
+
+        // Función para cerrar el modal
+        function closeModal() {
+            document.getElementById('modal').style.display = 'none';
+        }
+
+        // Función para aplicar filtros
+        function applyFilters() {
+            const search = document.getElementById('search').value.toLowerCase();
+            const type = document.getElementById('type-filter').value;
+            const minRating = parseInt(document.getElementById('rating-filter').value);
+
+            filteredPlantillas = plantillas.filter(p =>
+                p.nombre.toLowerCase().includes(search) &&
+                (type === '' || p.tipo === type) &&
+                p.valoracion >= minRating
+            );
+            renderGrid();
+        }
+
+        // Función para aplicar ordenación
+        function applySorting() {
+            const sortValue = document.getElementById('sort').value;
+            filteredPlantillas.sort((a, b) => {
+                switch (sortValue) {
+                    case 'name-asc': return a.nombre.localeCompare(b.nombre);
+                    case 'name-desc': return b.nombre.localeCompare(a.nombre);
+                    case 'rating-desc': return b.valoracion - a.valoracion;
+                    case 'rating-asc': return a.valoracion - b.valoracion;
+                    case 'date-desc': return new Date(b.fecha) - new Date(a.fecha);
+                    case 'date-asc': return new Date(a.fecha) - new Date(b.fecha);
+                    case 'type-asc': return a.tipo.localeCompare(b.tipo);
+                    case 'random': return Math.random() - 0.5;
+                    default: return 0;
+                }
+            });
+            renderGrid();
+        }
+
+        // Event listeners
+        document.addEventListener('DOMContentLoaded', loadPlantillas);
+        document.getElementById('search').addEventListener('input', applyFilters);
+        document.getElementById('type-filter').addEventListener('change', applyFilters);
+        document.getElementById('rating-filter').addEventListener('change', applyFilters);
+        document.getElementById('sort').addEventListener('change', applySorting);
+        document.querySelector('.close').addEventListener('click', closeModal);
+        window.addEventListener('click', (e) => {
+            if (e.target === document.getElementById('modal')) closeModal();
+        });
+    </script>
+</body>
+</html>
