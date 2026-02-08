@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Datos</title>
+<style>
+  #btnCopiar {
+    font-size: 24px;
+    padding: 15px 30px;
+    margin-bottom: 15px;
+    cursor: pointer;
+  }
+  textarea {
+    width: 100%;
+    height: 120px;
+    font-size: 18px;
+  }
+</style>
+</head>
+<body>
+
+<button id="btnCopiar">COPIAR</button><br><br>
+
+<textarea id="cuadro" readonly>Cargando...</textarea>
+
+<script>
+let textoUnido = "";
+
+fetch("https://script.google.com/macros/s/AKfycbwXG3eCtNXUDtdXCXJ4gbHzCBvjdorMoVML0P9_ww-p-CpdcYdCgIPKlXsTOSP3GBxWUA/exec")
+  .then(r => r.text())
+  .then(text => {
+    const data = JSON.parse(text);
+    const obj = data[0];
+
+    const t1 = obj["1"];
+    const t2 = obj["2"];
+    const t3 = obj["3"];
+
+    // Orden: 2 → 1 → 3
+    textoUnido = t2 + t1 + t3;
+
+    document.getElementById("cuadro").value = textoUnido;
+  })
+  .catch(err => {
+    document.getElementById("cuadro").value = "Error cargando datos";
+    console.error(err);
+  });
+
+document.getElementById("btnCopiar").addEventListener("click", function() {
+  const cuadro = document.getElementById("cuadro");
+  cuadro.select();
+  cuadro.setSelectionRange(0, 99999); // móviles
+
+  document.execCommand("copy");
+  alert("Texto copiado");
+});
+</script>
+
+</body>
+</html>
