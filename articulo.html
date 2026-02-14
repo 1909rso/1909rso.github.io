@@ -84,17 +84,22 @@ nav a {
 }
 
 /* ===== ARTICLE ===== */
+/* ===== ARTICLE ===== */
 .article h1 {
   font-family: 'Neubahn', Arial, sans-serif;
-  font-size: 55px;           /* Bajamos un poco el tamaño para que quepa en una línea */
-  letter-spacing: 3px;       /* 👈 ESTO separa las letras que se chocan en tu imagen */
-  word-spacing: 12px;        /* 👈 ESTO separa bien las palabras */
-  line-height: 1.2;          /* Evita que se corten los acentos o la Ñ */
+  font-size: 85px;            /* Tamaño base mucho más grande */
+  line-height: 0.85;          /* Altura de línea reducida para que se vea compacto */
+  letter-spacing: 2px;        /* Espacio necesario para que no se peguen las letras */
+  word-spacing: 15px;         /* Mayor separación entre las palabras */
   color: #d90416;
   text-transform: uppercase;
-  margin-bottom: 25px;
-  display: block;
-  font-weight: normal;       /* La fuente ya es gruesa, no fuerces el bold */
+  margin-bottom: 30px;
+  
+  /* ESTO LE DA EL LOOK DE LA IMAGEN DE REFERENCIA */
+  display: inline-block;
+  transform: scaleY(1.3);     /* Estira las letras hacia arriba para que se vean más altas */
+  transform-origin: left;     /* Alinea el estirado a la izquierda */
+  font-weight: normal;        /* No uses bold, la fuente ya es gruesa por sí sola */
 }
 
 
