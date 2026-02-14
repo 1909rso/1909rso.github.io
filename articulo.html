@@ -82,30 +82,22 @@ nav a {
   gap: 40px;
   padding: 0 20px;
 }
-
-/* ===== ARTICLE ===== */
-/* ===== ARTICLE ===== */
+  /* ===== ARTICLE ===== */
 .article h1 {
   font-family: 'Neubahn', Arial, sans-serif;
-  
-  /* ESTO AJUSTA LA ANCHURA AUTOMÁTICAMENTE */
-  font-size: 7.2vw;           /* El tamaño depende del ancho de la pantalla */
-  letter-spacing: -0.02em;    /* Un ajuste sutil para que las letras se vean compactas */
-  word-spacing: 0.2em;        /* Espacio extra entre palabras */
-  
-  line-height: 0.9;
+  font-size: 85px;            /* Tamaño base mucho más grande */
+  line-height: 0.85;          /* Altura de línea reducida para que se vea compacto */
+  letter-spacing: 2px;        /* Espacio necesario para que no se peguen las letras */
+  word-spacing: 15px;         /* Mayor separación entre las palabras */
   color: #d90416;
   text-transform: uppercase;
   margin-bottom: 30px;
   
-  /* ESTO FUERZA EL ESTILO DE BLOQUE HORIZONTAL */
-  display: block;
-  white-space: nowrap;        /* Evita que el título se rompa en dos líneas */
-  transform: scaleY(1.4);     /* Mantiene la altura estilizada */
-  transform-origin: left;
-  
-  /* OPCIONAL: Si el título es muy largo, esto evita que se salga del borde */
-  max-width: 100%;
+  /* ESTO LE DA EL LOOK DE LA IMAGEN DE REFERENCIA */
+  display: inline-block;
+  transform: scaleY(1);     /* Estira las letras hacia arriba para que se vean más altas */
+  transform-origin: left;     /* Alinea el estirado a la izquierda */
+  font-weight: normal;        /* No uses bold, la fuente ya es gruesa por sí sola */
 }
 
 
