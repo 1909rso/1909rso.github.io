@@ -86,18 +86,15 @@ nav a {
 /* ===== ARTICLE ===== */
 .article h1 {
   font-family: 'Neubahn', Arial, sans-serif;
-  font-size: 70px;          /* Tamaño base */
-  line-height: 1;           /* Altura de línea compacta */
-  letter-spacing: 1px;      /* Espacio mínimo entre letras */
-  word-spacing: 10px;       /* Espacio entre palabras */
+  font-size: 55px;           /* Bajamos un poco el tamaño para que quepa en una línea */
+  letter-spacing: 3px;       /* 👈 ESTO separa las letras que se chocan en tu imagen */
+  word-spacing: 12px;        /* 👈 ESTO separa bien las palabras */
+  line-height: 1.2;          /* Evita que se corten los acentos o la Ñ */
   color: #d90416;
   text-transform: uppercase;
-  margin-bottom: 30px;
-  
-  /* ESTO DA EL ASPECTO DE LA IMAGEN */
-  display: inline-block;    /* Necesario para que funcione el scale */
-  transform: scaleY(1.4);   /* Estira las letras hacia arriba */
-  transform-origin: top left; /* Evita que el texto se desplace al estirarse */
+  margin-bottom: 25px;
+  display: block;
+  font-weight: normal;       /* La fuente ya es gruesa, no fuerces el bold */
 }
 
 
