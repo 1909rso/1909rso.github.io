@@ -84,17 +84,20 @@ nav a {
 }
 
 /* ===== ARTICLE ===== */
-/* ===== ARTICLE ===== */
 .article h1 {
   font-family: 'Neubahn', Arial, sans-serif;
-  font-size: 80px;            /* Tamaño grande e impactante */
-  letter-spacing: 4px;        /* 👈 ESTO es la clave: separa las letras para que no se pisen */
-  line-height: 0.9;           /* Ajusta la altura para que se vea compacto pero limpio */
+  font-size: 70px;          /* Tamaño base */
+  line-height: 1;           /* Altura de línea compacta */
+  letter-spacing: 1px;      /* Espacio mínimo entre letras */
+  word-spacing: 10px;       /* Espacio entre palabras */
   color: #d90416;
-  margin-bottom: 20px;
   text-transform: uppercase;
-  word-spacing: 15px;         /* 👈 Esto separa las palabras para que se lea "ATLÉTICO - BARCELONA" claramente */
-  display: block;             /* Asegura que use todo el ancho disponible */
+  margin-bottom: 30px;
+  
+  /* ESTO DA EL ASPECTO DE LA IMAGEN */
+  display: inline-block;    /* Necesario para que funcione el scale */
+  transform: scaleY(1.4);   /* Estira las letras hacia arriba */
+  transform-origin: top left; /* Evita que el texto se desplace al estirarse */
 }
 
 
