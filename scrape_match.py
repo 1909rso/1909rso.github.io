@@ -142,7 +142,7 @@ def extract_summary(match_json, df):
 
 def main():
     # ⚠️ CAMBIA ESTA URL por la del partido que quieras
-    match_url = "https://1xbet.whoscored.com/matches/1946104/live/england-league-cup-2025-2026-tottenham-doncaster"
+    match_url = "https://1xbet.whoscored.com/matches/1980125/live/international-int-friendly-2026-haiti-new-zealand"
 
     # Si se pasa URL como argumento: python scrape_match.py <url>
     if len(sys.argv) > 1:
