@@ -1,11 +1,8 @@
 name: Actualizar datos del partido
 
 on:
-  # Ejecutar cada 30 minutos (puedes cambiar el intervalo)
   schedule:
-    - cron: '*/1 * * * *'
-
-  # También permite ejecutarlo manualmente desde GitHub
+    - cron: '*/30 * * * *'
   workflow_dispatch:
     inputs:
       match_url:
@@ -16,6 +13,8 @@ on:
 jobs:
   scrape:
     runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
     steps:
       - name: Clonar repositorio
@@ -26,17 +25,11 @@ jobs:
         with:
           python-version: '3.11'
 
-      - name: Instalar Chrome
-        uses: browser-actions/setup-chrome@v1
-
       - name: Instalar dependencias Python
         run: |
-          pip install selenium beautifulsoup4 pandas
+          pip install undetected-chromedriver selenium beautifulsoup4 pandas
 
-      - name: Instalar ChromeDriver
-        uses: nanasess/setup-chromedriver@v2
-
-      - name: Crear carpeta data si no existe
+      - name: Crear carpeta data
         run: mkdir -p data
 
       - name: Ejecutar scraper
