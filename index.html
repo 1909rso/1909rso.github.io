@@ -1,0 +1,458 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Partido en Vivo</title>
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --bg: #0a0a0f;
+      --surface: #13131a;
+      --border: #1e1e2e;
+      --accent: #c8f135;
+      --accent2: #35f1c8;
+      --text: #e8e8f0;
+      --muted: #5a5a72;
+      --red: #ff4d6d;
+      --yellow: #ffd166;
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'DM Sans', sans-serif;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(ellipse 60% 40% at 20% 0%, rgba(200,241,53,0.06) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 35% at 80% 100%, rgba(53,241,200,0.05) 0%, transparent 60%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .container {
+      max-width: 820px;
+      margin: 0 auto;
+      padding: 2rem 1.2rem 4rem;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 2.5rem;
+    }
+
+    .logo {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1.4rem;
+      letter-spacing: 0.15em;
+      color: var(--accent);
+    }
+
+    .live-badge {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 0.72rem;
+      font-weight: 500;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+      color: var(--muted);
+    }
+
+    .live-badge .dot {
+      width: 7px; height: 7px;
+      border-radius: 50%;
+      background: var(--muted);
+    }
+
+    .live-badge.active .dot {
+      background: var(--accent);
+      box-shadow: 0 0 8px var(--accent);
+      animation: pulse 1.4s ease-in-out infinite;
+    }
+
+    .live-badge.active { color: var(--accent); }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.7); }
+    }
+
+    /* Score card */
+    .score-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 2.5rem 2rem;
+      text-align: center;
+      margin-bottom: 1.5rem;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .score-card::after {
+      content: '';
+      position: absolute;
+      bottom: 0; left: 0; right: 0;
+      height: 2px;
+      background: linear-gradient(90deg, transparent, var(--accent), var(--accent2), transparent);
+    }
+
+    .teams-row {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      align-items: center;
+      gap: 1.5rem;
+    }
+
+    .team-name {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(1.6rem, 4vw, 2.4rem);
+      letter-spacing: 0.06em;
+      line-height: 1.1;
+    }
+
+    .team-home { text-align: right; }
+    .team-away { text-align: left; }
+
+    .score-block {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .score-num {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(3rem, 8vw, 5rem);
+      line-height: 1;
+      color: var(--accent);
+      min-width: 1.2ch;
+      text-align: center;
+    }
+
+    .score-sep {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: clamp(2rem, 5vw, 3rem);
+      color: var(--muted);
+      line-height: 1;
+    }
+
+    .match-meta {
+      margin-top: 1.2rem;
+      font-size: 0.78rem;
+      color: var(--muted);
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+
+    /* Section */
+    .section {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 1.4rem 1.6rem;
+      margin-bottom: 1rem;
+    }
+
+    .section-title {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      letter-spacing: 0.18em;
+      color: var(--muted);
+      margin-bottom: 1.2rem;
+      text-transform: uppercase;
+    }
+
+    /* Stats bars */
+    .stat-row {
+      display: grid;
+      grid-template-columns: 2.5rem 1fr 2.5rem;
+      align-items: center;
+      gap: 0.8rem;
+      margin-bottom: 1rem;
+    }
+
+    .stat-row:last-child { margin-bottom: 0; }
+
+    .stat-val {
+      font-size: 0.95rem;
+      font-weight: 500;
+      color: var(--text);
+    }
+
+    .stat-val.right { text-align: right; }
+
+    .stat-bar-wrap {
+      position: relative;
+      height: 5px;
+      background: var(--border);
+      border-radius: 99px;
+      overflow: hidden;
+    }
+
+    .stat-bar-left, .stat-bar-right {
+      position: absolute;
+      top: 0; bottom: 0;
+      border-radius: 99px;
+      transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    }
+
+    .stat-bar-left {
+      left: 0;
+      background: var(--accent);
+    }
+
+    .stat-bar-right {
+      right: 0;
+      background: var(--accent2);
+    }
+
+    .stat-label {
+      grid-column: 1 / -1;
+      font-size: 0.72rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--muted);
+      text-align: center;
+      margin-top: -0.6rem;
+      margin-bottom: 0.4rem;
+    }
+
+    /* Events timeline */
+    .event-list { list-style: none; }
+
+    .event-item {
+      display: flex;
+      align-items: center;
+      gap: 0.9rem;
+      padding: 0.65rem 0;
+      border-bottom: 1px solid var(--border);
+    }
+
+    .event-item:last-child { border-bottom: none; }
+
+    .event-min {
+      font-family: 'Bebas Neue', sans-serif;
+      font-size: 1rem;
+      color: var(--muted);
+      min-width: 2.2rem;
+      text-align: right;
+    }
+
+    .event-icon {
+      width: 24px; height: 24px;
+      border-radius: 6px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 0.9rem;
+      flex-shrink: 0;
+    }
+
+    .event-icon.goal { background: rgba(200,241,53,0.12); }
+    .event-icon.yellow { background: rgba(255,209,102,0.12); }
+    .event-icon.red { background: rgba(255,77,109,0.12); }
+
+    .event-player {
+      font-size: 0.88rem;
+      font-weight: 500;
+    }
+
+    .event-team {
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-left: auto;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+    }
+
+    /* Updated time */
+    .updated {
+      text-align: center;
+      font-size: 0.72rem;
+      color: var(--muted);
+      margin-top: 2rem;
+      letter-spacing: 0.08em;
+    }
+
+    /* Loading / error */
+    .state-msg {
+      text-align: center;
+      padding: 3rem 1rem;
+      color: var(--muted);
+      font-size: 0.9rem;
+    }
+
+    .state-msg .big { font-family: 'Bebas Neue', sans-serif; font-size: 2rem; display: block; margin-bottom: 0.4rem; color: var(--text); }
+
+    .empty { color: var(--muted); font-size: 0.85rem; text-align: center; padding: 1rem 0; }
+
+    @media (max-width: 480px) {
+      .team-name { font-size: 1.3rem; }
+      .score-num { font-size: 3rem; }
+      .section { padding: 1rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+
+    <div class="header">
+      <div class="logo">⚽ Match Stats</div>
+      <div class="live-badge" id="liveBadge">
+        <span class="dot"></span>
+        <span id="liveText">Cargando…</span>
+      </div>
+    </div>
+
+    <div id="app">
+      <div class="state-msg">
+        <span class="big">Cargando</span>
+        Obteniendo datos del partido…
+      </div>
+    </div>
+
+    <div class="updated" id="updatedAt"></div>
+
+  </div>
+
+  <script>
+    const DATA_URL = 'data/match_data.json';
+
+    async function loadData() {
+      try {
+        const res = await fetch(DATA_URL + '?t=' + Date.now());
+        if (!res.ok) throw new Error('No se encontró el archivo de datos');
+        return await res.json();
+      } catch (e) {
+        return null;
+      }
+    }
+
+    function pct(a, b) {
+      const total = a + b;
+      if (!total) return [50, 50];
+      return [Math.round(a / total * 100), Math.round(b / total * 100)];
+    }
+
+    function statRow(label, home, away) {
+      const [ph, pa] = pct(home, away);
+      return `
+        <div class="stat-row">
+          <span class="stat-val right">${home}</span>
+          <div>
+            <div class="stat-bar-wrap">
+              <div class="stat-bar-left" style="width:${ph}%"></div>
+              <div class="stat-bar-right" style="width:${pa}%"></div>
+            </div>
+          </div>
+          <span class="stat-val">${away}</span>
+        </div>
+        <div class="stat-row"><span class="stat-label">${label}</span></div>
+      `;
+    }
+
+    function eventIcon(type) {
+      if (type === 'Goal') return `<div class="event-icon goal">⚽</div>`;
+      if (type === 'YellowCard') return `<div class="event-icon yellow">🟨</div>`;
+      if (type === 'RedCard' || type === 'YellowRedCard') return `<div class="event-icon red">🟥</div>`;
+      return `<div class="event-icon">•</div>`;
+    }
+
+    function render(data) {
+      const app = document.getElementById('app');
+      const badge = document.getElementById('liveBadge');
+      const updatedEl = document.getElementById('updatedAt');
+
+      if (!data) {
+        app.innerHTML = `<div class="state-msg">
+          <span class="big">Sin datos</span>
+          No se encontró <code>data/match_data.json</code>.<br>
+          Ejecuta el workflow de GitHub Actions para generarlo.
+        </div>`;
+        return;
+      }
+
+      // Live badge
+      badge.classList.add('active');
+      document.getElementById('liveText').textContent = 'EN VIVO';
+
+      // Updated
+      if (data.lastUpdated) {
+        const d = new Date(data.lastUpdated);
+        updatedEl.textContent = 'Actualizado: ' + d.toLocaleString('es-ES');
+      }
+
+      // Goals events
+      const allEvents = [
+        ...(data.goals || []).map(g => ({ ...g, eventType: 'Goal' })),
+        ...(data.cards || []).map(c => ({ ...c, eventType: c.type })),
+      ].sort((a, b) => a.minute - b.minute);
+
+      const eventsHtml = allEvents.length
+        ? allEvents.map(e => `
+          <li class="event-item">
+            <span class="event-min">${e.minute}'</span>
+            ${eventIcon(e.eventType)}
+            <span class="event-player">${e.player || 'Desconocido'}</span>
+            <span class="event-team">${e.teamId === data.homeTeamId ? data.homeTeam : data.awayTeam}</span>
+          </li>`).join('')
+        : `<p class="empty">Sin eventos registrados</p>`;
+
+      app.innerHTML = `
+        <div class="score-card">
+          <div class="teams-row">
+            <div class="team-name team-home">${data.homeTeam}</div>
+            <div class="score-block">
+              <span class="score-num">${data.homeScore ?? '–'}</span>
+              <span class="score-sep">:</span>
+              <span class="score-num">${data.awayScore ?? '–'}</span>
+            </div>
+            <div class="team-name team-away">${data.awayTeam}</div>
+          </div>
+          <div class="match-meta">
+            ${data.homeTeam} vs ${data.awayTeam}
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Estadísticas</div>
+          ${statRow('Disparos', data.stats?.shotsHome ?? 0, data.stats?.shotsAway ?? 0)}
+          ${statRow('Pases', data.stats?.passesHome ?? 0, data.stats?.passesAway ?? 0)}
+          <div style="display:flex;justify-content:space-between;margin-top:0.5rem;font-size:0.72rem;color:var(--muted);letter-spacing:0.08em;text-transform:uppercase">
+            <span style="color:var(--accent)">${data.homeTeam}</span>
+            <span style="color:var(--accent2)">${data.awayTeam}</span>
+          </div>
+        </div>
+
+        <div class="section">
+          <div class="section-title">Eventos</div>
+          <ul class="event-list">${eventsHtml}</ul>
+        </div>
+      `;
+    }
+
+    async function init() {
+      const data = await loadData();
+      render(data);
+    }
+
+    init();
+
+    // Auto-refresh cada 2 minutos
+    setInterval(init, 120000);
+  </script>
+</body>
+</html>
