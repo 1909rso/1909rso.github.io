@@ -1,46 +1,51 @@
 import pandas as pd
 import json
 import sys
-from selenium.webdriver.common.by import By
-from selenium.webdriver.support.ui import WebDriverWait
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.chrome.options import Options
-from selenium import webdriver
+import time
+import random
 from bs4 import BeautifulSoup
 
 
 def get_driver():
-    options = Options()
-    options.add_argument("--headless")
+    import undetected_chromedriver as uc
+    options = uc.ChromeOptions()
+    options.add_argument("--headless=new")
     options.add_argument("--no-sandbox")
     options.add_argument("--disable-dev-shm-usage")
-    options.add_argument("--disable-gpu")
-    options.add_argument(
-        "user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
-        "AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
-    )
-    driver = webdriver.Chrome(options=options)
+    options.add_argument("--window-size=1920,1080")
+    options.add_argument("--lang=en-GB")
+    driver = uc.Chrome(options=options, use_subprocess=True)
     return driver
 
 
 def load_whoscored_events_data(match_centre_url):
+    driver = None
     try:
         driver = get_driver()
+
+        # Visitar Google primero para parecer más humano
+        driver.get("https://www.google.com")
+        time.sleep(random.uniform(2, 4))
+
         driver.get(match_centre_url)
 
-        WebDriverWait(driver, 15).until(
-            EC.presence_of_element_located((By.TAG_NAME, "body"))
-        )
+        # Esperar que cargue el contenido dinámico
+        time.sleep(random.uniform(8, 12))
+
+        # Scroll suave para simular comportamiento humano
+        driver.execute_script("window.scrollTo(0, 300)")
+        time.sleep(1)
 
         page_source = driver.page_source
-        driver.quit()
-
         soup = BeautifulSoup(page_source, "html.parser")
         script_tag = soup.select_one('script:-soup-contains("matchCentreData")')
 
         if not script_tag:
             print("No script tag with matchCentreData found")
-            return None
+            # Guardar HTML para debug
+            with open("debug_page.html", "w") as f:
+                f.write(page_source[:5000])
+            return None, None
 
         _, _, json_text = script_tag.text.partition("matchCentreData: ")
         match_json = json.loads(json_text.split(",\n")[0])
@@ -50,7 +55,7 @@ def load_whoscored_events_data(match_centre_url):
 
         if not events_dict:
             print("No events data found")
-            return None
+            return None, None
 
         df = pd.json_normalize(events_dict)
 
@@ -69,16 +74,23 @@ def load_whoscored_events_data(match_centre_url):
     except Exception as e:
         print(f"Error: {e}")
         return None, None
+    finally:
+        if driver:
+            try:
+                driver.quit()
+            except:
+                pass
 
 
 def extract_summary(match_json, df):
-    """Extract key stats and events for the web page."""
-
     home = match_json.get("home", {})
     away = match_json.get("away", {})
 
-    # Goals
     goals = []
+    cards = []
+    shots_home = shots_away = passes_home = passes_away = 0
+    home_id = home.get("teamId")
+
     if df is not None and "type.displayName" in df.columns:
         goal_events = df[df["type.displayName"] == "Goal"]
         for _, row in goal_events.iterrows():
@@ -88,9 +100,6 @@ def extract_summary(match_json, df):
                 "teamId": int(row.get("teamId", 0)) if pd.notna(row.get("teamId")) else 0,
             })
 
-    # Cards
-    cards = []
-    if df is not None and "type.displayName" in df.columns:
         card_events = df[df["type.displayName"].isin(["YellowCard", "RedCard", "YellowRedCard"])]
         for _, row in card_events.iterrows():
             cards.append({
@@ -100,31 +109,21 @@ def extract_summary(match_json, df):
                 "teamId": int(row.get("teamId", 0)) if pd.notna(row.get("teamId")) else 0,
             })
 
-    # Shots
-    shots_home = 0
-    shots_away = 0
-    if df is not None and "type.displayName" in df.columns:
         shot_types = ["Goal", "ShotOnPost", "SavedShot", "MissedShots"]
         shots = df[df["type.displayName"].isin(shot_types)]
-        home_id = home.get("teamId")
         shots_home = len(shots[shots["teamId"] == home_id])
         shots_away = len(shots[shots["teamId"] != home_id])
 
-    # Passes
-    passes_home = 0
-    passes_away = 0
-    if df is not None and "type.displayName" in df.columns:
         passes = df[df["type.displayName"] == "Pass"]
-        home_id = home.get("teamId")
         passes_home = len(passes[passes["teamId"] == home_id])
         passes_away = len(passes[passes["teamId"] != home_id])
 
-    summary = {
+    return {
         "homeTeam": home.get("name", "Home"),
         "awayTeam": away.get("name", "Away"),
         "homeScore": home.get("scores", {}).get("fulltime", 0),
         "awayScore": away.get("scores", {}).get("fulltime", 0),
-        "homeTeamId": home.get("teamId"),
+        "homeTeamId": home_id,
         "awayTeamId": away.get("teamId"),
         "goals": goals,
         "cards": cards,
@@ -137,14 +136,11 @@ def extract_summary(match_json, df):
         "lastUpdated": pd.Timestamp.now().isoformat(),
     }
 
-    return summary
-
 
 def main():
     # ⚠️ CAMBIA ESTA URL por la del partido que quieras
     match_url = "https://1xbet.whoscored.com/matches/1980125/live/international-int-friendly-2026-haiti-new-zealand"
 
-    # Si se pasa URL como argumento: python scrape_match.py <url>
     if len(sys.argv) > 1:
         match_url = sys.argv[1]
 
@@ -154,7 +150,8 @@ def main():
     if df is not None and match_json is not None:
         summary = extract_summary(match_json, df)
 
-        # Guardar JSON para la página web
+        import os
+        os.makedirs("data", exist_ok=True)
         with open("data/match_data.json", "w", encoding="utf-8") as f:
             json.dump(summary, f, ensure_ascii=False, indent=2)
 
