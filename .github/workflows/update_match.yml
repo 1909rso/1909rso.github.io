@@ -3,7 +3,7 @@ name: Actualizar datos del partido
 on:
   # Ejecutar cada 30 minutos (puedes cambiar el intervalo)
   schedule:
-    - cron: '*/30 * * * *'
+    - cron: '*/1 * * * *'
 
   # También permite ejecutarlo manualmente desde GitHub
   workflow_dispatch:
