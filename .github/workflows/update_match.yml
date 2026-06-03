@@ -1,0 +1,56 @@
+name: Actualizar datos del partido
+
+on:
+  # Ejecutar cada 30 minutos (puedes cambiar el intervalo)
+  schedule:
+    - cron: '*/30 * * * *'
+
+  # También permite ejecutarlo manualmente desde GitHub
+  workflow_dispatch:
+    inputs:
+      match_url:
+        description: 'URL del partido en WhoScored (opcional)'
+        required: false
+        default: ''
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Instalar Chrome
+        uses: browser-actions/setup-chrome@v1
+
+      - name: Instalar dependencias Python
+        run: |
+          pip install selenium beautifulsoup4 pandas
+
+      - name: Instalar ChromeDriver
+        uses: nanasess/setup-chromedriver@v2
+
+      - name: Crear carpeta data si no existe
+        run: mkdir -p data
+
+      - name: Ejecutar scraper
+        run: |
+          if [ -n "${{ github.event.inputs.match_url }}" ]; then
+            python scrape_match.py "${{ github.event.inputs.match_url }}"
+          else
+            python scrape_match.py
+          fi
+
+      - name: Guardar cambios en el repositorio
+        run: |
+          git config --local user.email "actions@github.com"
+          git config --local user.name "GitHub Actions"
+          git add data/match_data.json
+          git diff --staged --quiet || git commit -m "Actualizar datos del partido [skip ci]"
+          git push
