@@ -777,8 +777,8 @@ select.form-input { cursor: pointer; }
 </footer>
 
 <script>
-// ===== APPS SCRIPT URL (reemplaza con la tuya) =====
-const APPS_SCRIPT_URL = 'TU_URL_APPS_SCRIPT_AQUI';
+// ===== APPS SCRIPT URL (Reemplaza esta línea con tu URL real de Google) =====
+const APPS_SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
 // ===== PRECIOS =====
 const PRICES = { bufanda: 15, pegatinas: 6 };
@@ -849,9 +849,11 @@ function showStep(n) {
   [1,2,3].forEach(i => {
     document.getElementById('step' + i).classList.toggle('active', i === n);
     const tab = document.getElementById('tab' + i);
-    tab.classList.remove('active', 'done');
-    if (i < n) tab.classList.add('done');
-    else if (i === n) tab.classList.add('active');
+    if(tab) {
+      tab.classList.remove('active', 'done');
+      if (i < n) tab.classList.add('done');
+      else if (i === n) tab.classList.add('active');
+    }
   });
 
   const navBack = document.getElementById('navBack');
@@ -937,28 +939,30 @@ function validateForm() {
   }
   required.forEach(id => {
     const el = document.getElementById(id);
-    const val = el.value.trim();
-    const empty = val === '';
-    const emailBad = id === 'f-email' && val && !val.includes('@');
-    const hasError = empty || emailBad;
-    el.classList.toggle('error', hasError);
-    if (hasError) ok = false;
+    if(el) {
+      const val = el.value.trim();
+      const empty = val === '';
+      const emailBad = id === 'f-email' && val && !val.includes('@');
+      const hasError = empty || emailBad;
+      el.classList.toggle('error', hasError);
+      if (hasError) ok = false;
+    }
   });
   return ok;
 }
 
-// ===== SUBMIT =====
+// ===== SUBMIT TO GOOGLE SHEETS =====
 async function submitOrder() {
   const formError = document.getElementById('formError');
-  formError.classList.remove('visible');
+  if (formError) formError.classList.remove('visible');
 
   if (!validateForm()) {
-    formError.classList.add('visible');
+    if (formError) formError.classList.add('visible');
     return;
   }
 
   const pais = document.getElementById('f-pais').value;
-  if (pais !== 'España') return; // no debería llegar aquí
+  if (pais !== 'España') return; 
 
   const navNext = document.getElementById('navNext');
   navNext.disabled = true;
@@ -969,6 +973,7 @@ async function submitOrder() {
   if (selected.pegatinas) productsList.push('Pack Pegatinas');
   const isCombo = selected.bufanda && selected.pegatinas;
 
+  // Creamos el JSON estructurado exactamente para las columnas de tu hoja de cálculo
   const payload = {
     nombre: document.getElementById('f-nombre').value.trim(),
     apellido: document.getElementById('f-apellido').value.trim(),
@@ -984,6 +989,7 @@ async function submitOrder() {
   };
 
   try {
+    // Petición POST real hacia tu Google Apps Script
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -991,19 +997,20 @@ async function submitOrder() {
       body: JSON.stringify(payload)
     });
   } catch(e) {
-    // con no-cors el fetch siempre "falla" (opaque response) pero el dato llega
-    console.log('Sent (opaque):', e);
+    console.log('Sent:', e);
   }
 
-  // Rellenar pantalla de éxito
+  // Rellenar pantalla de éxito visual
   const det = document.getElementById('successDetail');
-  det.innerHTML = `
-    <div class="success-detail-row"><span>Nombre</span><span>${payload.nombre} ${payload.apellido}</span></div>
-    <div class="success-detail-row"><span>Email</span><span>${payload.email}</span></div>
-    <div class="success-detail-row"><span>Productos</span><span>${payload.productos}</span></div>
-    <div class="success-detail-row"><span>Total</span><span>${payload.total}</span></div>
-    <div class="success-detail-row"><span>Envío</span><span>${payload.provincia}, ${payload.cp}</span></div>
-  `;
+  if (det) {
+    det.innerHTML = `
+      <div class="success-detail-row"><span>Nombre</span><span>${payload.nombre} ${payload.apellido}</span></div>
+      <div class="success-detail-row"><span>Email</span><span>${payload.email}</span></div>
+      <div class="success-detail-row"><span>Productos</span><span>${payload.productos}</span></div>
+      <div class="success-detail-row"><span>Total</span><span>${payload.total}</span></div>
+      <div class="success-detail-row"><span>Envío</span><span>${payload.provincia}, ${payload.cp}</span></div>
+    `;
+  }
 
   showStep(3);
 }
@@ -1011,9 +1018,11 @@ async function submitOrder() {
 // ===== SUCCESS ANIMATION =====
 function triggerSuccessAnim() {
   const anim = document.getElementById('successAnim');
-  anim.classList.remove('running');
-  void anim.offsetWidth; // reflow
-  anim.classList.add('running');
+  if (anim) {
+    anim.classList.remove('running');
+    void anim.offsetWidth; // reflow
+    anim.classList.add('running');
+  }
 }
 
 // ===== FAQ =====
@@ -1032,8 +1041,23 @@ function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
 }
+
+// ===== INITIALIZATION & EVENT LISTENERS =====
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
+
 document.addEventListener('DOMContentLoaded', function() {
+  // Conectar botones físicos de adelante y atrás del panel de navegación
+  const navNext = document.getElementById('navNext');
+  const navBack = document.getElementById('navBack');
+
+  if (navNext) navNext.addEventListener('click', goNext);
+  if (navBack) navBack.addEventListener('click', goBack);
+
+  // Escuchar el cambio de país
+  const selectPais = document.getElementById('f-pais');
+  if (selectPais) selectPais.addEventListener('change', onPaisChange);
+
+  // Inicializar imágenes para zoom con lightbox
   document.querySelectorAll('.format-img img, .gallery-item img').forEach(img => {
     img.style.cursor = 'zoom-in';
     img.addEventListener('click', function(e) {
@@ -1041,8 +1065,10 @@ document.addEventListener('DOMContentLoaded', function() {
       openLightbox(this.src, this.alt);
     });
   });
-  // init spain fields hidden
-  document.getElementById('spainFields').style.display = 'none';
+
+  // Asegurar que los campos de España arranquen ocultos si no se ha elegido país
+  const spainFields = document.getElementById('spainFields');
+  if (spainFields) spainFields.style.display = 'none';
 });
 </script>
 </body>
