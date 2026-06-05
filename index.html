@@ -115,24 +115,52 @@ section { padding: 6rem 3rem; }
 .formats-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.25rem; margin-bottom: 3rem; }
 .format-card { border: 1px solid var(--gray-light); padding: 2rem 1.75rem; position: relative; transition: border-color 0.2s; display: flex; flex-direction: column; }
 .format-card.featured { border-color: var(--blue); background: rgba(0,48,135,0.025); }
-.format-card.premium { border-color: var(--wood); background: rgba(44,24,16,0.03); }
+.format-card.premium { border-color: var(--wood); background: var(--ink); }
 .format-badge { position: absolute; top: -1px; right: -1px; font-size: 0.6rem; letter-spacing: 0.16em; text-transform: uppercase; padding: 0.32rem 0.75rem; font-weight: 500; }
 .format-badge.blue { background: var(--blue); color: var(--white); }
 .format-badge.wood { background: var(--wood); color: var(--gold); }
 .format-img { width: 100%; aspect-ratio: 4/3; background: var(--cream); border: 1px solid var(--gray-light); margin-bottom: 1.25rem; overflow: hidden; display: flex; align-items: center; justify-content: center; cursor: zoom-in; }
 .format-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .format-name { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 1.6rem; letter-spacing: -0.01em; color: var(--ink); margin-bottom: 0.15rem; }
+.format-name.on-dark { color: var(--white); }
 .format-sub { font-size: 0.75rem; font-weight: 300; color: var(--gray-mid); margin-bottom: 1.25rem; line-height: 1.5; }
+.format-sub.on-dark { color: rgba(250,250,248,0.45); }
 .format-features { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.75rem; flex: 1; }
 .format-features li { font-size: 0.8rem; font-weight: 300; color: var(--ink); display: flex; align-items: flex-start; gap: 0.6rem; line-height: 1.5; }
+.format-features li.on-dark { color: rgba(250,250,248,0.75); }
 .ci { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--blue); }
+.ci-wood { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--wood); }
 .format-divider { border: none; border-top: 1px solid var(--gray-light); margin-bottom: 1.25rem; }
+.format-divider.on-dark { border-top-color: rgba(255,255,255,0.1); }
 .format-price-before { font-size: 0.9rem; font-weight: 400; color: var(--gray-mid); text-decoration: line-through; margin-bottom: 0.25rem; }
 .format-price { display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 1.1rem; }
 .format-price-num { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 2.6rem; color: var(--blue); letter-spacing: -0.02em; line-height: 1; }
 .format-price-label { font-size: 0.72rem; font-weight: 300; color: var(--gray-mid); text-transform: uppercase; letter-spacing: 0.08em; }
+.format-price-label.on-dark { color: rgba(250,250,248,0.35); }
+
+/* Size selector (from paginie.htm) */
+.size-selector { margin-bottom: 1rem; }
+.size-label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-mid); margin-bottom: 0.6rem; display: block; }
+.size-label.on-dark { color: rgba(250,250,248,0.5); }
+.size-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; }
+.size-btn {
+  padding: 0.4rem 0.75rem; border: 1px solid var(--gray-light); background: transparent;
+  font-family: 'Archivo', sans-serif; font-size: 0.78rem; font-weight: 500; color: var(--ink);
+  cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em;
+}
+.size-btn:hover { border-color: var(--blue); color: var(--blue); }
+.size-btn.active { border-color: var(--blue); background: var(--blue); color: var(--white); }
+.size-btn-gold:hover { border-color: var(--gold); color: var(--gold); }
+.size-btn-gold.active { border-color: var(--gold); background: var(--gold); color: var(--ink); }
+/* Variant on dark card (ink background) */
+.size-btn-ink { border-color: rgba(255,255,255,0.25); color: rgba(250,250,248,0.75); background: transparent; }
+.size-btn-ink:hover { border-color: var(--white); color: var(--white); }
+.size-btn-ink.active { border-color: var(--white); background: var(--white); color: var(--ink); }
+
 .btn-blue { width: 100%; display: block; text-align: center; text-decoration: none; background: var(--blue); color: var(--white); font-family: 'Archivo', sans-serif; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.9rem 1rem; transition: background 0.2s, transform 0.15s; cursor: pointer; border: none; }
 .btn-blue:hover { background: var(--blue-mid); transform: translateY(-1px); }
+.btn-wood { width: 100%; display: block; text-align: center; text-decoration: none; background: var(--wood); color: var(--gold); font-family: 'Archivo', sans-serif; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.9rem 1rem; transition: opacity 0.2s, transform 0.15s; cursor: pointer; border: none; }
+.btn-wood:hover { opacity: 0.88; transform: translateY(-1px); }
 .btn-outline { width: 100%; display: block; text-align: center; text-decoration: none; background: transparent; color: var(--ink); font-family: 'Archivo', sans-serif; font-size: 0.75rem; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.85rem 1rem; border: 1px solid var(--gray-light); transition: border-color 0.2s, color 0.2s; cursor: pointer; }
 .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
 
@@ -191,7 +219,8 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
 }
 .checkout-header {
   padding: 1.5rem 2rem 1rem; border-bottom: 1px solid var(--gray-light);
-  display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--white); z-index: 2;
+  display: flex; justify-content: space-between; align-items: center;
+  position: sticky; top: 0; background: var(--white); z-index: 2;
 }
 .checkout-title { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 1.1rem; letter-spacing: -0.01em; }
 .checkout-close { background: none; border: none; font-size: 1.6rem; cursor: pointer; color: var(--gray-mid); line-height: 1; padding: 0.2rem; }
@@ -207,19 +236,33 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
 .step-panel { display: none; padding: 1.5rem 2rem; }
 .step-panel.active { display: block; }
 
-/* --- STEP 1: QUANTITY CONTROLS --- */
+/* --- STEP 1: productos --- */
 .product-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
 .product-row {
-  display: flex; align-items: center; gap: 1rem;
+  display: flex; align-items: flex-start; gap: 1rem;
   padding: 0.9rem 1rem; border: 1px solid var(--gray-light);
   transition: border-color 0.15s, background 0.15s;
-  user-select: none;
+  user-select: none; flex-wrap: wrap;
 }
 .product-row.selected { border-color: var(--blue); background: rgba(0,48,135,0.04); }
-.product-info { flex: 1; }
+.product-info { flex: 1; min-width: 150px; }
 .product-info-name { font-size: 0.85rem; font-weight: 500; }
 .product-info-sub { font-size: 0.72rem; font-weight: 300; color: var(--gray-mid); margin-top: 0.1rem; }
 .product-price-unit { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--blue); white-space: nowrap; min-width: 52px; text-align: right; }
+
+/* variant pills inside checkout row (50/100 style) */
+.checkout-variant { margin-top: 0.6rem; }
+.checkout-variant-label { font-size: 0.65rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-mid); margin-bottom: 0.4rem; display: block; }
+.checkout-variant-btns { display: flex; gap: 0.35rem; flex-wrap: wrap; }
+.cv-btn {
+  padding: 0.3rem 0.7rem; border: 1px solid var(--gray-light); background: transparent;
+  font-family: 'Archivo', sans-serif; font-size: 0.75rem; font-weight: 500; color: var(--ink);
+  cursor: pointer; transition: all 0.15s; letter-spacing: 0.03em;
+}
+.cv-btn:hover { border-color: var(--blue); color: var(--blue); }
+.cv-btn.active { border-color: var(--blue); background: var(--blue); color: var(--white); }
+.cv-btn-gold:hover { border-color: var(--gold); color: var(--gold); }
+.cv-btn-gold.active { border-color: var(--gold); background: var(--gold); color: var(--ink); }
 
 /* Quantity control */
 .qty-control { display: flex; align-items: center; gap: 0; border: 1px solid var(--gray-light); }
@@ -232,20 +275,21 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
 .qty-btn:hover { background: var(--blue); color: var(--white); }
 .qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
 .qty-btn:disabled:hover { background: var(--off-white); color: var(--ink); }
-.qty-num {
-  width: 36px; text-align: center; font-family: 'Archivo', sans-serif;
-  font-size: 0.9rem; font-weight: 600; color: var(--ink);
-}
+.qty-num { width: 36px; text-align: center; font-family: 'Archivo', sans-serif; font-size: 0.9rem; font-weight: 600; color: var(--ink); }
 
-/* Combo badge in step 1 */
+.product-qty-block { display: flex; align-items: center; gap: 0.75rem; padding-top: 0.1rem; }
+
+/* Combo badge */
 .combo-badge {
   background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4);
-  padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 300; color: var(--ink);
+  padding: 0.75rem 1rem; font-size: 0.75rem; font-weight: 300; color: var(--ink);
   line-height: 1.6; margin-bottom: 1rem;
 }
 .combo-badge strong { font-weight: 600; color: var(--ink); }
+.combo-badge .checkout-variant-label { color: var(--gray-mid); margin-top: 0.6rem; }
+.combo-badge .cv-btn { font-size: 0.72rem; }
 
-/* Subtotal rows in step 1 */
+/* Subtotal rows */
 .checkout-breakdown { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--gray-light); margin-bottom: 1.5rem; }
 .breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--gray-light); font-size: 0.8rem; color: var(--gray-mid); }
 .breakdown-row:last-child { border-bottom: none; }
@@ -254,7 +298,7 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
 .breakdown-row.total-row .breakdown-label { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-mid); }
 .breakdown-discount { color: var(--green) !important; font-weight: 500 !important; }
 
-/* --- STEP 2: FORMULARIO --- */
+/* --- STEP 2: formulario --- */
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
 .form-row.full { grid-template-columns: 1fr; }
 .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
@@ -270,7 +314,6 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
 .form-input.error { border-color: var(--red); }
 select.form-input { cursor: pointer; }
 
-/* Shipping notice (antes de seleccionar país) */
 .shipping-hint {
   background: var(--off-white); border: 1px solid var(--gray-light);
   padding: 0.75rem 1rem; margin-bottom: 0.75rem;
@@ -279,7 +322,6 @@ select.form-input { cursor: pointer; }
 }
 .shipping-hint svg { flex-shrink: 0; }
 
-/* Shipping result line */
 .shipping-result {
   padding: 0.75rem 1rem; margin-bottom: 0.75rem;
   font-size: 0.82rem; font-weight: 400; line-height: 1.6;
@@ -300,61 +342,34 @@ select.form-input { cursor: pointer; }
 .form-error-global.visible { display: block; }
 
 /* ORDER SUMMARY TABLE */
-.order-summary-table {
-  width: 100%; border-collapse: collapse; margin-top: 1rem; margin-bottom: 0;
-  font-size: 0.8rem;
-}
-.order-summary-table th {
-  background: var(--ink); color: var(--white);
-  font-size: 0.65rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
-  padding: 0.55rem 0.85rem; text-align: left;
-}
+.order-summary-table { width: 100%; border-collapse: collapse; margin-top: 0; margin-bottom: 0; font-size: 0.8rem; }
+.order-summary-table th { background: var(--ink); color: var(--white); font-size: 0.65rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase; padding: 0.55rem 0.85rem; text-align: left; }
 .order-summary-table th:last-child { text-align: right; }
-.order-summary-table td {
-  padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--gray-light);
-  font-weight: 300; color: var(--ink); vertical-align: middle;
-}
+.order-summary-table td { padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--gray-light); font-weight: 300; color: var(--ink); vertical-align: middle; }
 .order-summary-table td:nth-child(2) { text-align: center; color: var(--gray-mid); }
 .order-summary-table td:last-child { text-align: right; font-weight: 600; color: var(--blue); }
 .order-summary-table tr.discount-row td { color: var(--green); font-size: 0.75rem; }
 .order-summary-table tr.discount-row td:last-child { color: var(--green); font-weight: 500; }
 .order-summary-table tr.shipping-row td { color: var(--gray-mid); font-size: 0.78rem; }
 .order-summary-table tr.shipping-row td:last-child { font-weight: 500; color: var(--gray-mid); }
-.order-summary-table tr.total-row td {
-  background: var(--blue); color: var(--white);
-  font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 0.9rem; border-bottom: none;
-}
+.order-summary-table tr.total-row td { background: var(--blue); color: var(--white); font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 0.9rem; border-bottom: none; }
 .order-summary-table tr.total-row td:last-child { color: var(--white); font-size: 1.1rem; }
-.summary-box {
-  background: var(--off-white); border: 1px solid var(--gray-light);
-  padding: 0 0 0; margin-top: 1rem; margin-bottom: 1rem; overflow: hidden;
-}
-.summary-box-title {
-  background: var(--ink); color: var(--white);
-  font-size: 0.65rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;
-  padding: 0.55rem 0.85rem;
-}
-.payment-note {
-  padding: 0.75rem 0.85rem; font-size: 0.75rem; font-weight: 300; color: var(--gray-mid);
-  line-height: 1.6; border-top: 1px solid var(--gray-light);
-  background: var(--white);
-}
+.summary-box { background: var(--off-white); border: 1px solid var(--gray-light); margin-top: 1rem; margin-bottom: 1rem; overflow: hidden; }
+.summary-box-title { background: var(--ink); color: var(--white); font-size: 0.65rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase; padding: 0.55rem 0.85rem; }
+.payment-note { padding: 0.75rem 0.85rem; font-size: 0.75rem; font-weight: 300; color: var(--gray-mid); line-height: 1.6; border-top: 1px solid var(--gray-light); background: var(--white); }
 .payment-note strong { color: var(--ink); font-weight: 500; }
 
-/* --- STEP 3: ÉXITO --- */
+/* --- STEP 3: éxito --- */
 .success-screen { text-align: center; padding: 3rem 2rem; }
 .success-anim { width: 90px; height: 90px; margin: 0 auto 1.5rem; position: relative; }
-.success-circle {
-  width: 90px; height: 90px; border-radius: 50%;
-  border: 3px solid var(--gray-light); border-top-color: var(--green); animation: none;
-}
+.success-circle { width: 90px; height: 90px; border-radius: 50%; border: 3px solid var(--gray-light); border-top-color: var(--green); animation: none; }
 .success-anim.running .success-circle { animation: spinCircle 0.6s ease-out forwards; }
 @keyframes spinCircle {
-  0%   { transform: rotate(0deg); border-top-color: var(--green); border-color: var(--gray-light); }
+  0%   { transform: rotate(0deg); border-color: var(--gray-light); border-top-color: var(--green); }
   80%  { transform: rotate(360deg); border-color: var(--green); }
   100% { transform: rotate(360deg); border-color: var(--green); }
 }
-.success-tick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px; }
+.success-tick { position: absolute; top: 50%; left: 50%; transform: translate(-50%,-50%); width: 36px; height: 36px; }
 .success-tick path { stroke: var(--green); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 50; stroke-dashoffset: 50; }
 .success-anim.running .success-tick path { animation: drawTick 0.45s 0.55s ease-out forwards; }
 @keyframes drawTick { to { stroke-dashoffset: 0; } }
@@ -507,6 +522,7 @@ select.form-input { cursor: pointer; }
       <p class="buy-desc">Varias opciones disponibles. Elige la que más se adapte a ti.</p>
     </div>
     <div class="formats-grid">
+
       <!-- BUFANDA -->
       <div class="format-card featured">
         <span class="format-badge blue">Más popular</span>
@@ -522,20 +538,34 @@ select.form-input { cursor: pointer; }
         <div class="format-price"><span class="format-price-num">€15,00</span><span class="format-price-label">+ envío</span></div>
         <button class="btn-blue" onclick="openCheckout('bufanda')">Comprar bufanda</button>
       </div>
-      <!-- PEGATINAS -->
-      <div class="format-card">
-        <div class="format-img"><img src="https://cdn.realsociedad.eus//Uploads/contenidos/thumbs/_6_web_cabecera_945_.jpg" alt="Pack pegatinas RSO"></div>
-        <p class="format-name">Pegatinas</p>
-        <p class="format-sub">Pack de pegatinas exclusivas 1909 RSO</p>
+
+      <!-- PEGATINAS — card negra estilo POSTER COM MOLDURA -->
+      <div class="format-card premium">
+        <span class="format-badge wood">Personalizable</span>
+        <div class="format-img" style="border-color:rgba(255,255,255,0.1);"><img src="https://cdn.realsociedad.eus//Uploads/contenidos/thumbs/_6_web_cabecera_945_.jpg" alt="Pack pegatinas RSO"></div>
+        <p class="format-name on-dark">Pegatinas</p>
+        <p class="format-sub on-dark">Pack exclusivo 1909 RSO · Elige cantidad</p>
         <ul class="format-features">
-          <li><svg class="ci" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Varios diseños en el pack</li>
-          <li><svg class="ci" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Alta calidad, resistentes al agua</li>
-          <li><svg class="ci" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Envío incluído</li>
+          <li class="on-dark"><svg class="ci-wood" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Varios diseños en el pack</li>
+          <li class="on-dark"><svg class="ci-wood" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Alta calidad, resistentes al agua</li>
+          <li class="on-dark"><svg class="ci-wood" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Envío incluído</li>
         </ul>
-        <hr class="format-divider">
-        <div class="format-price"><span class="format-price-num">€6,00</span><span class="format-price-label">+ envío</span></div>
-        <button class="btn-outline" onclick="openCheckout('pegatinas')">Comprar pegatinas</button>
+        <!-- Selector de cantidad al estilo talla -->
+        <div class="size-selector" style="margin-bottom:0.9rem;">
+          <span class="size-label on-dark">Cantidad</span>
+          <div class="size-btns">
+            <button class="size-btn size-btn-ink active" id="card-peg-50" onclick="cardSelectPeg(50, this)">50 uds</button>
+            <button class="size-btn size-btn-ink" id="card-peg-100" onclick="cardSelectPeg(100, this)">100 uds</button>
+          </div>
+        </div>
+        <hr class="format-divider on-dark">
+        <div class="format-price">
+          <span class="format-price-num" id="card-peg-price" style="color:var(--gold);">€6,00</span>
+          <span class="format-price-label on-dark">+ envío</span>
+        </div>
+        <button class="btn-wood" onclick="openCheckout('pegatinas')">Comprar pegatinas</button>
       </div>
+
       <!-- PACK COMBO -->
       <div class="format-card" style="border-color:var(--gold);background:rgba(201,168,76,0.04);">
         <span class="format-badge" style="background:var(--gold);color:var(--ink);">Pack completo</span>
@@ -544,14 +574,26 @@ select.form-input { cursor: pointer; }
         <p class="format-sub">El pack completo — precio especial</p>
         <ul class="format-features">
           <li><svg class="ci" style="color:var(--gold)" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Bufanda edición limitada</li>
-          <li><svg class="ci" style="color:var(--gold)" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Pack completo de pegatinas</li>
+          <li><svg class="ci" style="color:var(--gold)" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Pack completo de pegatinas (elige cantidad)</li>
           <li><svg class="ci" style="color:var(--gold)" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg><strong style="font-weight:500">Ahorras €3 vs. compra separada</strong></li>
         </ul>
+        <!-- Selector cantidad pegatinas del combo -->
+        <div class="size-selector" style="margin-bottom:0.9rem;">
+          <span class="size-label">Pegatinas del pack</span>
+          <div class="size-btns">
+            <button class="size-btn size-btn-gold active" id="card-combo-50" onclick="cardSelectCombo(50, this)">50 uds · €18,00</button>
+            <button class="size-btn size-btn-gold" id="card-combo-100" onclick="cardSelectCombo(100, this)">100 uds · €22,00</button>
+          </div>
+        </div>
         <hr class="format-divider" style="border-color:rgba(201,168,76,0.3)">
-        <p class="format-price-before">€21,00</p>
-        <div class="format-price"><span class="format-price-num" style="color:var(--gold)">€18,00</span><span class="format-price-label">+ envío</span></div>
+        <p class="format-price-before" id="card-combo-before">€21,00</p>
+        <div class="format-price">
+          <span class="format-price-num" id="card-combo-price" style="color:var(--gold)">€18,00</span>
+          <span class="format-price-label">+ envío</span>
+        </div>
         <button class="btn-gold" style="display:block;width:100%;text-align:center;font-family:'Archivo',sans-serif;font-size:0.75rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;padding:0.9rem 1rem;border:none;cursor:pointer;" onclick="openCheckout('pack')">Comprar pack completo</button>
       </div>
+
     </div>
 
     <div class="how-it-works">
@@ -616,55 +658,71 @@ select.form-input { cursor: pointer; }
       <div class="step-tab" id="tab3">3 · Confirmado</div>
     </div>
 
-    <!-- STEP 1: Selección de productos con cantidades -->
+    <!-- STEP 1: Selección de productos -->
     <div class="step-panel active" id="step1">
-      <p style="font-size:0.78rem;color:var(--gray-mid);margin-bottom:1.25rem;line-height:1.6;">Usa los botones + y − para elegir cuántas unidades de cada producto quieres.</p>
+      <p style="font-size:0.78rem;color:var(--gray-mid);margin-bottom:1.25rem;line-height:1.6;">Usa los botones + y − para elegir cuántas unidades quieres de cada producto.</p>
 
       <div class="product-list">
 
+        <!-- BUFANDA ROW -->
         <div class="product-row" id="row-bufanda">
           <div class="product-info">
             <div class="product-info-name">Bufanda 2026/27</div>
-            <div class="product-info-sub">Edición limitada · Talla única</div>
+            <div class="product-info-sub">Edición limitada · Talla única · <strong style="color:var(--blue)">€15,00/ud.</strong></div>
           </div>
-          <div style="display:flex;align-items:center;gap:1rem;">
+          <div class="product-qty-block">
             <div class="qty-control">
               <button class="qty-btn" id="btn-minus-bufanda" onclick="changeQty('bufanda', -1)" disabled>−</button>
               <span class="qty-num" id="qty-bufanda">0</span>
               <button class="qty-btn" onclick="changeQty('bufanda', 1)">+</button>
             </div>
-            <div class="product-price-unit">€15,00</div>
           </div>
         </div>
 
+        <!-- PEGATINAS ROW con selector 50/100 -->
         <div class="product-row" id="row-pegatinas">
           <div class="product-info">
             <div class="product-info-name">Pack Pegatinas</div>
             <div class="product-info-sub">Varios diseños · Resistentes al agua</div>
+            <!-- Selector de variante 50 / 100 dentro del checkout -->
+            <div class="checkout-variant" style="margin-top:0.55rem;">
+              <span class="checkout-variant-label">Cantidad por pack</span>
+              <div class="checkout-variant-btns">
+                <button class="cv-btn active" id="cv-peg-50" onclick="setCvPeg(50, this)">50 uds · €6,00</button>
+                <button class="cv-btn" id="cv-peg-100" onclick="setCvPeg(100, this)">100 uds · €10,00</button>
+              </div>
+            </div>
           </div>
-          <div style="display:flex;align-items:center;gap:1rem;">
+          <div class="product-qty-block" style="align-self:flex-start;padding-top:0.15rem;">
             <div class="qty-control">
               <button class="qty-btn" id="btn-minus-pegatinas" onclick="changeQty('pegatinas', -1)" disabled>−</button>
               <span class="qty-num" id="qty-pegatinas">0</span>
               <button class="qty-btn" onclick="changeQty('pegatinas', 1)">+</button>
             </div>
-            <div class="product-price-unit">€6,00</div>
+            <div class="product-price-unit" id="peg-unit-label">€6,00</div>
           </div>
         </div>
 
       </div>
 
+      <!-- Combo badge con selector variante pegatinas del combo -->
       <div class="combo-badge" id="comboBadge" style="display:none;">
-        💡 <strong>Descuento pack aplicado:</strong> Por cada bufanda + pegatinas ahorras €3,00 (€18,00 en vez de €21,00).
-      </div>
-
-      <!-- Desglose en tiempo real -->
-      <div class="checkout-breakdown" id="breakdownContainer">
-        <div class="breakdown-row" id="brow-empty" style="justify-content:center;color:var(--gray-light);padding:1rem 0;">
-          Añade productos para ver el desglose
+        💡 <strong>Descuento pack activo:</strong> Por cada bufanda + pack pegatinas ahorras €3,00.
+        <div class="checkout-variant" style="margin-top:0.6rem;">
+          <span class="checkout-variant-label" style="color:var(--gray-mid);">Cantidad pegatinas en el combo</span>
+          <div class="checkout-variant-btns">
+            <button class="cv-btn cv-btn-gold active" id="cv-combo-50" onclick="setCvCombo(50, this)">50 uds → Pack €18,00</button>
+            <button class="cv-btn cv-btn-gold" id="cv-combo-100" onclick="setCvCombo(100, this)">100 uds → Pack €22,00</button>
+          </div>
         </div>
       </div>
 
+      <!-- Desglose tiempo real -->
+      <div class="checkout-breakdown" id="breakdownContainer">
+        <div class="breakdown-row" style="justify-content:center;color:var(--gray-light);padding:1rem 0;">
+          Añade productos para ver el desglose
+        </div>
+      </div>
     </div>
 
     <!-- STEP 2: Formulario de datos -->
@@ -693,22 +751,22 @@ select.form-input { cursor: pointer; }
         </div>
       </div>
 
-      <!-- Aviso antes de seleccionar país -->
+      <!-- Aviso envío antes de país -->
       <div class="shipping-hint" id="shippingHint">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 11v.5"/></svg>
         El coste de envío se calculará al introducir tu país de destino.
       </div>
 
-      <!-- Resultado de envío: España -->
+      <!-- Envío España -->
       <div class="shipping-result" id="shippingSpain">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6.5"/><path d="M5 8l2.5 2.5L11 5.5"/></svg>
         <span>Envío a España — <strong>€3,50</strong> (3–7 días hábiles)</span>
       </div>
 
-      <!-- Resultado de envío: Internacional -->
+      <!-- Envío Internacional -->
       <div class="shipping-result" id="shippingIntl">
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--gold)" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 11v.5"/></svg>
-        <span>🌍 Envío internacional — Para envíos fuera de España contáctanos en Instagram <a href="https://www.instagram.com/1909_RSO" target="_blank">@1909_RSO</a> o <a href="https://www.instagram.com/pasiontxuriurdiin" target="_blank">@Pasiontxuriurdiin</a> para coordinar el precio de envío.</span>
+        <span>🌍 Envío internacional — Contáctanos en Instagram <a href="https://www.instagram.com/1909_RSO" target="_blank">@1909_RSO</a> o <a href="https://www.instagram.com/pasiontxuriurdiin" target="_blank">@Pasiontxuriurdiin</a> para coordinar el precio de envío.</span>
       </div>
 
       <div class="form-row full">
@@ -730,7 +788,12 @@ select.form-input { cursor: pointer; }
         </div>
       </div>
 
-      <!-- Campos solo para España -->
+      <div class="intl-notice" id="intlNotice">
+        🌍 <strong>Envíos internacionales:</strong> Para países fuera de España debes contactarnos directamente.<br>
+        Escríbenos por Instagram a <a href="https://www.instagram.com/1909_RSO" target="_blank">@1909_RSO</a> o <a href="https://www.instagram.com/pasiontxuriurdiin" target="_blank">@Pasiontxuriurdiin</a>.
+      </div>
+
+      <!-- Campos España -->
       <div id="spainFields" style="display:none;">
         <div class="form-row">
           <div class="form-group">
@@ -772,7 +835,7 @@ select.form-input { cursor: pointer; }
         </div>
       </div>
 
-      <!-- Tabla resumen de pedido -->
+      <!-- Tabla resumen pedido -->
       <div class="summary-box" id="summaryBox">
         <div class="summary-box-title">📦 Resumen del pedido</div>
         <table class="order-summary-table" id="summaryTable">
@@ -783,8 +846,7 @@ select.form-input { cursor: pointer; }
               <th style="text-align:right;">Importe</th>
             </tr>
           </thead>
-          <tbody id="summaryTbody">
-          </tbody>
+          <tbody id="summaryTbody"></tbody>
         </table>
         <div class="payment-note">
           💳 <strong>Pago:</strong> Te contactaremos por email o Instagram para gestionar el pago por PayPal o Bizum una vez recibamos tu pedido.
@@ -843,44 +905,93 @@ select.form-input { cursor: pointer; }
 <script>
 // ===== APPS SCRIPT URL =====
 const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwiIL7Y_jMH7qtH-HpKa6bR_PeVd5I9cGiReJ4Ex-5XxeGYtxSbWO6ZRrknJrl6TD8wKg/exec';
-  // ===== PRECIOS =====
-const PRICES = { bufanda: 15, pegatinas: 6 };
-const PACK_PRICE = 18;       // precio de un combo bufanda+pegatinas
+
+// ===== PRECIOS =====
+const PRICE_BUFANDA = 15;
+const PEG_PRICES = { 50: 6, 100: 10 };   // precio por pack según cantidad
+const PACK_DISCOUNT = 3;                  // descuento por combo bufanda+pegatinas
 const SHIPPING_SPAIN = 3.50;
 
 // ===== STATE =====
 let currentStep = 1;
 let qty = { bufanda: 0, pegatinas: 0 };
+let pegVariant = 50;    // cantidad pegatinas seleccionada en checkout
 
 // ===== HELPERS =====
 function fmt(n) { return '€' + n.toFixed(2).replace('.', ','); }
+function pegPrice(v) { return PEG_PRICES[v] || 6; }
 
 function calcBreakdown() {
   const qB = qty.bufanda;
   const qP = qty.pegatinas;
   const combos = Math.min(qB, qP);
-  const extraB = qB - combos;
-  const extraP = qP - combos;
-
-  let subtotal = 0;
-  let discount = 0;
   const lines = [];
+  let subtotal = 0;
 
   if (qB > 0) {
-    const rawB = qB * PRICES.bufanda;
-    lines.push({ name: 'Bufanda 2026/27', qty: qB, unit: PRICES.bufanda, subtotal: rawB });
-    subtotal += rawB;
+    const sub = qB * PRICE_BUFANDA;
+    lines.push({ name: 'Bufanda 2026/27', qty: qB, unit: PRICE_BUFANDA, subtotal: sub });
+    subtotal += sub;
   }
   if (qP > 0) {
-    const rawP = qP * PRICES.pegatinas;
-    lines.push({ name: 'Pack Pegatinas', qty: qP, unit: PRICES.pegatinas, subtotal: rawP });
-    subtotal += rawP;
+    const pp = pegPrice(pegVariant);
+    const sub = qP * pp;
+    const varLabel = pegVariant === 100 ? '100 uds' : '50 uds';
+    lines.push({ name: `Pegatinas (${varLabel})`, qty: qP, unit: pp, subtotal: sub });
+    subtotal += sub;
   }
-  if (combos > 0) {
-    discount = combos * 3; // €3 por cada combo
-  }
+
+  const discount = combos * PACK_DISCOUNT;
   const productsTotal = subtotal - discount;
   return { lines, subtotal, discount, combos, productsTotal };
+}
+
+// ===== VARIANT SELECTORS =====
+
+// En la landing (sección comprar) — selector de pegatinas card
+function cardSelectPeg(v, btn) {
+  pegVariant = v;
+  document.querySelectorAll('#card-peg-50,#card-peg-100').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('card-peg-price').textContent = fmt(pegPrice(v));
+}
+
+// En la landing — selector del combo
+function cardSelectCombo(v, btn) {
+  document.querySelectorAll('#card-combo-50,#card-combo-100').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  const packP = PRICE_BUFANDA + pegPrice(v) - PACK_DISCOUNT;
+  const beforeP = PRICE_BUFANDA + pegPrice(v);
+  document.getElementById('card-combo-price').textContent = fmt(packP);
+  document.getElementById('card-combo-before').textContent = fmt(beforeP);
+  // preselect variant for checkout
+  pegVariant = v;
+}
+
+// En el checkout panel — variante de pegatinas
+function setCvPeg(v, btn) {
+  pegVariant = v;
+  document.querySelectorAll('#cv-peg-50,#cv-peg-100').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  document.getElementById('peg-unit-label').textContent = fmt(pegPrice(v));
+  // sync combo btns
+  document.querySelectorAll('#cv-combo-50,#cv-combo-100').forEach(b => {
+    b.classList.toggle('active', parseInt(b.id.replace('cv-combo-','')) === v);
+  });
+  updateBreakdown();
+}
+
+// En el checkout — variante desde el badge combo
+function setCvCombo(v, btn) {
+  pegVariant = v;
+  document.querySelectorAll('#cv-combo-50,#cv-combo-100').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  // sync peg row btns
+  document.querySelectorAll('#cv-peg-50,#cv-peg-100').forEach(b => {
+    b.classList.toggle('active', parseInt(b.id.replace('cv-peg-','')) === v);
+  });
+  document.getElementById('peg-unit-label').textContent = fmt(pegPrice(v));
+  updateBreakdown();
 }
 
 // ===== QTY CONTROLS =====
@@ -888,32 +999,26 @@ function changeQty(id, delta) {
   const newVal = qty[id] + delta;
   if (newVal < 0) return;
   qty[id] = newVal;
-
   document.getElementById('qty-' + id).textContent = newVal;
   document.getElementById('row-' + id).classList.toggle('selected', newVal > 0);
   document.getElementById('btn-minus-' + id).disabled = newVal === 0;
-
   updateBreakdown();
   updateContinueBtn();
 }
 
 function updateContinueBtn() {
-  const total = qty.bufanda + qty.pegatinas;
-  document.getElementById('navNext').disabled = total === 0;
+  document.getElementById('navNext').disabled = (qty.bufanda + qty.pegatinas) === 0;
 }
 
 function updateBreakdown() {
-  const { lines, subtotal, discount, combos, productsTotal } = calcBreakdown();
+  const { lines, discount, combos, productsTotal } = calcBreakdown();
   const container = document.getElementById('breakdownContainer');
-  const comboBadge = document.getElementById('comboBadge');
-
-  comboBadge.style.display = combos > 0 ? 'block' : 'none';
+  document.getElementById('comboBadge').style.display = combos > 0 ? 'block' : 'none';
 
   if (lines.length === 0) {
     container.innerHTML = '<div class="breakdown-row" style="justify-content:center;color:var(--gray-light);padding:1rem 0;">Añade productos para ver el desglose</div>';
     return;
   }
-
   let html = '';
   lines.forEach(l => {
     html += `<div class="breakdown-row"><span>${l.name} × ${l.qty}</span><span style="font-weight:400;color:var(--ink)">${fmt(l.subtotal)}</span></div>`;
@@ -928,7 +1033,6 @@ function updateBreakdown() {
 // ===== CHECKOUT OPEN/CLOSE =====
 function openCheckout(preselect) {
   qty = { bufanda: 0, pegatinas: 0 };
-  // Reset UI
   ['bufanda','pegatinas'].forEach(id => {
     document.getElementById('qty-' + id).textContent = '0';
     document.getElementById('row-' + id).classList.remove('selected');
@@ -940,7 +1044,6 @@ function openCheckout(preselect) {
 
   currentStep = 1;
   showStep(1);
-
   document.getElementById('checkoutOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
 }
@@ -960,7 +1063,7 @@ function showStep(n) {
   [1,2,3].forEach(i => {
     document.getElementById('step' + i).classList.toggle('active', i === n);
     const tab = document.getElementById('tab' + i);
-    tab.classList.remove('active', 'done');
+    tab.classList.remove('active','done');
     if (i < n) tab.classList.add('done');
     else if (i === n) tab.classList.add('active');
   });
@@ -991,7 +1094,6 @@ function goNext() {
   if (currentStep === 1) showStep(2);
   else if (currentStep === 2) submitOrder();
 }
-
 function goBack() {
   if (currentStep === 2) showStep(1);
 }
@@ -1006,7 +1108,6 @@ function onPaisChange() {
   document.getElementById('shippingHint').style.display = pais === '' ? 'flex' : 'none';
   document.getElementById('shippingSpain').className = 'shipping-result' + (isSpain ? ' spain' : '');
   document.getElementById('shippingIntl').className = 'shipping-result' + (isIntl ? ' intl' : '');
-
   document.getElementById('spainFields').style.display = isSpain ? 'block' : 'none';
   document.getElementById('intlNotice').classList.toggle('visible', isIntl);
 
@@ -1017,7 +1118,6 @@ function onPaisChange() {
     navNext.disabled = false;
     navNext.textContent = 'Enviar pedido →';
   }
-
   renderSummaryTable();
 }
 
@@ -1025,54 +1125,25 @@ function onPaisChange() {
 function renderSummaryTable() {
   const pais = document.getElementById('f-pais').value;
   const isSpain = pais === 'España';
-  const { lines, subtotal, discount, combos, productsTotal } = calcBreakdown();
+  const { lines, discount, combos, productsTotal } = calcBreakdown();
   const tbody = document.getElementById('summaryTbody');
-
   let html = '';
   lines.forEach(l => {
-    html += `<tr>
-      <td>${l.name}</td>
-      <td>${l.qty}</td>
-      <td>${fmt(l.subtotal)}</td>
-    </tr>`;
+    html += `<tr><td>${l.name}</td><td>${l.qty}</td><td>${fmt(l.subtotal)}</td></tr>`;
   });
-
   if (discount > 0) {
-    html += `<tr class="discount-row">
-      <td colspan="2">🎁 Descuento pack (${combos}× combo)</td>
-      <td>−${fmt(discount)}</td>
-    </tr>`;
+    html += `<tr class="discount-row"><td colspan="2">🎁 Descuento pack (${combos}× combo)</td><td>−${fmt(discount)}</td></tr>`;
   }
-
   if (pais === '') {
-    html += `<tr class="shipping-row">
-      <td colspan="2">Envío</td>
-      <td>Pendiente</td>
-    </tr>`;
-    html += `<tr class="total-row">
-      <td colspan="2">Total estimado</td>
-      <td>${fmt(productsTotal)} + envío</td>
-    </tr>`;
+    html += `<tr class="shipping-row"><td colspan="2">Envío</td><td>Pendiente</td></tr>`;
+    html += `<tr class="total-row"><td colspan="2">Total estimado</td><td>${fmt(productsTotal)} + envío</td></tr>`;
   } else if (isSpain) {
-    html += `<tr class="shipping-row">
-      <td colspan="2">📦 Envío (España, 3–7 días)</td>
-      <td>${fmt(SHIPPING_SPAIN)}</td>
-    </tr>`;
-    html += `<tr class="total-row">
-      <td colspan="2">Total</td>
-      <td>${fmt(productsTotal + SHIPPING_SPAIN)}</td>
-    </tr>`;
+    html += `<tr class="shipping-row"><td colspan="2">📦 Envío (España, 3–7 días)</td><td>${fmt(SHIPPING_SPAIN)}</td></tr>`;
+    html += `<tr class="total-row"><td colspan="2">Total</td><td>${fmt(productsTotal + SHIPPING_SPAIN)}</td></tr>`;
   } else {
-    html += `<tr class="shipping-row">
-      <td colspan="2">🌍 Envío internacional</td>
-      <td>A consultar</td>
-    </tr>`;
-    html += `<tr class="total-row">
-      <td colspan="2">Total productos</td>
-      <td>${fmt(productsTotal)} + envío</td>
-    </tr>`;
+    html += `<tr class="shipping-row"><td colspan="2">🌍 Envío internacional</td><td>A consultar</td></tr>`;
+    html += `<tr class="total-row"><td colspan="2">Total productos</td><td>${fmt(productsTotal)} + envío</td></tr>`;
   }
-
   tbody.innerHTML = html;
 }
 
@@ -1081,15 +1152,11 @@ function validateForm() {
   let ok = true;
   const required = ['f-nombre','f-apellido','f-email','f-telefono','f-pais'];
   const pais = document.getElementById('f-pais').value;
-  if (pais === 'España') {
-    required.push('f-provincia','f-cp','f-direccion');
-  }
+  if (pais === 'España') required.push('f-provincia','f-cp','f-direccion');
   required.forEach(id => {
     const el = document.getElementById(id);
     const val = el.value.trim();
-    const empty = val === '';
-    const emailBad = id === 'f-email' && val && !val.includes('@');
-    const hasError = empty || emailBad;
+    const hasError = val === '' || (id === 'f-email' && val && !val.includes('@'));
     el.classList.toggle('error', hasError);
     if (hasError) ok = false;
   });
@@ -1100,11 +1167,7 @@ function validateForm() {
 async function submitOrder() {
   const formError = document.getElementById('formError');
   formError.classList.remove('visible');
-
-  if (!validateForm()) {
-    formError.classList.add('visible');
-    return;
-  }
+  if (!validateForm()) { formError.classList.add('visible'); return; }
 
   const pais = document.getElementById('f-pais').value;
   if (pais !== 'España') return;
@@ -1113,11 +1176,9 @@ async function submitOrder() {
   navNext.disabled = true;
   navNext.textContent = 'Enviando…';
 
-  const { lines, productsTotal } = calcBreakdown();
-  const isSpain = pais === 'España';
-  const shipping = isSpain ? SHIPPING_SPAIN : 0;
+  const { lines, discount, productsTotal } = calcBreakdown();
+  const shipping = SHIPPING_SPAIN;
   const total = productsTotal + shipping;
-
   const productsList = lines.map(l => `${l.name} ×${l.qty}`).join(' + ');
 
   const payload = {
@@ -1125,12 +1186,13 @@ async function submitOrder() {
     apellido: document.getElementById('f-apellido').value.trim(),
     email: document.getElementById('f-email').value.trim(),
     telefono: document.getElementById('f-telefono').value.trim(),
-    pais: pais,
+    pais,
     provincia: document.getElementById('f-provincia').value,
     cp: document.getElementById('f-cp').value.trim(),
     direccion: document.getElementById('f-direccion').value.trim(),
     instagram: document.getElementById('f-instagram').value.trim(),
     productos: productsList,
+    descuento: discount > 0 ? fmt(discount) : 'Ninguno',
     subtotal: fmt(productsTotal),
     envio: fmt(shipping),
     total: fmt(total)
@@ -1149,12 +1211,12 @@ async function submitOrder() {
     <div class="success-detail-row"><span>Nombre</span><span>${payload.nombre} ${payload.apellido}</span></div>
     <div class="success-detail-row"><span>Email</span><span>${payload.email}</span></div>
     <div class="success-detail-row"><span>Productos</span><span>${payload.productos}</span></div>
+    ${discount > 0 ? `<div class="success-detail-row" style="color:var(--green)"><span>Descuento pack</span><span>−${fmt(discount)}</span></div>` : ''}
     <div class="success-detail-row"><span>Subtotal</span><span>${payload.subtotal}</span></div>
     <div class="success-detail-row"><span>Envío</span><span>${payload.envio}</span></div>
     <div class="success-detail-row" style="font-weight:600;border-top:1px solid var(--gray-light);padding-top:0.4rem;margin-top:0.1rem"><span>Total</span><span style="color:var(--blue)">${payload.total}</span></div>
     <div class="success-detail-row"><span>Dirección</span><span>${payload.provincia}, ${payload.cp}</span></div>
   `;
-
   showStep(3);
 }
 
@@ -1167,9 +1229,7 @@ function triggerSuccessAnim() {
 }
 
 // ===== FAQ =====
-function toggleFaq(btn) {
-  btn.closest('.faq-item').classList.toggle('open');
-}
+function toggleFaq(btn) { btn.closest('.faq-item').classList.toggle('open'); }
 
 // ===== LIGHTBOX =====
 function openLightbox(src, alt) {
