@@ -126,25 +126,13 @@ section { padding: 6rem 3rem; }
 .format-features { list-style: none; display: flex; flex-direction: column; gap: 0.5rem; margin-bottom: 1.75rem; flex: 1; }
 .format-features li { font-size: 0.8rem; font-weight: 300; color: var(--ink); display: flex; align-items: flex-start; gap: 0.6rem; line-height: 1.5; }
 .ci { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--blue); }
-.ci-wood { width: 13px; height: 13px; flex-shrink: 0; margin-top: 2px; color: var(--wood); }
 .format-divider { border: none; border-top: 1px solid var(--gray-light); margin-bottom: 1.25rem; }
 .format-price-before { font-size: 0.9rem; font-weight: 400; color: var(--gray-mid); text-decoration: line-through; margin-bottom: 0.25rem; }
 .format-price { display: flex; align-items: baseline; gap: 0.4rem; margin-bottom: 1.1rem; }
 .format-price-num { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 2.6rem; color: var(--blue); letter-spacing: -0.02em; line-height: 1; }
-.format-price-num.wood-col { color: var(--wood); }
 .format-price-label { font-size: 0.72rem; font-weight: 300; color: var(--gray-mid); text-transform: uppercase; letter-spacing: 0.08em; }
-.size-selector { margin-bottom: 1rem; }
-.size-label { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-mid); margin-bottom: 0.6rem; display: block; }
-.size-btns { display: flex; gap: 0.4rem; flex-wrap: wrap; }
-.size-btn { padding: 0.4rem 0.75rem; border: 1px solid var(--gray-light); background: transparent; font-family: 'Archivo', sans-serif; font-size: 0.78rem; font-weight: 500; color: var(--ink); cursor: pointer; transition: all 0.15s; letter-spacing: 0.04em; }
-.size-btn:hover { border-color: var(--blue); color: var(--blue); }
-.size-btn.active { border-color: var(--blue); background: var(--blue); color: var(--white); }
-.size-btn-gold:hover { border-color: var(--gold); color: var(--gold); }
-.size-btn-gold.active { border-color: var(--gold); background: var(--gold); color: var(--ink); }
 .btn-blue { width: 100%; display: block; text-align: center; text-decoration: none; background: var(--blue); color: var(--white); font-family: 'Archivo', sans-serif; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.9rem 1rem; transition: background 0.2s, transform 0.15s; cursor: pointer; border: none; }
 .btn-blue:hover { background: var(--blue-mid); transform: translateY(-1px); }
-.btn-wood { width: 100%; display: block; text-align: center; text-decoration: none; background: var(--wood); color: var(--gold); font-family: 'Archivo', sans-serif; font-size: 0.75rem; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; padding: 0.9rem 1rem; transition: opacity 0.2s, transform 0.15s; cursor: pointer; border: none; }
-.btn-wood:hover { opacity: 0.88; transform: translateY(-1px); }
 .btn-outline { width: 100%; display: block; text-align: center; text-decoration: none; background: transparent; color: var(--ink); font-family: 'Archivo', sans-serif; font-size: 0.75rem; font-weight: 400; letter-spacing: 0.1em; text-transform: uppercase; padding: 0.85rem 1rem; border: 1px solid var(--gray-light); transition: border-color 0.2s, color 0.2s; cursor: pointer; }
 .btn-outline:hover { border-color: var(--blue); color: var(--blue); }
 
@@ -190,7 +178,6 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
   align-items: center; justify-content: center; padding: 1rem;
 }
 .checkout-overlay.open { display: flex; }
-
 .checkout-panel {
   background: var(--white); width: 100%; max-width: 620px;
   max-height: 92vh; overflow-y: auto; position: relative;
@@ -202,7 +189,6 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
   from { opacity: 0; transform: translateY(24px) scale(0.98); }
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
-
 .checkout-header {
   padding: 1.5rem 2rem 1rem; border-bottom: 1px solid var(--gray-light);
   display: flex; justify-content: space-between; align-items: center; position: sticky; top: 0; background: var(--white); z-index: 2;
@@ -212,14 +198,8 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
 .checkout-close:hover { color: var(--ink); }
 
 /* Steps indicator */
-.checkout-steps {
-  display: flex; padding: 1rem 2rem 0; gap: 0; border-bottom: 1px solid var(--gray-light);
-}
-.step-tab {
-  flex: 1; text-align: center; padding-bottom: 0.75rem;
-  font-size: 0.68rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase;
-  color: var(--gray-mid); border-bottom: 2px solid transparent; transition: all 0.2s;
-}
+.checkout-steps { display: flex; padding: 1rem 2rem 0; gap: 0; border-bottom: 1px solid var(--gray-light); }
+.step-tab { flex: 1; text-align: center; padding-bottom: 0.75rem; font-size: 0.68rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-mid); border-bottom: 2px solid transparent; transition: all 0.2s; }
 .step-tab.active { color: var(--blue); border-bottom-color: var(--blue); }
 .step-tab.done { color: var(--green); border-bottom-color: var(--green); }
 
@@ -227,52 +207,58 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
 .step-panel { display: none; padding: 1.5rem 2rem; }
 .step-panel.active { display: block; }
 
-/* --- STEP 1: productos --- */
-.product-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.5rem; }
+/* --- STEP 1: QUANTITY CONTROLS --- */
+.product-list { display: flex; flex-direction: column; gap: 0.75rem; margin-bottom: 1.25rem; }
 .product-row {
   display: flex; align-items: center; gap: 1rem;
   padding: 0.9rem 1rem; border: 1px solid var(--gray-light);
-  cursor: pointer; transition: border-color 0.15s, background 0.15s;
+  transition: border-color 0.15s, background 0.15s;
   user-select: none;
 }
 .product-row.selected { border-color: var(--blue); background: rgba(0,48,135,0.04); }
-.product-row input[type="checkbox"] { display: none; }
-.product-check {
-  width: 18px; height: 18px; border: 1.5px solid var(--gray-light);
-  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
-  transition: all 0.15s; border-radius: 2px;
-}
-.product-row.selected .product-check { background: var(--blue); border-color: var(--blue); }
-.product-check svg { display: none; width: 11px; height: 11px; color: white; }
-.product-row.selected .product-check svg { display: block; }
 .product-info { flex: 1; }
 .product-info-name { font-size: 0.85rem; font-weight: 500; }
 .product-info-sub { font-size: 0.72rem; font-weight: 300; color: var(--gray-mid); margin-top: 0.1rem; }
-.product-size-inline { margin-top: 0.5rem; display: none; }
-.product-row.selected .product-size-inline { display: flex; gap: 0.3rem; flex-wrap: wrap; }
-.size-chip {
-  padding: 0.25rem 0.55rem; border: 1px solid var(--gray-light); background: transparent;
-  font-family: 'Archivo', sans-serif; font-size: 0.7rem; font-weight: 500; cursor: pointer;
-  transition: all 0.15s;
-}
-.size-chip.active { border-color: var(--blue); background: var(--blue); color: var(--white); }
-.product-price { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 1rem; color: var(--blue); white-space: nowrap; }
+.product-price-unit { font-family: 'Archivo', sans-serif; font-weight: 700; font-size: 0.95rem; color: var(--blue); white-space: nowrap; min-width: 52px; text-align: right; }
 
-.checkout-total {
-  border-top: 1px solid var(--gray-light); padding: 1rem 0 0;
-  display: flex; justify-content: space-between; align-items: baseline;
-  margin-bottom: 1.5rem;
+/* Quantity control */
+.qty-control { display: flex; align-items: center; gap: 0; border: 1px solid var(--gray-light); }
+.qty-btn {
+  width: 32px; height: 32px; border: none; background: var(--off-white);
+  font-family: 'Archivo', sans-serif; font-size: 1.1rem; font-weight: 400;
+  color: var(--ink); cursor: pointer; display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s, color 0.15s; flex-shrink: 0;
 }
-.checkout-total-label { font-size: 0.75rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-mid); }
-.checkout-total-price { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 1.6rem; color: var(--blue); }
+.qty-btn:hover { background: var(--blue); color: var(--white); }
+.qty-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+.qty-btn:disabled:hover { background: var(--off-white); color: var(--ink); }
+.qty-num {
+  width: 36px; text-align: center; font-family: 'Archivo', sans-serif;
+  font-size: 0.9rem; font-weight: 600; color: var(--ink);
+}
 
-/* --- STEP 2: formulario --- */
+/* Combo badge in step 1 */
+.combo-badge {
+  background: rgba(201,168,76,0.12); border: 1px solid rgba(201,168,76,0.4);
+  padding: 0.65rem 1rem; font-size: 0.75rem; font-weight: 300; color: var(--ink);
+  line-height: 1.6; margin-bottom: 1rem;
+}
+.combo-badge strong { font-weight: 600; color: var(--ink); }
+
+/* Subtotal rows in step 1 */
+.checkout-breakdown { display: flex; flex-direction: column; gap: 0; border-top: 1px solid var(--gray-light); margin-bottom: 1.5rem; }
+.breakdown-row { display: flex; justify-content: space-between; align-items: center; padding: 0.5rem 0; border-bottom: 1px dashed var(--gray-light); font-size: 0.8rem; color: var(--gray-mid); }
+.breakdown-row:last-child { border-bottom: none; }
+.breakdown-row.total-row { border-top: 2px solid var(--ink); border-bottom: none; padding-top: 0.75rem; margin-top: 0.25rem; }
+.breakdown-row.total-row span { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 1.5rem; color: var(--blue); }
+.breakdown-row.total-row .breakdown-label { font-size: 0.72rem; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--gray-mid); }
+.breakdown-discount { color: var(--green) !important; font-weight: 500 !important; }
+
+/* --- STEP 2: FORMULARIO --- */
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 0.75rem; }
 .form-row.full { grid-template-columns: 1fr; }
 .form-group { display: flex; flex-direction: column; gap: 0.35rem; }
-.form-label {
-  font-size: 0.68rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-mid);
-}
+.form-label { font-size: 0.68rem; font-weight: 500; letter-spacing: 0.14em; text-transform: uppercase; color: var(--gray-mid); }
 .form-label span { color: var(--gray-light); font-weight: 300; letter-spacing: 0; text-transform: none; font-size: 0.68rem; }
 .form-input {
   font-family: 'Archivo', sans-serif; font-size: 0.85rem; font-weight: 300;
@@ -284,6 +270,25 @@ footer { background: var(--ink); padding: 2.5rem 3rem; display: flex; justify-co
 .form-input.error { border-color: var(--red); }
 select.form-input { cursor: pointer; }
 
+/* Shipping notice (antes de seleccionar país) */
+.shipping-hint {
+  background: var(--off-white); border: 1px solid var(--gray-light);
+  padding: 0.75rem 1rem; margin-bottom: 0.75rem;
+  font-size: 0.78rem; font-weight: 300; color: var(--gray-mid); line-height: 1.6;
+  display: flex; align-items: center; gap: 0.6rem;
+}
+.shipping-hint svg { flex-shrink: 0; }
+
+/* Shipping result line */
+.shipping-result {
+  padding: 0.75rem 1rem; margin-bottom: 0.75rem;
+  font-size: 0.82rem; font-weight: 400; line-height: 1.6;
+  border: 1px solid; display: none; align-items: center; gap: 0.6rem;
+}
+.shipping-result.spain { background: rgba(26,122,74,0.06); border-color: rgba(26,122,74,0.35); color: var(--green); display: flex; }
+.shipping-result.intl { background: #fff8e6; border-color: var(--gold); color: var(--ink); display: flex; }
+.shipping-result a { color: var(--blue); font-weight: 500; text-decoration: none; }
+
 .intl-notice {
   display: none; background: #fff8e6; border: 1px solid var(--gold);
   padding: 1rem 1.25rem; margin-bottom: 1rem; font-size: 0.82rem; line-height: 1.65; color: var(--ink);
@@ -294,37 +299,65 @@ select.form-input { cursor: pointer; }
 .form-error-global { background: #fef2f2; border: 1px solid #fca5a5; padding: 0.75rem 1rem; font-size: 0.8rem; color: var(--red); margin-bottom: 1rem; display: none; }
 .form-error-global.visible { display: block; }
 
-/* --- STEP 3: éxito --- */
+/* ORDER SUMMARY TABLE */
+.order-summary-table {
+  width: 100%; border-collapse: collapse; margin-top: 1rem; margin-bottom: 0;
+  font-size: 0.8rem;
+}
+.order-summary-table th {
+  background: var(--ink); color: var(--white);
+  font-size: 0.65rem; font-weight: 500; letter-spacing: 0.16em; text-transform: uppercase;
+  padding: 0.55rem 0.85rem; text-align: left;
+}
+.order-summary-table th:last-child { text-align: right; }
+.order-summary-table td {
+  padding: 0.6rem 0.85rem; border-bottom: 1px solid var(--gray-light);
+  font-weight: 300; color: var(--ink); vertical-align: middle;
+}
+.order-summary-table td:nth-child(2) { text-align: center; color: var(--gray-mid); }
+.order-summary-table td:last-child { text-align: right; font-weight: 600; color: var(--blue); }
+.order-summary-table tr.discount-row td { color: var(--green); font-size: 0.75rem; }
+.order-summary-table tr.discount-row td:last-child { color: var(--green); font-weight: 500; }
+.order-summary-table tr.shipping-row td { color: var(--gray-mid); font-size: 0.78rem; }
+.order-summary-table tr.shipping-row td:last-child { font-weight: 500; color: var(--gray-mid); }
+.order-summary-table tr.total-row td {
+  background: var(--blue); color: var(--white);
+  font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 0.9rem; border-bottom: none;
+}
+.order-summary-table tr.total-row td:last-child { color: var(--white); font-size: 1.1rem; }
+.summary-box {
+  background: var(--off-white); border: 1px solid var(--gray-light);
+  padding: 0 0 0; margin-top: 1rem; margin-bottom: 1rem; overflow: hidden;
+}
+.summary-box-title {
+  background: var(--ink); color: var(--white);
+  font-size: 0.65rem; font-weight: 500; letter-spacing: 0.18em; text-transform: uppercase;
+  padding: 0.55rem 0.85rem;
+}
+.payment-note {
+  padding: 0.75rem 0.85rem; font-size: 0.75rem; font-weight: 300; color: var(--gray-mid);
+  line-height: 1.6; border-top: 1px solid var(--gray-light);
+  background: var(--white);
+}
+.payment-note strong { color: var(--ink); font-weight: 500; }
+
+/* --- STEP 3: ÉXITO --- */
 .success-screen { text-align: center; padding: 3rem 2rem; }
 .success-anim { width: 90px; height: 90px; margin: 0 auto 1.5rem; position: relative; }
 .success-circle {
   width: 90px; height: 90px; border-radius: 50%;
-  border: 3px solid var(--gray-light);
-  border-top-color: var(--green);
-  animation: none;
+  border: 3px solid var(--gray-light); border-top-color: var(--green); animation: none;
 }
-.success-anim.running .success-circle {
-  animation: spinCircle 0.6s ease-out forwards;
-}
+.success-anim.running .success-circle { animation: spinCircle 0.6s ease-out forwards; }
 @keyframes spinCircle {
-  0%   { transform: rotate(0deg); border-top-color: var(--green); border-color: var(--gray-light); border-top-color: var(--green); }
+  0%   { transform: rotate(0deg); border-top-color: var(--green); border-color: var(--gray-light); }
   80%  { transform: rotate(360deg); border-color: var(--green); }
   100% { transform: rotate(360deg); border-color: var(--green); }
 }
-.success-tick {
-  position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
-  width: 36px; height: 36px;
-}
-.success-tick path {
-  stroke: var(--green); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round;
-  stroke-dasharray: 50; stroke-dashoffset: 50;
-}
-.success-anim.running .success-tick path {
-  animation: drawTick 0.45s 0.55s ease-out forwards;
-}
-@keyframes drawTick {
-  to { stroke-dashoffset: 0; }
-}
+.success-tick { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 36px; height: 36px; }
+.success-tick path { stroke: var(--green); stroke-width: 3; fill: none; stroke-linecap: round; stroke-linejoin: round; stroke-dasharray: 50; stroke-dashoffset: 50; }
+.success-anim.running .success-tick path { animation: drawTick 0.45s 0.55s ease-out forwards; }
+@keyframes drawTick { to { stroke-dashoffset: 0; } }
 .success-title { font-family: 'Archivo', sans-serif; font-weight: 800; font-size: 1.6rem; letter-spacing: -0.02em; margin-bottom: 0.5rem; color: var(--ink); }
 .success-sub { font-size: 0.9rem; font-weight: 300; color: var(--gray-mid); line-height: 1.7; max-width: 380px; margin: 0 auto 2rem; }
 .success-detail { background: var(--off-white); border: 1px solid var(--gray-light); padding: 1.25rem 1.5rem; text-align: left; margin-bottom: 1.5rem; }
@@ -474,7 +507,6 @@ select.form-input { cursor: pointer; }
       <p class="buy-desc">Varias opciones disponibles. Elige la que más se adapte a ti.</p>
     </div>
     <div class="formats-grid">
-
       <!-- BUFANDA -->
       <div class="format-card featured">
         <span class="format-badge blue">Más popular</span>
@@ -487,10 +519,9 @@ select.form-input { cursor: pointer; }
           <li><svg class="ci" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Envío en 3 a 7 días hábiles</li>
         </ul>
         <hr class="format-divider">
-        <div class="format-price"><span class="format-price-num">€15,00</span><span class="format-price-label">envío incluído</span></div>
+        <div class="format-price"><span class="format-price-num">€15,00</span><span class="format-price-label">+ envío</span></div>
         <button class="btn-blue" onclick="openCheckout('bufanda')">Comprar bufanda</button>
       </div>
-
       <!-- PEGATINAS -->
       <div class="format-card">
         <div class="format-img"><img src="https://cdn.realsociedad.eus//Uploads/contenidos/thumbs/_6_web_cabecera_945_.jpg" alt="Pack pegatinas RSO"></div>
@@ -502,10 +533,9 @@ select.form-input { cursor: pointer; }
           <li><svg class="ci" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="7" cy="7" r="5.5"/><path d="M4.5 7l2 2 3-3"/></svg>Envío incluído</li>
         </ul>
         <hr class="format-divider">
-        <div class="format-price"><span class="format-price-num">€6,00</span><span class="format-price-label">envío incluído</span></div>
+        <div class="format-price"><span class="format-price-num">€6,00</span><span class="format-price-label">+ envío</span></div>
         <button class="btn-outline" onclick="openCheckout('pegatinas')">Comprar pegatinas</button>
       </div>
-
       <!-- PACK COMBO -->
       <div class="format-card" style="border-color:var(--gold);background:rgba(201,168,76,0.04);">
         <span class="format-badge" style="background:var(--gold);color:var(--ink);">Pack completo</span>
@@ -519,10 +549,9 @@ select.form-input { cursor: pointer; }
         </ul>
         <hr class="format-divider" style="border-color:rgba(201,168,76,0.3)">
         <p class="format-price-before">€21,00</p>
-        <div class="format-price"><span class="format-price-num" style="color:var(--gold)">€18,00</span><span class="format-price-label">envío incluído</span></div>
+        <div class="format-price"><span class="format-price-num" style="color:var(--gold)">€18,00</span><span class="format-price-label">+ envío</span></div>
         <button class="btn-gold" style="display:block;width:100%;text-align:center;font-family:'Archivo',sans-serif;font-size:0.75rem;font-weight:500;letter-spacing:0.12em;text-transform:uppercase;padding:0.9rem 1rem;border:none;cursor:pointer;" onclick="openCheckout('pack')">Comprar pack completo</button>
       </div>
-
     </div>
 
     <div class="how-it-works">
@@ -587,46 +616,55 @@ select.form-input { cursor: pointer; }
       <div class="step-tab" id="tab3">3 · Confirmado</div>
     </div>
 
-    <!-- STEP 1: Selección de productos -->
+    <!-- STEP 1: Selección de productos con cantidades -->
     <div class="step-panel active" id="step1">
-      <p style="font-size:0.78rem;color:var(--gray-mid);margin-bottom:1.25rem;line-height:1.6;">Confirma los productos que quieres pedir. Puedes añadir o quitar productos.</p>
+      <p style="font-size:0.78rem;color:var(--gray-mid);margin-bottom:1.25rem;line-height:1.6;">Usa los botones + y − para elegir cuántas unidades de cada producto quieres.</p>
 
-      <div class="product-list" id="productList">
+      <div class="product-list">
 
-        <div class="product-row" id="row-bufanda" onclick="toggleProduct('bufanda', this)">
-          <input type="checkbox" id="chk-bufanda">
-          <div class="product-check">
-            <svg viewBox="0 0 12 9" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4l3.5 3.5L11 1"/></svg>
-          </div>
+        <div class="product-row" id="row-bufanda">
           <div class="product-info">
             <div class="product-info-name">Bufanda 2026/27</div>
             <div class="product-info-sub">Edición limitada · Talla única</div>
           </div>
-          <div class="product-price">€15,00</div>
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <div class="qty-control">
+              <button class="qty-btn" id="btn-minus-bufanda" onclick="changeQty('bufanda', -1)" disabled>−</button>
+              <span class="qty-num" id="qty-bufanda">0</span>
+              <button class="qty-btn" onclick="changeQty('bufanda', 1)">+</button>
+            </div>
+            <div class="product-price-unit">€15,00</div>
+          </div>
         </div>
 
-        <div class="product-row" id="row-pegatinas" onclick="toggleProduct('pegatinas', this)">
-          <input type="checkbox" id="chk-pegatinas">
-          <div class="product-check">
-            <svg viewBox="0 0 12 9" fill="none" stroke="currentColor" stroke-width="2"><path d="M1 4l3.5 3.5L11 1"/></svg>
-          </div>
+        <div class="product-row" id="row-pegatinas">
           <div class="product-info">
             <div class="product-info-name">Pack Pegatinas</div>
             <div class="product-info-sub">Varios diseños · Resistentes al agua</div>
           </div>
-          <div class="product-price">€6,00</div>
+          <div style="display:flex;align-items:center;gap:1rem;">
+            <div class="qty-control">
+              <button class="qty-btn" id="btn-minus-pegatinas" onclick="changeQty('pegatinas', -1)" disabled>−</button>
+              <span class="qty-num" id="qty-pegatinas">0</span>
+              <button class="qty-btn" onclick="changeQty('pegatinas', 1)">+</button>
+            </div>
+            <div class="product-price-unit">€6,00</div>
+          </div>
         </div>
 
       </div>
 
-      <div class="checkout-total">
-        <span class="checkout-total-label">Total estimado</span>
-        <span class="checkout-total-price" id="checkoutTotalPrice">€0,00</span>
+      <div class="combo-badge" id="comboBadge" style="display:none;">
+        💡 <strong>Descuento pack aplicado:</strong> Por cada bufanda + pegatinas ahorras €3,00 (€18,00 en vez de €21,00).
       </div>
 
-      <p style="font-size:0.72rem;color:var(--gray-mid);line-height:1.6;margin-bottom:0.5rem;">
-        💡 Si seleccionas bufanda + pegatinas aplica el descuento del pack automáticamente (€18,00 en vez de €21,00).
-      </p>
+      <!-- Desglose en tiempo real -->
+      <div class="checkout-breakdown" id="breakdownContainer">
+        <div class="breakdown-row" id="brow-empty" style="justify-content:center;color:var(--gray-light);padding:1rem 0;">
+          Añade productos para ver el desglose
+        </div>
+      </div>
+
     </div>
 
     <!-- STEP 2: Formulario de datos -->
@@ -655,6 +693,24 @@ select.form-input { cursor: pointer; }
         </div>
       </div>
 
+      <!-- Aviso antes de seleccionar país -->
+      <div class="shipping-hint" id="shippingHint">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 11v.5"/></svg>
+        El coste de envío se calculará al introducir tu país de destino.
+      </div>
+
+      <!-- Resultado de envío: España -->
+      <div class="shipping-result" id="shippingSpain">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="8" cy="8" r="6.5"/><path d="M5 8l2.5 2.5L11 5.5"/></svg>
+        <span>Envío a España — <strong>€3,50</strong> (3–7 días hábiles)</span>
+      </div>
+
+      <!-- Resultado de envío: Internacional -->
+      <div class="shipping-result" id="shippingIntl">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" stroke="var(--gold)" stroke-width="1.5"><circle cx="8" cy="8" r="6.5"/><path d="M8 5v3.5M8 11v.5"/></svg>
+        <span>🌍 Envío internacional — Para envíos fuera de España contáctanos en Instagram <a href="https://www.instagram.com/1909_RSO" target="_blank">@1909_RSO</a> o <a href="https://www.instagram.com/pasiontxuriurdiin" target="_blank">@Pasiontxuriurdiin</a> para coordinar el precio de envío.</span>
+      </div>
+
       <div class="form-row full">
         <div class="form-group">
           <label class="form-label" for="f-pais">País</label>
@@ -674,14 +730,8 @@ select.form-input { cursor: pointer; }
         </div>
       </div>
 
-      <!-- Aviso internacional -->
-      <div class="intl-notice" id="intlNotice">
-        🌍 <strong>Envíos internacionales:</strong> Para países fuera de España debes contactarnos directamente para coordinar el envío y el precio.<br>
-        Escríbenos por Instagram a <a href="https://www.instagram.com/1909_RSO" target="_blank">@1909_RSO</a> o <a href="https://www.instagram.com/pasiontxuriurdiin" target="_blank">@Pasiontxuriurdiin</a> indicando los productos que quieres.
-      </div>
-
       <!-- Campos solo para España -->
-      <div id="spainFields">
+      <div id="spainFields" style="display:none;">
         <div class="form-row">
           <div class="form-group">
             <label class="form-label" for="f-provincia">Provincia</label>
@@ -722,9 +772,23 @@ select.form-input { cursor: pointer; }
         </div>
       </div>
 
-      <div style="margin-top:1rem;padding:0.85rem 1rem;background:var(--off-white);border:1px solid var(--gray-light);font-size:0.75rem;color:var(--gray-mid);line-height:1.65;">
-        📦 <strong style="color:var(--ink)">Resumen del pedido:</strong> <span id="orderSummaryText">—</span>
-        <br>💳 <strong style="color:var(--ink)">Pago:</strong> Te contactaremos por email o Instagram para gestionar el pago por PayPal o Bizum.
+      <!-- Tabla resumen de pedido -->
+      <div class="summary-box" id="summaryBox">
+        <div class="summary-box-title">📦 Resumen del pedido</div>
+        <table class="order-summary-table" id="summaryTable">
+          <thead>
+            <tr>
+              <th>Producto</th>
+              <th style="text-align:center;">Cant.</th>
+              <th style="text-align:right;">Importe</th>
+            </tr>
+          </thead>
+          <tbody id="summaryTbody">
+          </tbody>
+        </table>
+        <div class="payment-note">
+          💳 <strong>Pago:</strong> Te contactaremos por email o Instagram para gestionar el pago por PayPal o Bizum una vez recibamos tu pedido.
+        </div>
       </div>
     </div>
 
@@ -777,31 +841,105 @@ select.form-input { cursor: pointer; }
 </footer>
 
 <script>
-// ===== APPS SCRIPT URL (Reemplaza los ceros con tu URL real de Google) =====
-const APPS_SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
-
+// ===== APPS SCRIPT URL =====
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwIxJJseAWp1-n8uI0P8ARMe93xeEu8sOGHiQnMg8B1SaIsbyl1ezDxeWxKKOiBc-bdog/exec';
 // ===== PRECIOS =====
 const PRICES = { bufanda: 15, pegatinas: 6 };
-const PACK_PRICE = 18; // descuento pack bufanda+pegatinas
+const PACK_PRICE = 18;       // precio de un combo bufanda+pegatinas
+const SHIPPING_SPAIN = 3.50;
 
 // ===== STATE =====
 let currentStep = 1;
-let selected = { bufanda: false, pegatinas: false };
+let qty = { bufanda: 0, pegatinas: 0 };
+
+// ===== HELPERS =====
+function fmt(n) { return '€' + n.toFixed(2).replace('.', ','); }
+
+function calcBreakdown() {
+  const qB = qty.bufanda;
+  const qP = qty.pegatinas;
+  const combos = Math.min(qB, qP);
+  const extraB = qB - combos;
+  const extraP = qP - combos;
+
+  let subtotal = 0;
+  let discount = 0;
+  const lines = [];
+
+  if (qB > 0) {
+    const rawB = qB * PRICES.bufanda;
+    lines.push({ name: 'Bufanda 2026/27', qty: qB, unit: PRICES.bufanda, subtotal: rawB });
+    subtotal += rawB;
+  }
+  if (qP > 0) {
+    const rawP = qP * PRICES.pegatinas;
+    lines.push({ name: 'Pack Pegatinas', qty: qP, unit: PRICES.pegatinas, subtotal: rawP });
+    subtotal += rawP;
+  }
+  if (combos > 0) {
+    discount = combos * 3; // €3 por cada combo
+  }
+  const productsTotal = subtotal - discount;
+  return { lines, subtotal, discount, combos, productsTotal };
+}
+
+// ===== QTY CONTROLS =====
+function changeQty(id, delta) {
+  const newVal = qty[id] + delta;
+  if (newVal < 0) return;
+  qty[id] = newVal;
+
+  document.getElementById('qty-' + id).textContent = newVal;
+  document.getElementById('row-' + id).classList.toggle('selected', newVal > 0);
+  document.getElementById('btn-minus-' + id).disabled = newVal === 0;
+
+  updateBreakdown();
+  updateContinueBtn();
+}
+
+function updateContinueBtn() {
+  const total = qty.bufanda + qty.pegatinas;
+  document.getElementById('navNext').disabled = total === 0;
+}
+
+function updateBreakdown() {
+  const { lines, subtotal, discount, combos, productsTotal } = calcBreakdown();
+  const container = document.getElementById('breakdownContainer');
+  const comboBadge = document.getElementById('comboBadge');
+
+  comboBadge.style.display = combos > 0 ? 'block' : 'none';
+
+  if (lines.length === 0) {
+    container.innerHTML = '<div class="breakdown-row" style="justify-content:center;color:var(--gray-light);padding:1rem 0;">Añade productos para ver el desglose</div>';
+    return;
+  }
+
+  let html = '';
+  lines.forEach(l => {
+    html += `<div class="breakdown-row"><span>${l.name} × ${l.qty}</span><span style="font-weight:400;color:var(--ink)">${fmt(l.subtotal)}</span></div>`;
+  });
+  if (discount > 0) {
+    html += `<div class="breakdown-row breakdown-discount"><span>Descuento pack (${combos} combo${combos > 1 ? 's' : ''})</span><span>−${fmt(discount)}</span></div>`;
+  }
+  html += `<div class="breakdown-row total-row"><span class="breakdown-label">Subtotal productos</span><span>${fmt(productsTotal)}</span></div>`;
+  container.innerHTML = html;
+}
 
 // ===== CHECKOUT OPEN/CLOSE =====
 function openCheckout(preselect) {
-  // reset
-  selected = { bufanda: false, pegatinas: false };
-  document.querySelectorAll('.product-row').forEach(r => r.classList.remove('selected'));
+  qty = { bufanda: 0, pegatinas: 0 };
+  // Reset UI
+  ['bufanda','pegatinas'].forEach(id => {
+    document.getElementById('qty-' + id).textContent = '0';
+    document.getElementById('row-' + id).classList.remove('selected');
+    document.getElementById('btn-minus-' + id).disabled = true;
+  });
+
+  if (preselect === 'bufanda' || preselect === 'pack') changeQty('bufanda', 1);
+  if (preselect === 'pegatinas' || preselect === 'pack') changeQty('pegatinas', 1);
+
   currentStep = 1;
   showStep(1);
-
-  if (preselect === 'bufanda' || preselect === 'pack') {
-    toggleProduct('bufanda', document.getElementById('row-bufanda'), true);
-  }
-  if (preselect === 'pegatinas' || preselect === 'pack') {
-    toggleProduct('pegatinas', document.getElementById('row-pegatinas'), true);
-  }
 
   document.getElementById('checkoutOverlay').classList.add('open');
   document.body.style.overflow = 'hidden';
@@ -816,81 +954,42 @@ document.getElementById('checkoutOverlay').addEventListener('click', function(e)
   if (e.target === this) closeCheckout();
 });
 
-// ===== TOGGLE PRODUCT =====
-function toggleProduct(id, row, forceOn) {
-  if (forceOn === true) {
-    selected[id] = true;
-    row.classList.add('selected');
-  } else {
-    selected[id] = !selected[id];
-    row.classList.toggle('selected', selected[id]);
-  }
-  updateTotal();
-}
-
-function updateTotal() {
-  const hasBufanda = selected.bufanda;
-  const hasPegatinas = selected.pegatinas;
-  let total = 0;
-  if (hasBufanda && hasPegatinas) {
-    total = PACK_PRICE;
-  } else {
-    if (hasBufanda) total += PRICES.bufanda;
-    if (hasPegatinas) total += PRICES.pegatinas;
-  }
-  const fmt = total.toFixed(2).replace('.', ',');
-  document.getElementById('checkoutTotalPrice').textContent = '€' + fmt;
-  document.getElementById('navNext').disabled = total === 0;
-}
-
 // ===== NAVIGATION =====
 function showStep(n) {
   currentStep = n;
   [1,2,3].forEach(i => {
     document.getElementById('step' + i).classList.toggle('active', i === n);
     const tab = document.getElementById('tab' + i);
-    if(tab) {
-      tab.classList.remove('active', 'done');
-      if (i < n) tab.classList.add('done');
-      else if (i === n) tab.classList.add('active');
-    }
+    tab.classList.remove('active', 'done');
+    if (i < n) tab.classList.add('done');
+    else if (i === n) tab.classList.add('active');
   });
 
   const navBack = document.getElementById('navBack');
   const navNext = document.getElementById('navNext');
   const panelNav = document.getElementById('panelNav');
+  panelNav.style.display = 'flex';
 
   if (n === 1) {
     navBack.style.display = 'none';
     navNext.style.display = 'block';
     navNext.textContent = 'Continuar →';
-    navNext.disabled = calcTotal() === 0;
+    updateContinueBtn();
   } else if (n === 2) {
     navBack.style.display = 'block';
     navNext.style.display = 'block';
     navNext.textContent = 'Enviar pedido →';
     navNext.disabled = false;
-    updateOrderSummary();
+    renderSummaryTable();
   } else if (n === 3) {
     panelNav.style.display = 'none';
     triggerSuccessAnim();
   }
 }
 
-function calcTotal() {
-  if (selected.bufanda && selected.pegatinas) return PACK_PRICE;
-  let t = 0;
-  if (selected.bufanda) t += PRICES.bufanda;
-  if (selected.pegatinas) t += PRICES.pegatinas;
-  return t;
-}
-
 function goNext() {
-  if (currentStep === 1) {
-    showStep(2);
-  } else if (currentStep === 2) {
-    submitOrder();
-  }
+  if (currentStep === 1) showStep(2);
+  else if (currentStep === 2) submitOrder();
 }
 
 function goBack() {
@@ -901,32 +1000,80 @@ function goBack() {
 function onPaisChange() {
   const pais = document.getElementById('f-pais').value;
   const isSpain = pais === 'España';
-  const intlNotice = document.getElementById('intlNotice');
-  const spainFields = document.getElementById('spainFields');
+  const isIntl = pais !== '' && !isSpain;
   const navNext = document.getElementById('navNext');
 
-  intlNotice.classList.toggle('visible', pais !== '' && !isSpain);
-  spainFields.style.display = isSpain ? 'block' : 'none';
+  document.getElementById('shippingHint').style.display = pais === '' ? 'flex' : 'none';
+  document.getElementById('shippingSpain').className = 'shipping-result' + (isSpain ? ' spain' : '');
+  document.getElementById('shippingIntl').className = 'shipping-result' + (isIntl ? ' intl' : '');
 
-  if (pais !== '' && !isSpain) {
+  document.getElementById('spainFields').style.display = isSpain ? 'block' : 'none';
+  document.getElementById('intlNotice').classList.toggle('visible', isIntl);
+
+  if (isIntl) {
     navNext.disabled = true;
     navNext.textContent = 'Contacta por Instagram';
   } else {
     navNext.disabled = false;
     navNext.textContent = 'Enviar pedido →';
   }
+
+  renderSummaryTable();
 }
 
-// ===== ORDER SUMMARY =====
-function updateOrderSummary() {
-  const parts = [];
-  if (selected.bufanda) parts.push('Bufanda (€15,00)');
-  if (selected.pegatinas) parts.push('Pegatinas (€6,00)');
-  const isCombo = selected.bufanda && selected.pegatinas;
-  let txt = parts.join(' + ');
-  if (isCombo) txt += ' → Pack €18,00';
-  else txt += ' → Total €' + calcTotal().toFixed(2).replace('.', ',');
-  document.getElementById('orderSummaryText').textContent = txt;
+// ===== SUMMARY TABLE =====
+function renderSummaryTable() {
+  const pais = document.getElementById('f-pais').value;
+  const isSpain = pais === 'España';
+  const { lines, subtotal, discount, combos, productsTotal } = calcBreakdown();
+  const tbody = document.getElementById('summaryTbody');
+
+  let html = '';
+  lines.forEach(l => {
+    html += `<tr>
+      <td>${l.name}</td>
+      <td>${l.qty}</td>
+      <td>${fmt(l.subtotal)}</td>
+    </tr>`;
+  });
+
+  if (discount > 0) {
+    html += `<tr class="discount-row">
+      <td colspan="2">🎁 Descuento pack (${combos}× combo)</td>
+      <td>−${fmt(discount)}</td>
+    </tr>`;
+  }
+
+  if (pais === '') {
+    html += `<tr class="shipping-row">
+      <td colspan="2">Envío</td>
+      <td>Pendiente</td>
+    </tr>`;
+    html += `<tr class="total-row">
+      <td colspan="2">Total estimado</td>
+      <td>${fmt(productsTotal)} + envío</td>
+    </tr>`;
+  } else if (isSpain) {
+    html += `<tr class="shipping-row">
+      <td colspan="2">📦 Envío (España, 3–7 días)</td>
+      <td>${fmt(SHIPPING_SPAIN)}</td>
+    </tr>`;
+    html += `<tr class="total-row">
+      <td colspan="2">Total</td>
+      <td>${fmt(productsTotal + SHIPPING_SPAIN)}</td>
+    </tr>`;
+  } else {
+    html += `<tr class="shipping-row">
+      <td colspan="2">🌍 Envío internacional</td>
+      <td>A consultar</td>
+    </tr>`;
+    html += `<tr class="total-row">
+      <td colspan="2">Total productos</td>
+      <td>${fmt(productsTotal)} + envío</td>
+    </tr>`;
+  }
+
+  tbody.innerHTML = html;
 }
 
 // ===== VALIDATION =====
@@ -939,39 +1086,39 @@ function validateForm() {
   }
   required.forEach(id => {
     const el = document.getElementById(id);
-    if(el) {
-      const val = el.value.trim();
-      const empty = val === '';
-      const emailBad = id === 'f-email' && val && !val.includes('@');
-      const hasError = empty || emailBad;
-      el.classList.toggle('error', hasError);
-      if (hasError) ok = false;
-    }
+    const val = el.value.trim();
+    const empty = val === '';
+    const emailBad = id === 'f-email' && val && !val.includes('@');
+    const hasError = empty || emailBad;
+    el.classList.toggle('error', hasError);
+    if (hasError) ok = false;
   });
   return ok;
 }
 
-// ===== SUBMIT TO GOOGLE SHEETS =====
+// ===== SUBMIT =====
 async function submitOrder() {
   const formError = document.getElementById('formError');
-  if (formError) formError.classList.remove('visible');
+  formError.classList.remove('visible');
 
   if (!validateForm()) {
-    if (formError) formError.classList.add('visible');
+    formError.classList.add('visible');
     return;
   }
 
   const pais = document.getElementById('f-pais').value;
-  if (pais !== 'España') return; 
+  if (pais !== 'España') return;
 
   const navNext = document.getElementById('navNext');
   navNext.disabled = true;
   navNext.textContent = 'Enviando…';
 
-  const productsList = [];
-  if (selected.bufanda) productsList.push('Bufanda 2026/27');
-  if (selected.pegatinas) productsList.push('Pack Pegatinas');
-  const isCombo = selected.bufanda && selected.pegatinas;
+  const { lines, productsTotal } = calcBreakdown();
+  const isSpain = pais === 'España';
+  const shipping = isSpain ? SHIPPING_SPAIN : 0;
+  const total = productsTotal + shipping;
+
+  const productsList = lines.map(l => `${l.name} ×${l.qty}`).join(' + ');
 
   const payload = {
     nombre: document.getElementById('f-nombre').value.trim(),
@@ -983,31 +1130,30 @@ async function submitOrder() {
     cp: document.getElementById('f-cp').value.trim(),
     direccion: document.getElementById('f-direccion').value.trim(),
     instagram: document.getElementById('f-instagram').value.trim(),
-    productos: productsList.join(' + ') + (isCombo ? ' (Pack)' : ''),
-    total: '€' + calcTotal().toFixed(2).replace('.', ',')
+    productos: productsList,
+    subtotal: fmt(productsTotal),
+    envio: fmt(shipping),
+    total: fmt(total)
   };
 
   try {
     await fetch(APPS_SCRIPT_URL, {
-      method: 'POST',
-      mode: 'no-cors',
+      method: 'POST', mode: 'no-cors',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
-  } catch(e) {
-    console.log('Sent:', e);
-  }
+  } catch(e) { console.log('Sent (opaque):', e); }
 
   const det = document.getElementById('successDetail');
-  if (det) {
-    det.innerHTML = `
-      <div class="success-detail-row"><span>Nombre</span><span>${payload.nombre} ${payload.apellido}</span></div>
-      <div class="success-detail-row"><span>Email</span><span>${payload.email}</span></div>
-      <div class="success-detail-row"><span>Productos</span><span>${payload.productos}</span></div>
-      <div class="success-detail-row"><span>Total</span><span>${payload.total}</span></div>
-      <div class="success-detail-row"><span>Envío</span><span>${payload.provincia}, ${payload.cp}</span></div>
-    `;
-  }
+  det.innerHTML = `
+    <div class="success-detail-row"><span>Nombre</span><span>${payload.nombre} ${payload.apellido}</span></div>
+    <div class="success-detail-row"><span>Email</span><span>${payload.email}</span></div>
+    <div class="success-detail-row"><span>Productos</span><span>${payload.productos}</span></div>
+    <div class="success-detail-row"><span>Subtotal</span><span>${payload.subtotal}</span></div>
+    <div class="success-detail-row"><span>Envío</span><span>${payload.envio}</span></div>
+    <div class="success-detail-row" style="font-weight:600;border-top:1px solid var(--gray-light);padding-top:0.4rem;margin-top:0.1rem"><span>Total</span><span style="color:var(--blue)">${payload.total}</span></div>
+    <div class="success-detail-row"><span>Dirección</span><span>${payload.provincia}, ${payload.cp}</span></div>
+  `;
 
   showStep(3);
 }
@@ -1015,11 +1161,9 @@ async function submitOrder() {
 // ===== SUCCESS ANIMATION =====
 function triggerSuccessAnim() {
   const anim = document.getElementById('successAnim');
-  if (anim) {
-    anim.classList.remove('running');
-    void anim.offsetWidth; // reflow
-    anim.classList.add('running');
-  }
+  anim.classList.remove('running');
+  void anim.offsetWidth;
+  anim.classList.add('running');
 }
 
 // ===== FAQ =====
@@ -1038,23 +1182,8 @@ function closeLightbox() {
   document.getElementById('lightbox').classList.remove('open');
   document.body.style.overflow = '';
 }
-
-// ===== INITIALIZATION & EVENT LISTENERS =====
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
-
 document.addEventListener('DOMContentLoaded', function() {
-  // Conectar botones del panel de pasos de compra alternativos
-  const navNext = document.getElementById('navNext');
-  const navBack = document.getElementById('navBack');
-
-  if (navNext) navNext.addEventListener('click', goNext);
-  if (navBack) navBack.addEventListener('click', goBack);
-
-  // Escuchar el cambio de país en el selector del formulario
-  const selectPais = document.getElementById('f-pais');
-  if (selectPais) selectPais.addEventListener('change', onPaisChange);
-
-  // Iniciar zoom de imágenes de productos y mockups
   document.querySelectorAll('.format-img img, .gallery-item img').forEach(img => {
     img.style.cursor = 'zoom-in';
     img.addEventListener('click', function(e) {
@@ -1062,10 +1191,7 @@ document.addEventListener('DOMContentLoaded', function() {
       openLightbox(this.src, this.alt);
     });
   });
-
-  // Forzar que los campos de provincia y dirección de España arranquen invisibles
-  const spainFields = document.getElementById('spainFields');
-  if (spainFields) spainFields.style.display = 'none';
+  updateBreakdown();
 });
 </script>
 </body>
