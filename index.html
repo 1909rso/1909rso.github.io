@@ -777,7 +777,7 @@ select.form-input { cursor: pointer; }
 </footer>
 
 <script>
-// ===== APPS SCRIPT URL (Reemplaza esta línea con tu URL real de Google) =====
+// ===== APPS SCRIPT URL (Reemplaza los ceros con tu URL real de Google) =====
 const APPS_SCRIPT_URL = 'TU_URL_DE_APPS_SCRIPT_AQUI';
 
 // ===== PRECIOS =====
@@ -973,7 +973,6 @@ async function submitOrder() {
   if (selected.pegatinas) productsList.push('Pack Pegatinas');
   const isCombo = selected.bufanda && selected.pegatinas;
 
-  // Creamos el JSON estructurado exactamente para las columnas de tu hoja de cálculo
   const payload = {
     nombre: document.getElementById('f-nombre').value.trim(),
     apellido: document.getElementById('f-apellido').value.trim(),
@@ -989,7 +988,6 @@ async function submitOrder() {
   };
 
   try {
-    // Petición POST real hacia tu Google Apps Script
     await fetch(APPS_SCRIPT_URL, {
       method: 'POST',
       mode: 'no-cors',
@@ -1000,7 +998,6 @@ async function submitOrder() {
     console.log('Sent:', e);
   }
 
-  // Rellenar pantalla de éxito visual
   const det = document.getElementById('successDetail');
   if (det) {
     det.innerHTML = `
@@ -1046,18 +1043,18 @@ function closeLightbox() {
 document.addEventListener('keydown', e => { if (e.key === 'Escape') closeLightbox(); });
 
 document.addEventListener('DOMContentLoaded', function() {
-  // Conectar botones físicos de adelante y atrás del panel de navegación
+  // Conectar botones del panel de pasos de compra alternativos
   const navNext = document.getElementById('navNext');
   const navBack = document.getElementById('navBack');
 
   if (navNext) navNext.addEventListener('click', goNext);
   if (navBack) navBack.addEventListener('click', goBack);
 
-  // Escuchar el cambio de país
+  // Escuchar el cambio de país en el selector del formulario
   const selectPais = document.getElementById('f-pais');
   if (selectPais) selectPais.addEventListener('change', onPaisChange);
 
-  // Inicializar imágenes para zoom con lightbox
+  // Iniciar zoom de imágenes de productos y mockups
   document.querySelectorAll('.format-img img, .gallery-item img').forEach(img => {
     img.style.cursor = 'zoom-in';
     img.addEventListener('click', function(e) {
@@ -1066,7 +1063,7 @@ document.addEventListener('DOMContentLoaded', function() {
     });
   });
 
-  // Asegurar que los campos de España arranquen ocultos si no se ha elegido país
+  // Forzar que los campos de provincia y dirección de España arranquen invisibles
   const spainFields = document.getElementById('spainFields');
   if (spainFields) spainFields.style.display = 'none';
 });
