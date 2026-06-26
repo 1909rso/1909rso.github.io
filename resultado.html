@@ -1,0 +1,538 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Card Editor — 1909 RSO</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --navy: #0d1b2a;
+    --navy2: #111f30;
+    --gold: #c9a84c;
+    --gold2: #e8c86a;
+    --surface: #182436;
+    --border: #243448;
+    --text: #e8eaf0;
+    --muted: #7a8fa8;
+    --green: #4caf76;
+    --red: #e05555;
+  }
+
+  body {
+    background: #080f18;
+    color: var(--text);
+    font-family: 'Segoe UI', system-ui, sans-serif;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+
+  /* ── HEADER ── */
+  header {
+    width: 100%;
+    background: var(--navy2);
+    border-bottom: 1px solid var(--border);
+    padding: 14px 28px;
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: .12em;
+    color: var(--gold);
+    text-transform: uppercase;
+  }
+
+  .match-badge {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 6px 16px;
+  }
+  .match-team {
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--text);
+    letter-spacing: .03em;
+  }
+  .match-vs {
+    font-size: 11px;
+    font-weight: 600;
+    color: var(--muted);
+    letter-spacing: .1em;
+    text-transform: uppercase;
+  }
+  .match-loading {
+    font-size: 12px;
+    color: var(--muted);
+    font-style: italic;
+  }
+
+  .spacer { flex: 1; }
+
+  .data-pill {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+    color: var(--muted);
+  }
+  .dot {
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--muted);
+    transition: background .3s;
+  }
+  .dot.ok { background: var(--green); box-shadow: 0 0 6px var(--green); }
+  .dot.err { background: var(--red); }
+  .dot.pulse {
+    background: #5ab0ff;
+    animation: pulse 1s infinite;
+  }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+
+  /* ── TOOLBAR ── */
+  .toolbar {
+    width: 100%;
+    background: var(--navy);
+    border-bottom: 1px solid var(--border);
+    padding: 10px 28px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+  }
+
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 8px 18px;
+    border-radius: 8px;
+    font-size: 13px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all .15s;
+    letter-spacing: .03em;
+  }
+  .btn-outline {
+    background: transparent;
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  .btn-outline:hover { border-color: var(--gold); color: var(--gold); }
+  .btn-export {
+    background: var(--gold);
+    color: var(--navy);
+  }
+  .btn-export:hover { background: var(--gold2); }
+  .btn:disabled { opacity: .4; cursor: not-allowed; }
+
+  /* ── CANVAS AREA ── */
+  .canvas-area {
+    flex: 1;
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    overflow: auto;
+    padding: 36px 20px 80px;
+  }
+
+  .canvas-wrap {
+    transform-origin: top center;
+    position: relative;
+  }
+
+  /* THE CARD */
+  #card {
+    width: 2000px;
+    height: 2500px;
+    position: relative;
+    overflow: hidden;
+    background: #00b140;
+    transform-origin: top left;
+  }
+
+  #card-bg {
+    position: absolute;
+    top: 0; left: 0;
+    width: 2000px;
+    height: 2500px;
+    object-fit: fill;
+    display: none;
+    z-index: 0;
+  }
+
+  .card-layer {
+    position: absolute;
+    line-height: 1;
+  }
+
+  /* ── ZOOM BAR ── */
+  .zoom-bar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 30px;
+    padding: 7px 18px;
+    font-size: 12px;
+    z-index: 200;
+    box-shadow: 0 4px 20px #0007;
+  }
+  .zoom-bar button {
+    background: none; border: none;
+    color: var(--text); font-size: 17px;
+    cursor: pointer; line-height: 1; padding: 0 4px;
+    transition: color .15s;
+  }
+  .zoom-bar button:hover { color: var(--gold); }
+  .zoom-val {
+    min-width: 44px; text-align: center;
+    font-weight: 700; color: var(--gold);
+    font-size: 13px;
+  }
+  .zoom-fit {
+    font-size: 11px; color: var(--muted);
+    cursor: pointer; padding: 2px 8px;
+    border-left: 1px solid var(--border);
+  }
+  .zoom-fit:hover { color: var(--gold); }
+
+  /* last-updated */
+  .updated {
+    font-size: 10px;
+    color: var(--muted);
+    opacity: .7;
+  }
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="logo">🏟 1909 RSO</div>
+
+  <div class="match-badge">
+    <span id="matchHome" class="match-loading">Cargando…</span>
+    <span class="match-vs">vs</span>
+    <span id="matchAway" class="match-loading"></span>
+  </div>
+
+  <div class="spacer"></div>
+
+  <div class="data-pill">
+    <div class="dot pulse" id="statusDot"></div>
+    <span id="statusText">Conectando…</span>
+    <span class="updated" id="updatedAt"></span>
+  </div>
+</header>
+
+<!-- TOOLBAR -->
+<div class="toolbar">
+  <button class="btn btn-outline" onclick="document.getElementById('bgInput').click()">
+    🖼 Cargar fondo
+  </button>
+  <input type="file" id="bgInput" accept="image/*" style="display:none" onchange="loadBackground(this)">
+
+  <div style="flex:1"></div>
+
+  <button class="btn btn-export" id="exportBtn" onclick="exportCard()">
+    ⬇ Descargar imagen
+  </button>
+</div>
+
+<!-- CANVAS -->
+<div class="canvas-area">
+  <div class="canvas-wrap" id="canvasWrap">
+    <div id="card">
+      <img id="card-bg" alt="">
+
+      <!-- CAPA: Res_local -->
+      <div id="d-Res_local" class="card-layer"></div>
+
+      <!-- CAPA: EST (imagen cargada desde GitHub según el valor numérico de EST) -->
+      <img id="layer-est" class="card-layer" src="" alt="" style="display:none">
+
+    </div>
+  </div>
+</div>
+
+<!-- ZOOM -->
+<div class="zoom-bar">
+  <button onclick="zoom(-0.05)">−</button>
+  <span class="zoom-val" id="zoomVal">15%</span>
+  <button onclick="zoom(+0.05)">＋</button>
+  <span class="zoom-fit" onclick="zoomFit()">Ajustar</span>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+// CONFIG
+// ═══════════════════════════════════════════════════
+const DATA_URL = "https://script.google.com/macros/s/AKfycbyK9bf932Rbj1WgNuWVi8Sc1Y4kFW4JXNoZoQv2t3R0U4YQ-UEx6xfwAEghSTm-81kw/exec";
+
+// Nombres de los campos del Sheet que representan los equipos
+// Ajusta estas claves según cómo vengan los datos reales
+const KEY_HOME = 'local';      // ej: "local", "home", "equipo_local"
+const KEY_AWAY = 'visitante';  // ej: "visitante", "away", "equipo_visitante"
+
+const REFRESH_INTERVAL = 60000; // 1 minuto
+
+// ═══════════════════════════════════════════════════
+// CAPAS — CONFIGURACIÓN
+// Edita aquí posición, fuente, color y alineación
+// ═══════════════════════════════════════════════════
+
+// Capa: resultado equipo local (variable Res_local del Sheet)
+const LAYER_RES_LOCAL = {
+  x:          100,          // posición horizontal en px (0 = borde izquierdo)
+  y:          200,          // posición vertical en px   (0 = borde superior)
+  fontFamily: 'Arial',      // fuente (debe estar disponible o ser @font-face)
+  fontSize:   160,          // tamaño en px
+  fontWeight: '900',        // grosor: 400 | 600 | 700 | 800 | 900
+  color:      '#ffffff',    // color en hex
+  align:      'left',       // alineación: 'left' | 'center' | 'right'
+  width:      600,          // ancho máximo del bloque de texto en px
+};
+
+// Capa: imagen EST (se carga desde GitHub según el número de la variable EST)
+const LAYER_EST = {
+  x:          100,          // posición horizontal en px
+  y:          500,          // posición vertical en px
+  width:      400,          // ancho de la imagen en px
+  height:     400,          // alto de la imagen en px
+  // URL base de GitHub: la imagen se construye como BASE_URL + valor_EST + ".png"
+  // Ajusta el usuario, repo y rama según tu repositorio
+  baseUrl:    'https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/est/',
+};
+
+// ═══════════════════════════════════════════════════
+// ZOOM
+// ═══════════════════════════════════════════════════
+let scale = 0.15;
+
+function applyScale() {
+  const wrap = document.getElementById('canvasWrap');
+  wrap.style.transform = `scale(${scale})`;
+  wrap.style.width  = Math.round(2000 * scale) + 'px';
+  wrap.style.height = Math.round(2500 * scale) + 'px';
+  document.getElementById('zoomVal').textContent = Math.round(scale * 100) + '%';
+}
+
+function zoom(delta) {
+  scale = Math.max(0.05, Math.min(1.5, scale + delta));
+  applyScale();
+}
+
+function zoomFit() {
+  const area = document.querySelector('.canvas-area');
+  const available = Math.min(area.clientWidth - 40, (window.innerHeight - 160) * (2000/2500));
+  scale = parseFloat((available / 2000).toFixed(2));
+  applyScale();
+}
+
+applyScale();
+
+// ═══════════════════════════════════════════════════
+// BACKGROUND
+// ═══════════════════════════════════════════════════
+function loadBackground(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = function(e) {
+    const bg = document.getElementById('card-bg');
+    bg.src = e.target.result;
+    bg.style.display = 'block';
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+// ═══════════════════════════════════════════════════
+// DATA
+// ═══════════════════════════════════════════════════
+let sheetData = {};
+
+function setStatus(state, msg) {
+  const dot  = document.getElementById('statusDot');
+  const text = document.getElementById('statusText');
+  dot.className  = 'dot ' + state;
+  text.textContent = msg;
+}
+
+function fetchData() {
+  setStatus('pulse', 'Actualizando\u2026');
+  fetch(DATA_URL)
+    .then(function(r) { return r.text(); })
+    .then(function(text) {
+      const data = JSON.parse(text);
+      const obj = data[0];                // mismo patron que tu HTML de referencia
+      sheetData = obj;                    // guardamos el objeto directamente
+      applyDataToLayers();
+      updateMatchHeader();
+      setStatus('ok', 'Datos al dia');
+      const now = new Date();
+      document.getElementById('updatedAt').textContent =
+        '- ' + now.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
+    })
+    .catch(function(err) {
+      setStatus('err', 'Error al cargar');
+      console.error('fetchData error:', err);
+    });
+}
+
+// Rellena todos los elementos con id="d-CLAVE" y aplica estilos de capa
+function applyDataToLayers() {
+  applyLayerStyles();
+
+  Object.keys(sheetData).forEach(function(key) {
+    const safeKey = key.replace(/[\.\[\]]/g, '_');
+    const el = document.getElementById('d-' + key) ||
+               document.getElementById('d-' + safeKey);
+    if (el) {
+      const prefix = el.dataset.prefix || '';
+      const suffix = el.dataset.suffix || '';
+      el.textContent = prefix + String(sheetData[key] ?? '') + suffix;
+    }
+  });
+}
+
+// Aplica la configuración de cada capa al DOM
+function applyLayerStyles() {
+  var cfg, el;
+
+  // — Res_local —
+  cfg = LAYER_RES_LOCAL;
+  el  = document.getElementById('d-Res_local');
+  if (el) {
+    el.style.left       = cfg.x + 'px';
+    el.style.top        = cfg.y + 'px';
+    el.style.fontFamily = cfg.fontFamily;
+    el.style.fontSize   = cfg.fontSize + 'px';
+    el.style.fontWeight = cfg.fontWeight;
+    el.style.color      = cfg.color;
+    el.style.textAlign  = cfg.align;
+    el.style.width      = cfg.width + 'px';
+    el.style.lineHeight = '1';
+  }
+
+  // — EST (imagen desde GitHub) —
+  cfg = LAYER_EST;
+  el  = document.getElementById('layer-est');
+  if (el) {
+    el.style.left   = cfg.x + 'px';
+    el.style.top    = cfg.y + 'px';
+    el.style.width  = cfg.width + 'px';
+    el.style.height = cfg.height + 'px';
+
+    var estVal = sheetData['EST'];
+    if (estVal !== undefined && estVal !== null && estVal !== '') {
+      var url = cfg.baseUrl + estVal + '.png';
+      el.src          = url;
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+}
+
+function updateMatchHeader() {
+  const homeEl = document.getElementById('matchHome');
+  const awayEl = document.getElementById('matchAway');
+
+  const home = findField(KEY_HOME) || '—';
+  const away = findField(KEY_AWAY) || '—';
+
+  homeEl.textContent = home;
+  awayEl.textContent = away;
+  homeEl.classList.remove('match-loading');
+  awayEl.classList.remove('match-loading');
+  homeEl.className = 'match-team';
+  awayEl.className = 'match-team';
+}
+
+// Busca un campo por clave exacta, o por variantes comunes
+function findField(key) {
+  if (sheetData[key] !== undefined) return sheetData[key];
+  // intenta variantes: mayúsculas, con espacios, etc.
+  const lower = key.toLowerCase();
+  const found = Object.keys(sheetData).find(function(k) {
+    return k.toLowerCase() === lower ||
+           k.toLowerCase().replace(/[^a-z]/g,'') === lower.replace(/[^a-z]/g,'');
+  });
+  return found ? sheetData[found] : null;
+}
+
+// ═══════════════════════════════════════════════════
+// EXPORT
+// ═══════════════════════════════════════════════════
+async function exportCard() {
+  const btn = document.getElementById('exportBtn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Generando…';
+
+  const wrap = document.getElementById('canvasWrap');
+  const card = document.getElementById('card');
+
+  // Quitar el scale temporalmente para capturar a tamaño real
+  wrap.style.transform = 'scale(1)';
+  wrap.style.width  = '2000px';
+  wrap.style.height = '2500px';
+
+  // Pequeña pausa para que el navegador repinte
+  await new Promise(function(r) { setTimeout(r, 100); });
+
+  try {
+    const canvas = await html2canvas(card, {
+      width: 2000,
+      height: 2500,
+      scale: 1,
+      useCORS: true,
+      allowTaint: true,
+      backgroundColor: null,
+      logging: false,
+      imageTimeout: 15000
+    });
+
+    const link = document.createElement('a');
+    link.download = '1909rso_' + Date.now() + '.png';
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+  } catch(e) {
+    alert('Error al exportar: ' + e.message);
+    console.error(e);
+  }
+
+  // Restaurar el scale
+  applyScale();
+
+  btn.disabled = false;
+  btn.textContent = '⬇ Descargar imagen';
+}
+
+// ═══════════════════════════════════════════════════
+// INIT
+// ═══════════════════════════════════════════════════
+fetchData();
+setInterval(fetchData, REFRESH_INTERVAL);
+</script>
+</body>
+</html>
