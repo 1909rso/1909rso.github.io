@@ -319,6 +319,71 @@
       <img id="layer-comp" class="card-layer" src="" alt="" crossorigin="anonymous"
            style="display:none; z-index:9;">
 
+
+
+      <!-- z-index 100: 1_L_Tipo — icono dinámico -->
+      <img id="layer-icon-1_L" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:100;">
+
+      <!-- z-index 101: 2_L_Tipo — icono dinámico -->
+      <img id="layer-icon-2_L" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:101;">
+
+      <!-- z-index 102: 3_L_Tipo — icono dinámico -->
+      <img id="layer-icon-3_L" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:102;">
+
+      <!-- z-index 103: 4_L_Tipo — icono dinámico -->
+      <img id="layer-icon-4_L" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:103;">
+
+      <!-- z-index 104: 5_L_Tipo — icono dinámico -->
+      <img id="layer-icon-5_L" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:104;">
+
+      <!-- z-index 105: 6_L_Tipo — icono dinámico -->
+      <img id="layer-icon-6_L" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:105;">
+
+      <!-- z-index 106: 7_L_Tipo — icono dinámico -->
+      <img id="layer-icon-7_L" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:106;">
+
+      <!-- z-index 107: 8_L_Tipo — icono dinámico -->
+      <img id="layer-icon-8_L" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:107;">
+
+      <!-- z-index 108: 1_V_Tipo — icono dinámico -->
+      <img id="layer-icon-1_V" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:108;">
+
+      <!-- z-index 109: 2_V_Tipo — icono dinámico -->
+      <img id="layer-icon-2_V" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:109;">
+
+      <!-- z-index 110: 3_V_Tipo — icono dinámico -->
+      <img id="layer-icon-3_V" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:110;">
+
+      <!-- z-index 111: 4_V_Tipo — icono dinámico -->
+      <img id="layer-icon-4_V" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:111;">
+
+      <!-- z-index 112: 5_V_Tipo — icono dinámico -->
+      <img id="layer-icon-5_V" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:112;">
+
+      <!-- z-index 113: 6_V_Tipo — icono dinámico -->
+      <img id="layer-icon-6_V" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:113;">
+
+      <!-- z-index 114: 7_V_Tipo — icono dinámico -->
+      <img id="layer-icon-7_V" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:114;">
+
+      <!-- z-index 115: 8_V_Tipo — icono dinámico -->
+      <img id="layer-icon-8_V" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:115;">
     </div>
   </div>
 </div>
@@ -487,6 +552,7 @@ function fetchData() {
 
 function applyDataToLayers() {
   applyLayerStyles();
+  applyIconLayers();
 
   // Rellena elementos de texto genéricos: id="d-CLAVE"
   Object.keys(sheetData).forEach(function(key) {
@@ -697,6 +763,54 @@ async function exportCard() {
   btn.textContent = '⬇ Descargar imagen';
 }
 
+
+// ═══════════════════════════════════════════════════
+// ICON LAYERS (1_L_Tipo … 8_V_Tipo)
+// ═══════════════════════════════════════════════════
+const ICON_LAYERS = [
+  { id: 'layer-icon-1_L', key: '1_L_Tipo', folder: '1_L' },
+  { id: 'layer-icon-2_L', key: '2_L_Tipo', folder: '2_L' },
+  { id: 'layer-icon-3_L', key: '3_L_Tipo', folder: '3_L' },
+  { id: 'layer-icon-4_L', key: '4_L_Tipo', folder: '4_L' },
+  { id: 'layer-icon-5_L', key: '5_L_Tipo', folder: '5_L' },
+  { id: 'layer-icon-6_L', key: '6_L_Tipo', folder: '6_L' },
+  { id: 'layer-icon-7_L', key: '7_L_Tipo', folder: '7_L' },
+  { id: 'layer-icon-8_L', key: '8_L_Tipo', folder: '8_L' },
+  { id: 'layer-icon-1_V', key: '1_V_Tipo', folder: '1_V' },
+  { id: 'layer-icon-2_V', key: '2_V_Tipo', folder: '2_V' },
+  { id: 'layer-icon-3_V', key: '3_V_Tipo', folder: '3_V' },
+  { id: 'layer-icon-4_V', key: '4_V_Tipo', folder: '4_V' },
+  { id: 'layer-icon-5_V', key: '5_V_Tipo', folder: '5_V' },
+  { id: 'layer-icon-6_V', key: '6_V_Tipo', folder: '6_V' },
+  { id: 'layer-icon-7_V', key: '7_V_Tipo', folder: '7_V' },
+  { id: 'layer-icon-8_V', key: '8_V_Tipo', folder: '8_V' },
+];
+
+// Posición y tamaño de cada icono — ajusta en este objeto
+const ICON_CFG = {
+  x:      0,
+  y:      0,
+  width:  2000,
+  height: 2500,
+};
+
+function applyIconLayers() {
+  ICON_LAYERS.forEach(function(layer) {
+    var el = document.getElementById(layer.id);
+    if (!el) return;
+    el.style.left   = ICON_CFG.x + 'px';
+    el.style.top    = ICON_CFG.y + 'px';
+    el.style.width  = ICON_CFG.width + 'px';
+    el.style.height = ICON_CFG.height + 'px';
+    var val = sheetData[layer.key];
+    if (val !== undefined && val !== null && val !== '') {
+      el.src           = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/icons/' + layer.folder + '/' + layer.folder + '_' + val + '.png';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  });
+}
 // ═══════════════════════════════════════════════════
 // INIT
 // ═══════════════════════════════════════════════════
