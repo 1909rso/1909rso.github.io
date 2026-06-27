@@ -250,12 +250,6 @@
     🖼 Cargar fondo
   </button>
   <input type="file" id="bgInput" accept="image/*" style="display:none" onchange="loadBackground(this)">
-
-  <!-- DEBUG: muestra la URL de la capa EST -->
-  <span id="debug-est" style="font-size:11px; color:#7a8fa8; font-family:monospace; max-width:500px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
-    EST: —
-  </span>
-
   <div style="flex:1"></div>
 
   <button class="btn btn-export" id="exportBtn" onclick="exportCard()">
@@ -315,7 +309,7 @@ const KEY_AWAY = 'Visitante';
 const REFRESH_INTERVAL = 60000; // 1 minuto
 
 // BASE URL para imágenes del repo
-const GITHUB_BASE = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/main/resultaue/est/';
+const GITHUB_BASE = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/est/';
 
 // ═══════════════════════════════════════════════════
 // CAPAS — CONFIGURACIÓN
@@ -464,7 +458,7 @@ function applyLayerStyles() {
     var dbg = document.getElementById("debug-est");
     if (estVal !== undefined && estVal !== null && estVal !== '') {
       var estNum = parseInt(estVal, 10);
-      var url = GITHUB_BASE + estNum + ".png";
+      var url = GITHUB_BASE + estNum + ".PNG";
       el.src           = url;
       el.onerror = function() { if(dbg){dbg.textContent="EST "+estNum+" → ERROR 404: "+url; dbg.style.color="#e05555";} console.error("EST img error:",url); };
       el.onload  = function() { if(dbg){dbg.style.color="#4caf76";} };
