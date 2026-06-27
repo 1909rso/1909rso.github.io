@@ -262,13 +262,29 @@
 <div class="canvas-area">
   <div class="canvas-wrap" id="canvasWrap">
     <div id="card">
+
+      <!-- z-index 0: fondo subido por el usuario -->
       <img id="card-bg" alt="">
 
-      <!-- CAPA: Res_local -->
-      <div id="d-Res_local" class="card-layer"></div>
+      <!-- z-index 1: Luzysombra — capa estática de luz y sombra -->
+      <img id="layer-luzysombra" class="card-layer"
+           src="https://raw.githubusercontent.com/1909rso/1909rso.github.io/main/resultaue/est/Luzysombra.PNG"
+           alt="" crossorigin="anonymous"
+           style="top:0; left:0; width:2000px; height:2500px; z-index:1; object-fit:fill;">
 
-      <!-- CAPA: EST (imagen cargada desde GitHub según el valor numérico de EST) -->
-      <img id="layer-est" class="card-layer" src="" alt="" style="display:none">
+      <!-- z-index 2: EST — imagen dinámica según variable EST (0-8) -->
+      <img id="layer-est" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:2;">
+
+      <!-- z-index 3: lauki — capa estática superior -->
+      <img id="layer-lauki" class="card-layer"
+           src="https://raw.githubusercontent.com/1909rso/1909rso.github.io/main/resultaue/est/lauki.PNG"
+           alt="" crossorigin="anonymous"
+           style="top:0; left:0; width:2000px; height:2500px; z-index:3; object-fit:fill;">
+
+      <!-- z-index 4: capas de texto -->
+      <!-- CAPA: Res_local -->
+      <div id="d-Res_local" class="card-layer" style="z-index:4;"></div>
 
     </div>
   </div>
@@ -288,39 +304,36 @@
 // ═══════════════════════════════════════════════════
 const DATA_URL = "https://script.google.com/macros/s/AKfycbyK9bf932Rbj1WgNuWVi8Sc1Y4kFW4JXNoZoQv2t3R0U4YQ-UEx6xfwAEghSTm-81kw/exec";
 
-// Nombres de los campos del Sheet que representan los equipos
-// Ajusta estas claves según cómo vengan los datos reales
-const KEY_HOME = 'local';      // ej: "local", "home", "equipo_local"
-const KEY_AWAY = 'visitante';  // ej: "visitante", "away", "equipo_visitante"
+const KEY_HOME = 'local';
+const KEY_AWAY = 'visitante';
 
 const REFRESH_INTERVAL = 60000; // 1 minuto
 
+// BASE URL para imágenes del repo
+const GITHUB_BASE = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/main/resultaue/est/';
+
 // ═══════════════════════════════════════════════════
 // CAPAS — CONFIGURACIÓN
-// Edita aquí posición, fuente, color y alineación
 // ═══════════════════════════════════════════════════
 
-// Capa: resultado equipo local (variable Res_local del Sheet)
+// Capa: resultado equipo local
 const LAYER_RES_LOCAL = {
-  x:          100,          // posición horizontal en px (0 = borde izquierdo)
-  y:          200,          // posición vertical en px   (0 = borde superior)
-  fontFamily: 'Arial',      // fuente (debe estar disponible o ser @font-face)
-  fontSize:   160,          // tamaño en px
-  fontWeight: '900',        // grosor: 400 | 600 | 700 | 800 | 900
-  color:      '#ffffff',    // color en hex
-  align:      'left',       // alineación: 'left' | 'center' | 'right'
-  width:      600,          // ancho máximo del bloque de texto en px
+  x:          100,
+  y:          200,
+  fontFamily: 'Arial',
+  fontSize:   160,
+  fontWeight: '900',
+  color:      '#ffffff',
+  align:      'left',
+  width:      600,
 };
 
-// Capa: imagen EST (se carga desde GitHub según el número de la variable EST)
+// Capa: EST — imagen dinámica (0.png … 8.png)
 const LAYER_EST = {
-  x:          100,          // posición horizontal en px
-  y:          500,          // posición vertical en px
-  width:      400,          // ancho de la imagen en px
-  height:     400,          // alto de la imagen en px
-  // URL base de GitHub: la imagen se construye como BASE_URL + valor_EST + ".png"
-  // Ajusta el usuario, repo y rama según tu repositorio
-  baseUrl:    'https://raw.githubusercontent.com/TU_USUARIO/TU_REPO/main/est/',
+  x:      0,
+  y:      0,
+  width:  2000,
+  height: 2500,
 };
 
 // ═══════════════════════════════════════════════════
@@ -379,16 +392,16 @@ function setStatus(state, msg) {
 }
 
 function fetchData() {
-  setStatus('pulse', 'Actualizando\u2026');
+  setStatus('pulse', 'Actualizando…');
   fetch(DATA_URL)
     .then(function(r) { return r.text(); })
     .then(function(text) {
       const data = JSON.parse(text);
-      const obj = data[0];                // mismo patron que tu HTML de referencia
-      sheetData = obj;                    // guardamos el objeto directamente
+      const obj = data[0];
+      sheetData = obj;
       applyDataToLayers();
       updateMatchHeader();
-      setStatus('ok', 'Datos al dia');
+      setStatus('ok', 'Datos al día');
       const now = new Date();
       document.getElementById('updatedAt').textContent =
         '- ' + now.toLocaleTimeString('es-ES', {hour:'2-digit', minute:'2-digit'});
@@ -399,10 +412,10 @@ function fetchData() {
     });
 }
 
-// Rellena todos los elementos con id="d-CLAVE" y aplica estilos de capa
 function applyDataToLayers() {
   applyLayerStyles();
 
+  // Rellena elementos de texto genéricos: id="d-CLAVE"
   Object.keys(sheetData).forEach(function(key) {
     const safeKey = key.replace(/[\.\[\]]/g, '_');
     const el = document.getElementById('d-' + key) ||
@@ -415,7 +428,6 @@ function applyDataToLayers() {
   });
 }
 
-// Aplica la configuración de cada capa al DOM
 function applyLayerStyles() {
   var cfg, el;
 
@@ -434,7 +446,7 @@ function applyLayerStyles() {
     el.style.lineHeight = '1';
   }
 
-  // — EST (imagen desde GitHub) —
+  // — EST: imagen dinámica según valor numérico 0-8 —
   cfg = LAYER_EST;
   el  = document.getElementById('layer-est');
   if (el) {
@@ -445,8 +457,8 @@ function applyLayerStyles() {
 
     var estVal = sheetData['EST'];
     if (estVal !== undefined && estVal !== null && estVal !== '') {
-      var url = cfg.baseUrl + estVal + '.png';
-      el.src          = url;
+      var url = GITHUB_BASE + estVal + '.png';
+      el.src           = url;
       el.style.display = 'block';
     } else {
       el.style.display = 'none';
@@ -463,16 +475,12 @@ function updateMatchHeader() {
 
   homeEl.textContent = home;
   awayEl.textContent = away;
-  homeEl.classList.remove('match-loading');
-  awayEl.classList.remove('match-loading');
   homeEl.className = 'match-team';
   awayEl.className = 'match-team';
 }
 
-// Busca un campo por clave exacta, o por variantes comunes
 function findField(key) {
   if (sheetData[key] !== undefined) return sheetData[key];
-  // intenta variantes: mayúsculas, con espacios, etc.
   const lower = key.toLowerCase();
   const found = Object.keys(sheetData).find(function(k) {
     return k.toLowerCase() === lower ||
@@ -492,12 +500,10 @@ async function exportCard() {
   const wrap = document.getElementById('canvasWrap');
   const card = document.getElementById('card');
 
-  // Quitar el scale temporalmente para capturar a tamaño real
   wrap.style.transform = 'scale(1)';
   wrap.style.width  = '2000px';
   wrap.style.height = '2500px';
 
-  // Pequeña pausa para que el navegador repinte
   await new Promise(function(r) { setTimeout(r, 100); });
 
   try {
@@ -521,7 +527,6 @@ async function exportCard() {
     console.error(e);
   }
 
-  // Restaurar el scale
   applyScale();
 
   btn.disabled = false;
