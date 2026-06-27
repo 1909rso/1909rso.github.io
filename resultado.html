@@ -305,6 +305,10 @@
       <img id="layer-visitante" class="card-layer" src="" alt="" crossorigin="anonymous"
            style="display:none; z-index:8;">
 
+      <!-- z-index 9: comp — imagen dinámica según variable comp -->
+      <img id="layer-comp" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:9;">
+
     </div>
   </div>
 </div>
@@ -365,6 +369,14 @@ const LAYER_LOCAL = {
 
 // Capa: Visitante — imagen dinámica según variable Visitante
 const LAYER_VISITANTE = {
+  x:      0,
+  y:      0,
+  width:  2000,
+  height: 2500,
+};
+
+// Capa: comp — imagen dinámica según variable comp
+const LAYER_COMP = {
   x:      0,
   y:      0,
   width:  2000,
@@ -534,6 +546,23 @@ function applyLayerStyles() {
     var visitanteVal = sheetData['Visitante'];
     if (visitanteVal !== undefined && visitanteVal !== null && visitanteVal !== '') {
       el.src           = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/visitante/' + visitanteVal + '.png';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  // — comp: imagen dinámica según variable comp —
+  cfg = LAYER_COMP;
+  el  = document.getElementById('layer-comp');
+  if (el) {
+    el.style.left   = cfg.x + 'px';
+    el.style.top    = cfg.y + 'px';
+    el.style.width  = cfg.width + 'px';
+    el.style.height = cfg.height + 'px';
+    var compVal = sheetData['comp'];
+    if (compVal !== undefined && compVal !== null && compVal !== '') {
+      el.src           = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/comp/' + compVal + '.png';
       el.style.display = 'block';
     } else {
       el.style.display = 'none';
