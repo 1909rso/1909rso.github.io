@@ -251,6 +251,11 @@
   </button>
   <input type="file" id="bgInput" accept="image/*" style="display:none" onchange="loadBackground(this)">
 
+  <!-- DEBUG: muestra la URL de la capa EST -->
+  <span id="debug-est" style="font-size:11px; color:#7a8fa8; font-family:monospace; max-width:500px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;">
+    EST: —
+  </span>
+
   <div style="flex:1"></div>
 
   <button class="btn btn-export" id="exportBtn" onclick="exportCard()">
@@ -304,8 +309,8 @@
 // ═══════════════════════════════════════════════════
 const DATA_URL = "https://script.google.com/macros/s/AKfycbyK9bf932Rbj1WgNuWVi8Sc1Y4kFW4JXNoZoQv2t3R0U4YQ-UEx6xfwAEghSTm-81kw/exec";
 
-const KEY_HOME = 'local';
-const KEY_AWAY = 'visitante';
+const KEY_HOME = 'Local';
+const KEY_AWAY = 'Visitante';
 
 const REFRESH_INTERVAL = 60000; // 1 minuto
 
@@ -455,13 +460,19 @@ function applyLayerStyles() {
     el.style.width  = cfg.width + 'px';
     el.style.height = cfg.height + 'px';
 
-    var estVal = sheetData['EST'];
+    var estVal = sheetData["EST"];
+    var dbg = document.getElementById("debug-est");
     if (estVal !== undefined && estVal !== null && estVal !== '') {
-      var url = GITHUB_BASE + estVal + '.png';
+      var estNum = parseInt(estVal, 10);
+      var url = GITHUB_BASE + estNum + ".png";
       el.src           = url;
-      el.style.display = 'block';
+      el.onerror = function() { if(dbg){dbg.textContent="EST "+estNum+" → ERROR 404: "+url; dbg.style.color="#e05555";} console.error("EST img error:",url); };
+      el.onload  = function() { if(dbg){dbg.style.color="#4caf76";} };
+      el.style.display = "block";
+      if(dbg){ dbg.textContent="EST "+estNum+" → "+url; dbg.style.color="#7a8fa8"; }
     } else {
-      el.style.display = 'none';
+      el.style.display = "none";
+      if(dbg){ dbg.textContent="EST: sin valor"; }
     }
   }
 }
