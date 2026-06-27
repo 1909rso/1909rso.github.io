@@ -257,6 +257,8 @@
   </button>
 </div>
 
+</div>
+
 <!-- CANVAS -->
 <div class="canvas-area">
   <div class="canvas-wrap" id="canvasWrap">
@@ -290,6 +292,14 @@
            src="https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/est/logos.PNG"
            alt="" crossorigin="anonymous"
            style="top:0; left:0; width:2000px; height:2500px; z-index:5; object-fit:fill;">
+
+      <!-- z-index 5b: Res_local — imagen dinámica según variable Res_local -->
+      <img id="layer-numlocal" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:51;">
+
+      <!-- z-index 5c: Res_Vis — imagen dinámica según variable Res_Vis -->
+      <img id="layer-numvisitante" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:52;">
 
       <!-- z-index 6: guion — capa estática superior absoluta -->
       <img id="layer-guion" class="card-layer"
@@ -377,6 +387,22 @@ const LAYER_VISITANTE = {
 
 // Capa: comp — imagen dinámica según variable comp
 const LAYER_COMP = {
+  x:      0,
+  y:      0,
+  width:  2000,
+  height: 2500,
+};
+
+// Capa: Res_local — imagen dinámica (número local)
+const LAYER_NUMLOCAL = {
+  x:      0,
+  y:      0,
+  width:  2000,
+  height: 2500,
+};
+
+// Capa: Res_Vis — imagen dinámica (número visitante)
+const LAYER_NUMVISITANTE = {
   x:      0,
   y:      0,
   width:  2000,
@@ -563,6 +589,40 @@ function applyLayerStyles() {
     var compVal = sheetData['comp'];
     if (compVal !== undefined && compVal !== null && compVal !== '') {
       el.src           = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/comp/' + compVal + '.png';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  // — Res_local: imagen dinámica según variable Res_local —
+  cfg = LAYER_NUMLOCAL;
+  el  = document.getElementById('layer-numlocal');
+  if (el) {
+    el.style.left   = cfg.x + 'px';
+    el.style.top    = cfg.y + 'px';
+    el.style.width  = cfg.width + 'px';
+    el.style.height = cfg.height + 'px';
+    var resLocalVal = sheetData['Res_local'];
+    if (resLocalVal !== undefined && resLocalVal !== null) {
+      el.src           = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/numerolocal/' + String(resLocalVal) + '.png';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  // — Res_Vis: imagen dinámica según variable Res_Vis —
+  cfg = LAYER_NUMVISITANTE;
+  el  = document.getElementById('layer-numvisitante');
+  if (el) {
+    el.style.left   = cfg.x + 'px';
+    el.style.top    = cfg.y + 'px';
+    el.style.width  = cfg.width + 'px';
+    el.style.height = cfg.height + 'px';
+    var resVisVal = sheetData['Res_Vis'];
+    if (resVisVal !== undefined && resVisVal !== null) {
+      el.src           = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/numerovisitante/' + String(resVisVal) + '.png';
       el.style.display = 'block';
     } else {
       el.style.display = 'none';
