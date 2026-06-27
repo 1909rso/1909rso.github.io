@@ -297,6 +297,14 @@
            alt="" crossorigin="anonymous"
            style="top:0; left:0; width:2000px; height:2500px; z-index:6; object-fit:fill;">
 
+      <!-- z-index 7: Local — imagen dinámica según variable Local -->
+      <img id="layer-local" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:7;">
+
+      <!-- z-index 8: Visitante — imagen dinámica según variable Visitante -->
+      <img id="layer-visitante" class="card-layer" src="" alt="" crossorigin="anonymous"
+           style="display:none; z-index:8;">
+
     </div>
   </div>
 </div>
@@ -341,6 +349,22 @@ const LAYER_RES_LOCAL = {
 
 // Capa: EST — imagen dinámica (0.png … 8.png)
 const LAYER_EST = {
+  x:      0,
+  y:      0,
+  width:  2000,
+  height: 2500,
+};
+
+// Capa: Local — imagen dinámica según variable Local
+const LAYER_LOCAL = {
+  x:      0,
+  y:      0,
+  width:  2000,
+  height: 2500,
+};
+
+// Capa: Visitante — imagen dinámica según variable Visitante
+const LAYER_VISITANTE = {
   x:      0,
   y:      0,
   width:  2000,
@@ -479,6 +503,40 @@ function applyLayerStyles() {
     } else {
       el.style.display = "none";
       if(dbg){ dbg.textContent="EST: sin valor"; }
+    }
+  }
+
+  // — Local: imagen dinámica según variable Local —
+  cfg = LAYER_LOCAL;
+  el  = document.getElementById('layer-local');
+  if (el) {
+    el.style.left   = cfg.x + 'px';
+    el.style.top    = cfg.y + 'px';
+    el.style.width  = cfg.width + 'px';
+    el.style.height = cfg.height + 'px';
+    var localVal = sheetData['Local'];
+    if (localVal !== undefined && localVal !== null && localVal !== '') {
+      el.src           = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/local/' + localVal + '.png';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
+    }
+  }
+
+  // — Visitante: imagen dinámica según variable Visitante —
+  cfg = LAYER_VISITANTE;
+  el  = document.getElementById('layer-visitante');
+  if (el) {
+    el.style.left   = cfg.x + 'px';
+    el.style.top    = cfg.y + 'px';
+    el.style.width  = cfg.width + 'px';
+    el.style.height = cfg.height + 'px';
+    var visitanteVal = sheetData['Visitante'];
+    if (visitanteVal !== undefined && visitanteVal !== null && visitanteVal !== '') {
+      el.src           = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/visitante/' + visitanteVal + '.png';
+      el.style.display = 'block';
+    } else {
+      el.style.display = 'none';
     }
   }
 }
