@@ -844,18 +844,16 @@ async function exportCard() {
 // TEXT LAYERS CONFIG — edita aquí posición y tamaño
 // ═══════════════════════════════════════════════════
 const TEXT_CFG = {
-  // ── LOCALES (alineados a la derecha) ──
-  xLocal_Min: -1027,   // borde derecho del minuto local (distancia desde borde izquierdo)
-  xLocal_Jug: -1218,   // borde derecho del jugador local
-  // ── VISITANTES (alineados a la izquierda) ──
-  xVis_Min:   1027,    // borde izquierdo del minuto visitante
-  xVis_Jug:   1216,    // borde izquierdo del jugador visitante
-  // ── TAMAÑOS ──
-  sizejugador: 41,     // tamaño fuente jugador (Paralucent Medium) en px
-  sizeMinuto:  33,     // tamaño fuente minuto (Paralucent Bold) en px
-  // ── FILAS ──
-  y1:    1938,         // Y de la fila 1 en px
-  rowGap: 59,          // separación vertical entre filas en px
+  xLocal_Min: -1027,
+  xLocal_Jug: -1218,
+  xVis_Min:   1027,
+  xVis_Jug:   1216,
+  sizejugador: 41,
+  sizeMinuto:  33,
+  y1:    1938,
+  rowGap: 59,
+  letterSpacingJug: 0.5,   // ← NUEVO: espaciado entre letras jugador (px)
+  letterSpacingMin: 0.5,   // ← NUEVO: espaciado entre letras minuto (px)
 };
 
 function applyTextLayers() {
@@ -952,6 +950,8 @@ function applyEventText(n, side) {
 
   elJug.style.fontSize  = cfg.sizejugador + 'px';
   elMin.style.fontSize  = cfg.sizeMinuto  + 'px';
+  elJug.style.letterSpacing = cfg.letterSpacingJug + 'px';
+elMin.style.letterSpacing = cfg.letterSpacingMin + 'px';
   elJug.style.top       = rowY + 'px';
   elMin.style.top       = rowY + 'px';
   // Reset both sides
