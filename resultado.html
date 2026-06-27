@@ -6,6 +6,16 @@
 <title>Card Editor — 1909 RSO</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
+  @font-face {
+    font-family: 'Paralucent';
+    font-weight: 500;
+    src: url('https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/resultaue/paralucent/fonnts.com-Paralucent_Medium.otf') format('opentype');
+  }
+  @font-face {
+    font-family: 'Paralucent';
+    font-weight: 700;
+    src: url('https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/resultaue/paralucent/fonnts.com-Paralucent_Bold.otf') format('opentype');
+  }
   * { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --navy: #0d1b2a;
@@ -321,6 +331,70 @@
 
 
 
+      <!-- TEXTO: 1_L — jugador y minuto (local) -->
+      <div id="txt-1_L_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-1_L_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 2_L — jugador y minuto (local) -->
+      <div id="txt-2_L_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-2_L_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 3_L — jugador y minuto (local) -->
+      <div id="txt-3_L_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-3_L_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 4_L — jugador y minuto (local) -->
+      <div id="txt-4_L_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-4_L_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 5_L — jugador y minuto (local) -->
+      <div id="txt-5_L_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-5_L_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 6_L — jugador y minuto (local) -->
+      <div id="txt-6_L_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-6_L_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 7_L — jugador y minuto (local) -->
+      <div id="txt-7_L_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-7_L_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 8_L — jugador y minuto (local) -->
+      <div id="txt-8_L_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-8_L_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 1_V — jugador y minuto (visitante) -->
+      <div id="txt-1_V_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-1_V_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 2_V — jugador y minuto (visitante) -->
+      <div id="txt-2_V_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-2_V_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 3_V — jugador y minuto (visitante) -->
+      <div id="txt-3_V_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-3_V_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 4_V — jugador y minuto (visitante) -->
+      <div id="txt-4_V_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-4_V_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 5_V — jugador y minuto (visitante) -->
+      <div id="txt-5_V_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-5_V_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 6_V — jugador y minuto (visitante) -->
+      <div id="txt-6_V_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-6_V_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 7_V — jugador y minuto (visitante) -->
+      <div id="txt-7_V_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-7_V_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
+      <!-- TEXTO: 8_V — jugador y minuto (visitante) -->
+      <div id="txt-8_V_Jug" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:500; white-space:nowrap; line-height:1;"></div>
+      <div id="txt-8_V_Min" class="card-layer" style="display:none; z-index:10; color:#ffffff; font-family:'Paralucent'; font-weight:700; white-space:nowrap; line-height:1;"></div>
+
       <!-- z-index 100: 1_L_Tipo — icono dinámico -->
       <img id="layer-icon-1_L" class="card-layer" src="" alt="" crossorigin="anonymous"
            style="display:none; z-index:100;">
@@ -553,6 +627,7 @@ function fetchData() {
 function applyDataToLayers() {
   applyLayerStyles();
   applyIconLayers();
+  applyTextLayers();
 
   // Rellena elementos de texto genéricos: id="d-CLAVE"
   Object.keys(sheetData).forEach(function(key) {
@@ -763,6 +838,86 @@ async function exportCard() {
   btn.textContent = '⬇ Descargar imagen';
 }
 
+
+
+// ═══════════════════════════════════════════════════
+// TEXT LAYERS CONFIG — edita aquí posición y tamaño
+// ═══════════════════════════════════════════════════
+const TEXT_CFG = {
+  // Posición X del bloque local (el texto se alinea a la DERECHA desde este punto)
+  xLocal:      900,
+  // Posición X del bloque visitante (el texto se alinea a la IZQUIERDA desde este punto)
+  xVisitante:  1100,
+  // Tamaño fuente jugador (Medium) en px
+  sizejugador: 52,
+  // Tamaño fuente minuto (Bold) en px
+  sizeMinuto:  52,
+  // Separación horizontal entre minuto y jugador en px
+  gapMin:      20,
+  // Posición Y base de la fila 1, en px
+  y1:          900,
+  // Separación vertical entre filas en px
+  rowGap:      110,
+};
+
+function applyTextLayers() {
+  for (var n = 1; n <= 8; n++) {
+    applyEventText(n, 'L');
+    applyEventText(n, 'V');
+  }
+}
+
+function applyEventText(n, side) {
+  var cfg   = TEXT_CFG;
+  var keyJug = n + '_' + side + '_Jug';
+  var keyMin = n + '_' + side + '_Min';
+  var keyTipo = n + '_' + side + '_Tipo';
+
+  var valJug  = sheetData[keyJug]  || '';
+  var valMin  = sheetData[keyMin]  || '';
+  var valTipo = sheetData[keyTipo] || '';
+
+  var elJug = document.getElementById('txt-' + keyJug);
+  var elMin = document.getElementById('txt-' + keyMin);
+  if (!elJug || !elMin) return;
+
+  var rowY = cfg.y1 + (n - 1) * cfg.rowGap;
+
+  // Hide if no event
+  if (valTipo === '' || valTipo === null) {
+    elJug.style.display = 'none';
+    elMin.style.display = 'none';
+    return;
+  }
+
+  elJug.style.fontSize = cfg.sizejugador + 'px';
+  elMin.style.fontSize = cfg.sizeMinuto  + 'px';
+  elJug.style.top = rowY + 'px';
+  elMin.style.top = rowY + 'px';
+
+  if (side === 'L') {
+    // Right-aligned locals: Min is to the left of xLocal, Jug further left
+    elMin.style.right  = (2000 - cfg.xLocal) + 'px';
+    elMin.style.left   = 'auto';
+    elMin.style.textAlign = 'right';
+    elJug.style.right  = (2000 - cfg.xLocal + cfg.sizeMinuto * valMin.length * 0.6 + cfg.gapMin) + 'px';
+    elJug.style.left   = 'auto';
+    elJug.style.textAlign = 'right';
+  } else {
+    // Left-aligned visitantes: Min is to the right of xVisitante, Jug further right
+    elMin.style.left  = cfg.xVisitante + 'px';
+    elMin.style.right = 'auto';
+    elMin.style.textAlign = 'left';
+    elJug.style.left  = (cfg.xVisitante + cfg.sizeMinuto * valMin.length * 0.6 + cfg.gapMin) + 'px';
+    elJug.style.right = 'auto';
+    elJug.style.textAlign = 'left';
+  }
+
+  elMin.textContent   = valMin  !== '' ? valMin + "'" : '';
+  elJug.textContent   = valJug;
+  elMin.style.display = valMin  !== '' ? 'block' : 'none';
+  elJug.style.display = valJug  !== '' ? 'block' : 'none';
+}
 
 // ═══════════════════════════════════════════════════
 // ICON LAYERS (1_L_Tipo … 8_V_Tipo)
