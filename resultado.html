@@ -115,6 +115,9 @@
       <!-- z1: Luzysombra estática -->
       <img id="layer-luzysombra" class="card-layer" src="https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/est/Luzysombra.PNG" alt="" crossorigin="anonymous" style="top:0;left:0;width:2000px;height:2500px;z-index:1;object-fit:fill;">
 
+      <!-- z1b: Full Time estática -->
+      <img id="layer-fulltime" class="card-layer" src="https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/est/full_time.PNG" alt="" crossorigin="anonymous" style="top:0;left:0;width:2000px;height:2500px;z-index:200;object-fit:fill;">
+
       <!-- z2: EST dinámica — se renderiza SIN overlay en el DOM (overlay se aplica solo al exportar) -->
       <img id="layer-est" class="card-layer" src="" alt="" crossorigin="anonymous" style="display:none;z-index:2;mix-blend-mode:overlay;">
 
@@ -231,7 +234,7 @@ const TEXT_CFG = {
   sizejugador: 41,
   sizeMinuto:  33,
   y1:    1938,
-  rowGap: 58,
+  rowGap: 59,
 };
 
 // ═══════════════════════════════════════════════════
@@ -549,6 +552,9 @@ async function exportCard() {
       var iconEl=document.getElementById(layer.id);
       if (iconEl.style.display!=='none'&&iconEl.src) draw(await loadImg(iconEl.src));
     }
+
+    // ── FULL TIME: arriba del todo ──
+    draw(await loadImg(document.getElementById('layer-fulltime').src));
 
     const link=document.createElement('a');
     link.download='1909rso_'+Date.now()+'.png';
