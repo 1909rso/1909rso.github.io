@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor de Plantilla · 1909 RSO</title>
+<style>
+  :root{
+    /* ============================================================
+       FUENTES — sustituye estas dos por las tuyas (self-hosted /
+       GitHub raw) igual que en tus otros editores.
+       ============================================================ */
+    --font-a: 'Anton', sans-serif;   /* FUENTE 1 */
+    --font-b: 'Oswald', sans-serif;  /* FUENTE 2 */
+    --accent: #ffd35c;
+    --accent-b: #6cc4ff;
+  }
+  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@600&display=swap');
+
+  * { box-sizing: border-box; }
+  body {
+    margin:0; font-family: system-ui, -apple-system, sans-serif; background:#0d0d0d; color:#eee;
+    display:flex; flex-direction:column; align-items:center; padding:20px 16px 60px;
+  }
+  h1 { font-size:17px; margin:0 0 2px; letter-spacing:.5px; }
+  .subtitle { font-size:12px; color:#888; margin-bottom:20px; text-align:center; }
+
+  #viewport {
+    overflow:hidden;
+    border:1px solid #2a2a2a;
+    background:#000;
+    box-shadow: 0 10px 40px rgba(0,0,0,.5);
+  }
+
+  #stage {
+    width: 2000px;
+    height: 3556px;
+    position: relative;
+    background:#1a1a1a;
+    transform-origin: top left;
+    overflow:hidden;
+  }
+
+  /* Capa 1: fondo y marco — SOLO por código, no editable desde la interfaz */
+  .static-image {
+    position:absolute;
+    top:0; left:0;
+    width:100%;
+    display:block;
+    pointer-events:none;
+  }
+
+  /* Capa 2: imagen subida por el usuario */
+  #userImageLayer {
+    position:absolute;
+    top:0; left:0;
+    width:100%; height:100%;
+    display:flex; align-items:center; justify-content:center;
+    overflow:hidden;
+  }
+  #userImageLayer img { max-width:100%; max-height:100%; display:block; }
+
+  /* Capas de texto — centradas horizontalmente, altura fijada por código */
+  .text-layer {
+    position:absolute;
+    left:0; width:100%;
+    text-align:center;
+    display:flex; flex-wrap:wrap; justify-content:center; align-content:flex-start;
+    padding:0 100px;
+  }
+
+  #staticTextLayer {
+    font-family: var(--font-a);
+    color:#fff;
+    font-size:72px;
+    font-weight:700;
+    letter-spacing:1px;
+  }
+
+  #dynamicTextLayer {
+    font-size:120px;
+    font-weight:800;
+    color:#fff;
+    gap:18px 34px;
+  }
+  #dynamicTextLayer .word { font-family: var(--font-a); }
+  #dynamicTextLayer .word.font-b { font-family: var(--font-b); }
+
+  /* Panel de control */
+  .panel {
+    margin-top:24px; width:100%; max-width:600px;
+    background:#161616; border:1px solid #262626; border-radius:14px; padding:20px;
+  }
+  .panel h2 { font-size:13px; margin:0 0 10px; color: var(--accent); letter-spacing:.5px; text-transform:uppercase; }
+  .field { margin-bottom:14px; }
+  .field label { display:block; font-size:12px; margin-bottom:4px; color:#999; }
+  .field input[type=file] {
+    width:100%; padding:9px 10px; border-radius:8px; border:1px solid #333; background:#0d0d0d; color:#eee; font-size:13px;
+  }
+  button {
+    background: var(--accent); color:#111; border:none; padding:11px 18px; border-radius:9px;
+    font-weight:700; cursor:pointer; font-size:14px;
+  }
+  button.secondary { background:#2a2a2a; color:#eee; }
+  .btnrow { display:flex; gap:10px; margin-top:6px; flex-wrap:wrap; }
+  #status { font-size:12px; color:#7fdc7f; margin-top:10px; min-height:16px; }
+
+  /* ===== Formulario de texto — como hoja modal, no tapa el lienzo por completo ===== */
+  #sheetBackdrop {
+    position:fixed; inset:0; background:rgba(0,0,0,.35);
+    display:none; z-index:50;
+  }
+  #sheet {
+    position:fixed; left:0; right:0; bottom:0;
+    max-height:78vh; overflow-y:auto;
+    background:#161616; border:1px solid #2a2a2a; border-bottom:none;
+    border-radius:18px 18px 0 0;
+    padding:20px; z-index:51;
+    transform:translateY(100%);
+    transition:transform .25s ease;
+  }
+  #sheet.open { transform:translateY(0); }
+  #sheetBackdrop.open { display:block; }
+
+  .sheet-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:14px; }
+  .sheet-header h3 { font-size:14px; margin:0; text-transform:uppercase; letter-spacing:.5px; color:#fff; }
+  .sheet-header button.close {
+    background:transparent; color:#999; font-size:18px; padding:2px 8px; border:1px solid #333; border-radius:8px;
+  }
+
+  #sheet textarea {
+    width:100%; min-height:80px; padding:10px; border-radius:8px; border:1px solid #333;
+    background:#0d0d0d; color:#eee; font-size:15px; font-family:inherit; resize:vertical;
+  }
+
+  #modalPreview {
+    margin:16px 0; min-height:60px; display:flex; flex-wrap:wrap; justify-content:center; gap:6px 10px;
+    background:#0d0d0d; border:1px dashed #333; border-radius:10px; padding:14px;
+    font-size:26px; font-weight:800; color:#fff; text-align:center;
+  }
+  #modalPreview .word { font-family: var(--font-a); }
+  #modalPreview .word.font-b { font-family: var(--font-b); }
+
+  #wordChips { display:flex; flex-wrap:wrap; gap:8px; margin-bottom:16px; }
+  .chip {
+    padding:8px 14px; border-radius:20px; font-size:13px; font-weight:600; cursor:pointer;
+    background:#0d0d0d; border:2px solid var(--accent); color: var(--accent);
+  }
+  .chip.font-b { border-color: var(--accent-b); color: var(--accent-b); }
+  .chip .tag { opacity:.6; font-weight:400; margin-left:6px; font-size:11px; }
+
+  .hint { font-size:12px; color:#777; margin-bottom:10px; }
+</style>
+</head>
+<body>
+
+<h1>Editor de Plantilla · 1909 RSO</h1>
+<div class="subtitle">Lienzo real 2000 × 3556 px — vista escalada en directo</div>
+
+<div id="viewport">
+  <div id="stage">
+    <!-- Capa 1: fondo/marco, fijados en CONFIG, no editables desde la interfaz -->
+    <div id="staticImagesLayer"></div>
+
+    <!-- Capa 2: imagen que sube el usuario -->
+    <div id="userImageLayer"><img id="userImage" crossorigin="anonymous"></div>
+
+    <!-- Capa 3: texto estático, altura fija por código -->
+    <div id="staticTextLayer" class="text-layer"></div>
+
+    <!-- Capa 4: texto editable, dos fuentes, altura fija por código -->
+    <div id="dynamicTextLayer" class="text-layer"></div>
+  </div>
+</div>
+
+<div class="panel">
+  <h2>1 · Imagen propia (capa 2)</h2>
+  <div class="field">
+    <label>Subir imagen</label>
+    <input type="file" id="fileInput" accept="image/*">
+  </div>
+
+  <h2>2 · Texto editable (capa 4)</h2>
+  <div class="btnrow">
+    <button id="openSheetBtn">Editar texto</button>
+  </div>
+
+  <h2>3 · Descargar</h2>
+  <div class="btnrow">
+    <button id="downloadBtn">Descargar imagen (PNG)</button>
+  </div>
+  <div id="status"></div>
+</div>
+
+<!-- ===== Formulario de texto (hoja modal) ===== -->
+<div id="sheetBackdrop"></div>
+<div id="sheet">
+  <div class="sheet-header">
+    <h3>Texto editable</h3>
+    <button class="close" id="closeSheetBtn">✕</button>
+  </div>
+
+  <div id="stepInput">
+    <div class="hint">Escribe el texto completo y pulsa "Separar en palabras".</div>
+    <textarea id="dynamicTextInput" placeholder="Ej: OYARZABAL AL RESCATE"></textarea>
+    <div class="btnrow">
+      <button id="splitBtn">Separar en palabras</button>
+    </div>
+  </div>
+
+  <div id="stepWords" style="display:none;">
+    <div class="hint">Toca cada palabra para alternar entre Fuente 1 y Fuente 2. Se aplica en el lienzo al instante.</div>
+    <div id="modalPreview"></div>
+    <div id="wordChips"></div>
+    <div class="btnrow">
+      <button class="secondary" id="backToTextBtn">← Volver a editar texto</button>
+      <button id="applyBtn">Aplicar y cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+/* ============================================================
+   CONFIG — todo lo fijo se edita aquí, no desde la interfaz
+   ============================================================ */
+const CONFIG = {
+  canvas: { width: 2000, height: 3556 },
+
+  // Capa 1 — fondo y marco. Fijados aquí, el usuario no los cambia.
+  staticImages: [
+    // { url: 'https://raw.githubusercontent.com/tuusuario/turepo/main/fondo.png' },
+    // { url: 'https://raw.githubusercontent.com/tuusuario/turepo/main/marco.png' },
+  ],
+
+  // Capa 3 — texto estático
+  staticText: {
+    content: 'REAL SOCIEDAD',
+    top: 200, // altura fija, en px reales sobre 3556
+  },
+
+  // Capa 4 — texto editable, altura fija
+  dynamicText: {
+    top: 1700, // altura fija, en px reales sobre 3556
+  },
+};
+/* ============================================================ */
+
+const stage = document.getElementById('stage');
+const viewport = document.getElementById('viewport');
+const staticImagesLayer = document.getElementById('staticImagesLayer');
+const staticTextLayer = document.getElementById('staticTextLayer');
+const dynamicTextLayer = document.getElementById('dynamicTextLayer');
+const userImage = document.getElementById('userImage');
+
+function init(){
+  stage.style.width = CONFIG.canvas.width + 'px';
+  stage.style.height = CONFIG.canvas.height + 'px';
+
+  staticImagesLayer.innerHTML = '';
+  CONFIG.staticImages.forEach(cfg => {
+    const im = document.createElement('img');
+    im.src = cfg.url;
+    im.crossOrigin = 'anonymous';
+    im.className = 'static-image';
+    staticImagesLayer.appendChild(im);
+  });
+
+  staticTextLayer.textContent = CONFIG.staticText.content;
+  staticTextLayer.style.top = CONFIG.staticText.top + 'px';
+  dynamicTextLayer.style.top = CONFIG.dynamicText.top + 'px';
+
+  fitStage();
+}
+
+function fitStage(){
+  const maxWidth = Math.min(window.innerWidth - 32, 560);
+  const scale = maxWidth / CONFIG.canvas.width;
+  stage.style.transform = `scale(${scale})`;
+  viewport.style.width = (CONFIG.canvas.width * scale) + 'px';
+  viewport.style.height = (CONFIG.canvas.height * scale) + 'px';
+}
+window.addEventListener('resize', fitStage);
+
+// Subir imagen propia (capa 2) — se ve al instante en el lienzo
+document.getElementById('fileInput').addEventListener('change', e => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = ev => { userImage.src = ev.target.result; };
+  reader.readAsDataURL(file);
+});
+
+/* ================= Formulario de texto (hoja modal) ================= */
+const sheetBackdrop = document.getElementById('sheetBackdrop');
+const sheet = document.getElementById('sheet');
+const stepInput = document.getElementById('stepInput');
+const stepWords = document.getElementById('stepWords');
+const dynamicTextInput = document.getElementById('dynamicTextInput');
+const modalPreview = document.getElementById('modalPreview');
+const wordChips = document.getElementById('wordChips');
+
+function openSheet(){
+  sheetBackdrop.classList.add('open');
+  sheet.classList.add('open');
+}
+function closeSheet(){
+  sheetBackdrop.classList.remove('open');
+  sheet.classList.remove('open');
+}
+document.getElementById('openSheetBtn').addEventListener('click', () => {
+  stepWords.style.display = dynamicTextLayer.children.length ? 'block' : 'none';
+  stepInput.style.display = dynamicTextLayer.children.length ? 'none' : 'block';
+  if (dynamicTextLayer.children.length) syncModalPreview();
+  openSheet();
+});
+document.getElementById('closeSheetBtn').addEventListener('click', closeSheet);
+document.getElementById('applyBtn').addEventListener('click', closeSheet);
+document.getElementById('backToTextBtn').addEventListener('click', () => {
+  stepWords.style.display = 'none';
+  stepInput.style.display = 'block';
+});
+sheetBackdrop.addEventListener('click', closeSheet);
+
+// Paso 1 -> Paso 2: separar el texto en palabras
+document.getElementById('splitBtn').addEventListener('click', () => {
+  const text = dynamicTextInput.value.trim();
+  if (!text) return;
+
+  // Construye las palabras directamente en el lienzo real (capa 4)
+  dynamicTextLayer.innerHTML = '';
+  text.split(/\s+/).forEach(word => {
+    const span = document.createElement('span');
+    span.textContent = word;
+    span.className = 'word font-a';
+    span.dataset.font = 'a';
+    dynamicTextLayer.appendChild(span);
+  });
+
+  buildWordChips();
+  syncModalPreview();
+
+  stepInput.style.display = 'none';
+  stepWords.style.display = 'block';
+});
+
+// Genera los chips del formulario, uno por palabra ya insertada en el lienzo
+function buildWordChips(){
+  wordChips.innerHTML = '';
+  Array.from(dynamicTextLayer.children).forEach(span => {
+    const chip = document.createElement('div');
+    chip.className = 'chip' + (span.dataset.font === 'b' ? ' font-b' : '');
+    chip.innerHTML = span.textContent + '<span class="tag">' + (span.dataset.font === 'b' ? 'Fuente 2' : 'Fuente 1') + '</span>';
+
+    chip.addEventListener('click', () => {
+      const wasA = span.dataset.font === 'a';
+      span.dataset.font = wasA ? 'b' : 'a';
+      span.classList.toggle('font-b', wasA);
+
+      chip.classList.toggle('font-b', wasA);
+      chip.querySelector('.tag').textContent = wasA ? 'Fuente 2' : 'Fuente 1';
+
+      syncModalPreview();
+    });
+
+    wordChips.appendChild(chip);
+  });
+}
+
+// Vista previa dentro del formulario, en directo, además del lienzo real detrás
+function syncModalPreview(){
+  modalPreview.innerHTML = '';
+  Array.from(dynamicTextLayer.children).forEach(span => {
+    const s = document.createElement('span');
+    s.textContent = span.textContent;
+    s.className = 'word' + (span.dataset.font === 'b' ? ' font-b' : '');
+    modalPreview.appendChild(s);
+  });
+}
+
+/* ================= Descarga — compatible con iPhone Safari ================= */
+document.getElementById('downloadBtn').addEventListener('click', async () => {
+  const status = document.getElementById('status');
+  status.textContent = 'Generando imagen...';
+
+  const prevTransform = stage.style.transform;
+  stage.style.transform = 'none'; // capturar a resolución real
+
+  try {
+    const canvas = await html2canvas(stage, {
+      width: CONFIG.canvas.width,
+      height: CONFIG.canvas.height,
+      scale: 1,
+      useCORS: true,
+      backgroundColor: null,
+    });
+
+    stage.style.transform = prevTransform;
+
+    canvas.toBlob(async (blob) => {
+      if (!blob) { status.textContent = 'Error al generar la imagen.'; return; }
+
+      const fileName = 'tarjeta-1909rso.png';
+      const file = new File([blob], fileName, { type: 'image/png' });
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        try {
+          await navigator.share({ files: [file], title: fileName });
+          status.textContent = 'Listo ✅';
+          return;
+        } catch (err) {
+          // cancelado; seguimos con el fallback
+        }
+      }
+
+      const url = URL.createObjectURL(blob);
+      const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent);
+
+      if (isIOS) {
+        window.open(url, '_blank');
+        status.textContent = 'Mantén pulsada la imagen para guardarla en Fotos.';
+      } else {
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = fileName;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        status.textContent = 'Descargado ✅';
+      }
+    }, 'image/png');
+
+  } catch (err) {
+    stage.style.transform = prevTransform;
+    status.textContent = 'Error: ' + err.message;
+    console.error(err);
+  }
+});
+
+init();
+</script>
+</body>
+</html>
