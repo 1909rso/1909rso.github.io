@@ -556,10 +556,40 @@ async function exportCard() {
     // ── FULL TIME: arriba del todo ──
     draw(await loadImg(document.getElementById('layer-fulltime').src));
 
-    const link=document.createElement('a');
-    link.download='1909rso_'+Date.now()+'.png';
-    link.href=canvas.toDataURL('image/png');
-    link.click();
+    const filename = '1909rso_'+Date.now()+'.png';
+
+    // ── DESCARGA / COMPARTIR: compatible con iOS ──
+    // En iOS Safari, un <a download> con data: URL NO descarga nada.
+    // Usamos Web Share API (hoja de compartir nativa, permite "Guardar imagen")
+    // y como fallback abrimos la imagen en una pestaña nueva.
+    await new Promise((resolve) => canvas.toBlob(resolve, 'image/png'))
+      .then(async (blob) => {
+        const file = new File([blob], filename, { type: 'image/png' });
+
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: filename });
+            return;
+          } catch (shareErr) {
+            if (shareErr.name === 'AbortError') return; // el usuario canceló
+          }
+        }
+
+        // Fallback (desktop / navegadores sin Web Share con archivos):
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = url;
+        link.click();
+        setTimeout(()=>URL.revokeObjectURL(url), 5000);
+
+        // En iOS sin soporte de share con files, abrir en pestaña nueva
+        // para poder mantener pulsado y "Guardar imagen".
+        const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+        if (isIOS) {
+          window.open(url, '_blank');
+        }
+      });
 
   } catch(e) {
     alert('Error al exportar: '+e.message);
