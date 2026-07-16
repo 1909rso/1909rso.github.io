@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Enlaces</title>
+<style>
+  :root{
+    --bg:#0d1117;
+    --bg-soft:#151b23;
+    --card:#1c2530;
+    --border:#2a3542;
+    --text:#eef2f6;
+    --muted:#8a97a6;
+    --accent:#3ddc84;
+    --accent-dim:#2a9d63;
+  }
+
+  *{ box-sizing:border-box; }
+
+  body{
+    margin:0;
+    min-height:100vh;
+    background:
+      radial-gradient(circle at 20% 0%, rgba(61,220,132,0.07), transparent 45%),
+      var(--bg);
+    color:var(--text);
+    font-family:'Segoe UI', system-ui, -apple-system, sans-serif;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    padding:48px 20px 80px;
+  }
+
+  h1{
+    font-size:1.6rem;
+    font-weight:700;
+    letter-spacing:0.3px;
+    margin:0 0 6px;
+  }
+
+  p.subtitle{
+    color:var(--muted);
+    font-size:0.95rem;
+    margin:0 0 36px;
+  }
+
+  #contenedor-botones{
+    width:100%;
+    max-width:420px;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  .boton-enlace{
+    display:flex;
+    align-items:center;
+    gap:14px;
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:16px 18px;
+    color:var(--text);
+    text-decoration:none;
+    font-size:1rem;
+    font-weight:600;
+    cursor:pointer;
+    transition:transform 0.15s ease, border-color 0.15s ease, background 0.15s ease;
+  }
+
+  .boton-enlace:hover{
+    transform:translateY(-2px);
+    border-color:var(--accent-dim);
+    background:var(--bg-soft);
+  }
+
+  .boton-enlace:active{
+    transform:translateY(0);
+  }
+
+  .boton-enlace .icono{
+    font-size:1.3rem;
+    line-height:1;
+    flex-shrink:0;
+  }
+
+  .boton-enlace .texto{
+    flex:1;
+  }
+
+  .boton-enlace .flecha{
+    color:var(--muted);
+    font-size:1.1rem;
+  }
+
+  footer{
+    margin-top:40px;
+    color:var(--muted);
+    font-size:0.8rem;
+    text-align:center;
+  }
+</style>
+</head>
+<body>
+
+  <h1>Mis enlaces</h1>
+  <p class="subtitle">Toca un botón para abrir el enlace</p>
+
+  <div id="contenedor-botones"></div>
+
+  <footer>Página generada con HTML estático</footer>
+
+<script>
+  /* ============================================================
+     👉 AÑADE TUS BOTONES AQUÍ 👈
+     Cada botón es un objeto con:
+       texto  -> lo que se muestra en el botón
+       url    -> el enlace que se abre al hacer click
+       icono  -> (opcional) un emoji o símbolo
+       nuevaPestana -> true/false, si se abre en una pestaña nueva
+
+     Para añadir más botones, simplemente copia un bloque
+     { ... } y pégalo dentro del array, separado por una coma.
+  ============================================================ */
+
+  const botones = [
+     {
+      texto: "Resultado",
+      url: "https://1909rso.github.io/resultado.html",
+      icono: "💬",
+      nuevaPestana: true
+    },
+    {
+      texto: "Fot Mob carrusel",
+      url: "https://1909rso.github.io/fotmobjugador/",
+      icono: "🌐",
+      nuevaPestana: true
+    },
+    {
+      texto: "Historia",
+      url: "https://1909rso.github.io/nothistoria.html",
+      icono: "💬",
+      nuevaPestana: true
+    }
+    // Añade más botones aquí, ej:
+    // {
+    //   texto: "YouTube",
+    //   url: "https://youtube.com/...",
+    //   icono: "▶️",
+    //   nuevaPestana: true
+    // },
+  ];
+
+  /* ============================================================
+     No hace falta tocar nada de aquí abajo
+  ============================================================ */
+
+  const contenedor = document.getElementById("contenedor-botones");
+
+  botones.forEach(boton => {
+    const a = document.createElement("a");
+    a.href = boton.url;
+    a.className = "boton-enlace";
+    a.target = boton.nuevaPestana === false ? "_self" : "_blank";
+    a.rel = "noopener noreferrer";
+
+    a.innerHTML = `
+      <span class="icono">${boton.icono || "🔗"}</span>
+      <span class="texto">${boton.texto}</span>
+      <span class="flecha">›</span>
+    `;
+
+    contenedor.appendChild(a);
+  });
+</script>
+
+</body>
+</html>
