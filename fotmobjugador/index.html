@@ -584,16 +584,45 @@ Aquí tienes el enlace del jugador a procesar:`;
   async function captureSlide(el){
     return await html2canvas(el, { backgroundColor: '#000000', scale: 5, useCORS: true, width:400, height:500 });
   }
-  function downloadCanvas(canvas, filename){
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = canvas.toDataURL('image/png');
-    link.click();
+  const isIOS = /iP(hone|od|ad)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+  function canvasToBlob(canvas){
+    return new Promise(resolve => canvas.toBlob(resolve, 'image/png'));
+  }
+
+  async function downloadCanvas(canvas, filename){
+    const blob = await canvasToBlob(canvas);
+    const file = new File([blob], filename, { type: 'image/png' });
+
+    // En iOS Safari, un <a download> con click() programático casi nunca
+    // dispara la descarga (Safari lo bloquea si no viene de un gesto directo
+    // del usuario, y un await previo ya "rompe" ese gesto). Usamos el share
+    // sheet nativo, que sí funciona y deja "Guardar en Fotos".
+    if (isIOS && navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: filename });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return; // usuario cerró el share sheet
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    if (isIOS) {
+      // Fallback: abrir en pestaña nueva para hacer toque largo -> Añadir a Fotos
+      window.open(url, '_blank');
+    } else {
+      const link = document.createElement('a');
+      link.download = filename;
+      link.href = url;
+      link.click();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
   }
   async function exportCurrentSlide(){
     statusEl.textContent = 'Generando imagen 2000×2500...';
     const canvas = await captureSlide(slides[current]);
-    downloadCanvas(canvas, `${currentSlug}-slide-${current+1}.png`);
+    await downloadCanvas(canvas, `${currentSlug}-slide-${current+1}.png`);
     statusEl.textContent = 'Descargado ✓';
     setTimeout(()=> statusEl.textContent = '', 2000);
   }
@@ -603,9 +632,9 @@ Aquí tienes el enlace del jugador a procesar:`;
       const wasDisplay = slides[i].style.display;
       slides[i].style.display = 'flex';
       const canvas = await captureSlide(slides[i]);
-      downloadCanvas(canvas, `${currentSlug}-slide-${i+1}.png`);
       slides[i].style.display = wasDisplay;
       statusEl.textContent = `Descargando ${i+1}/${slides.length}...`;
+      await downloadCanvas(canvas, `${currentSlug}-slide-${i+1}.png`);
       await new Promise(r => setTimeout(r, 400));
     }
     statusEl.textContent = 'Todas las diapositivas descargadas ✓';
