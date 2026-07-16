@@ -30,6 +30,7 @@
     border:1px solid #2a2a2a;
     background:#000;
     box-shadow: 0 10px 40px rgba(0,0,0,.5);
+    margin-top:24px;
   }
 
   #stage {
@@ -88,7 +89,7 @@
 
   /* Panel de control */
   .panel {
-    margin-top:24px; width:100%; max-width:600px;
+    margin-top:4px; width:100%; max-width:600px;
     background:#161616; border:1px solid #262626; border-radius:14px; padding:20px;
   }
   .panel h2 { font-size:13px; margin:0 0 10px; color: var(--accent); letter-spacing:.5px; text-transform:uppercase; }
@@ -157,22 +158,7 @@
 <h1>Editor de Plantilla · 1909 RSO</h1>
 <div class="subtitle">Lienzo real 2000 × 3556 px — vista escalada en directo</div>
 
-<div id="viewport">
-  <div id="stage">
-    <!-- Capa 1: fondo/marco, fijados en CONFIG, no editables desde la interfaz -->
-    <div id="staticImagesLayer"></div>
-
-    <!-- Capa 2: imagen que sube el usuario -->
-    <div id="userImageLayer"><img id="userImage" crossorigin="anonymous"></div>
-
-    <!-- Capa 3: texto estático, altura fija por código -->
-    <div id="staticTextLayer" class="text-layer"></div>
-
-    <!-- Capa 4: texto editable, dos fuentes, altura fija por código -->
-    <div id="dynamicTextLayer" class="text-layer"></div>
-  </div>
-</div>
-
+<!-- ===== Panel de controles: ahora arriba ===== -->
 <div class="panel">
   <h2>1 · Imagen propia (capa 2)</h2>
   <div class="field">
@@ -190,6 +176,23 @@
     <button id="downloadBtn">Descargar imagen (PNG)</button>
   </div>
   <div id="status"></div>
+</div>
+
+<!-- ===== Lienzo / vista previa: ahora abajo ===== -->
+<div id="viewport">
+  <div id="stage">
+    <!-- Capa 1: fondo/marco, fijados en CONFIG, no editables desde la interfaz -->
+    <div id="staticImagesLayer"></div>
+
+    <!-- Capa 2: imagen que sube el usuario -->
+    <div id="userImageLayer"><img id="userImage" crossorigin="anonymous"></div>
+
+    <!-- Capa 3: texto estático, altura fija por código -->
+    <div id="staticTextLayer" class="text-layer"></div>
+
+    <!-- Capa 4: texto editable, dos fuentes, altura fija por código -->
+    <div id="dynamicTextLayer" class="text-layer"></div>
+  </div>
 </div>
 
 <!-- ===== Formulario de texto (hoja modal) ===== -->
