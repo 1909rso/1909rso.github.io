@@ -5,17 +5,39 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Editor de Plantilla · 1909 RSO</title>
 <style>
+  /* ============================================================
+     FUENTES — self-hosted vía GitHub raw
+     ============================================================ */
+  @font-face {
+    font-family: 'Folio Extra Bold';
+    src: url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/nothistoria/Folio%20Extra%20Bold.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+  }
+  @font-face {
+    font-family: 'Neue Haas Unica Pro';
+    src: url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/nothistoria/NeueHaasUnicaPro-Bold.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+  }
+  @font-face {
+    font-family: 'Awan Zaman';
+    src: url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/nothistoria/AwanZaman%20Regular.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+    font-display: block;
+  }
+
   :root{
-    /* ============================================================
-       FUENTES — sustituye estas dos por las tuyas (self-hosted /
-       GitHub raw) igual que en tus otros editores.
-       ============================================================ */
-    --font-a: 'Anton', sans-serif;   /* FUENTE 1 */
-    --font-b: 'Oswald', sans-serif;  /* FUENTE 2 */
+    --font-static: 'Folio Extra Bold', sans-serif; /* texto estático (capa 3) */
+    --font-a: 'Neue Haas Unica Pro', sans-serif;    /* FUENTE 1 (capa 4) */
+    --font-b: 'Awan Zaman', sans-serif;             /* FUENTE 2 (capa 4) */
     --accent: #ffd35c;
     --accent-b: #6cc4ff;
+    --text-color: #e9e8de; /* color único para capa 3 y capa 4 */
   }
-  @import url('https://fonts.googleapis.com/css2?family=Anton&family=Oswald:wght@600&display=swap');
 
   * { box-sizing: border-box; }
   body {
@@ -56,12 +78,15 @@
     position:absolute;
     top:0; left:0;
     width:100%; height:100%;
-    display:flex; align-items:center; justify-content:center;
     overflow:hidden;
   }
-  #userImageLayer img { max-width:100%; max-height:100%; display:block; }
+  #userImageLayer img {
+    width:100%; height:100%;
+    object-fit:cover;
+    display:block;
+  }
 
-  /* Capas de texto — centradas horizontalmente, altura fijada por código */
+  /* Capas de texto — centradas horizontalmente, altura y tamaño fijados por código (ver CONFIG) */
   .text-layer {
     position:absolute;
     left:0; width:100%;
@@ -71,18 +96,29 @@
   }
 
   #staticTextLayer {
-    font-family: var(--font-a);
-    color:#fff;
-    font-size:72px;
-    font-weight:700;
+    font-family: var(--font-static);
+    color: var(--text-color);
+    font-weight:normal;
     letter-spacing:1px;
+    /* font-size se fija desde CONFIG.staticText.fontSize vía JS */
   }
 
   #dynamicTextLayer {
-    font-size:120px;
-    font-weight:800;
-    color:#fff;
-    gap:18px 34px;
+    font-weight:normal;
+    color: var(--text-color);
+    flex-direction: column;   /* las líneas se apilan verticalmente, en el orden real del texto */
+    flex-wrap: nowrap;
+    align-items: center;      /* centra cada línea horizontalmente */
+    /* font-size de cada palabra se fija por palabra vía JS, según su fuente (a/b) */
+    /* separación vertical entre líneas se fija por línea (margin-top) vía JS desde CONFIG.dynamicText.lineGap */
+  }
+  /* Cada línea es su propia fila: las palabras de ESA línea nunca saltan a otra */
+  .dynamic-line {
+    display:flex;
+    flex-wrap: nowrap;
+    align-items: baseline; /* alinea las palabras por su línea base aunque cambien de tamaño/fuente */
+    justify-content:center;
+    /* separación horizontal entre palabras (column-gap) se fija por JS desde CONFIG.dynamicText.wordGap */
   }
   #dynamicTextLayer .word { font-family: var(--font-a); }
   #dynamicTextLayer .word.font-b { font-family: var(--font-b); }
@@ -181,16 +217,16 @@
 <!-- ===== Lienzo / vista previa: ahora abajo ===== -->
 <div id="viewport">
   <div id="stage">
+    <!-- Capa 2: imagen que sube el usuario — al fondo de todo, ocupa el lienzo completo -->
+    <div id="userImageLayer"><img id="userImage" crossorigin="anonymous"></div>
+
     <!-- Capa 1: fondo/marco, fijados en CONFIG, no editables desde la interfaz -->
     <div id="staticImagesLayer"></div>
 
-    <!-- Capa 2: imagen que sube el usuario -->
-    <div id="userImageLayer"><img id="userImage" crossorigin="anonymous"></div>
-
-    <!-- Capa 3: texto estático, altura fija por código -->
+    <!-- Capa 3: texto estático, altura y tamaño fijos por código -->
     <div id="staticTextLayer" class="text-layer"></div>
 
-    <!-- Capa 4: texto editable, dos fuentes, altura fija por código -->
+    <!-- Capa 4: texto editable, dos fuentes, altura y tamaño fijos por código -->
     <div id="dynamicTextLayer" class="text-layer"></div>
   </div>
 </div>
@@ -204,8 +240,9 @@
   </div>
 
   <div id="stepInput">
-    <div class="hint">Escribe el texto completo y pulsa "Separar en palabras".</div>
+    <div class="hint">Escribe el texto completo y pulsa "Separar en palabras". Puedes usar varias líneas: el límite de caracteres se aplica a cada línea por separado.</div>
     <textarea id="dynamicTextInput" placeholder="Ej: OYARZABAL AL RESCATE"></textarea>
+    <div id="charCount" class="hint" style="margin:6px 0 0;"></div>
     <div class="btnrow">
       <button id="splitBtn">Separar en palabras</button>
     </div>
@@ -232,19 +269,24 @@ const CONFIG = {
 
   // Capa 1 — fondo y marco. Fijados aquí, el usuario no los cambia.
   staticImages: [
-    // { url: 'https://raw.githubusercontent.com/tuusuario/turepo/main/fondo.png' },
-    // { url: 'https://raw.githubusercontent.com/tuusuario/turepo/main/marco.png' },
+    { url: 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/nothistoria/fondo.png' },
   ],
 
   // Capa 3 — texto estático
   staticText: {
-    content: 'REAL SOCIEDAD',
-    top: 200, // altura fija, en px reales sobre 3556
+    content: 'NEWS',
+    top: 1482,     // altura fija, en px reales sobre 3556
+    fontSize: 44,  // tamaño de fuente, en px reales sobre el lienzo de 2000x3556
   },
 
-  // Capa 4 — texto editable, altura fija
+  // Capa 4 — texto editable, altura y tamaños fijos (uno por fuente)
   dynamicText: {
-    top: 1700, // altura fija, en px reales sobre 3556
+    top: 1508,        // altura fija, en px reales sobre 3556
+    fontSizeA: 120,    // tamaño para palabras en Fuente 1 (Neue Haas Unica Pro)
+    fontSizeB: 160,    // tamaño para palabras en Fuente 2 (Awan Zaman) — súbelo/bájalo hasta que visualmente iguale a la Fuente 1 (misma altura en px NO es el mismo tamaño visual entre fuentes distintas)
+    lineGap: -50,       // separación vertical entre líneas, en px reales (margin-top por línea; admite negativos para acercarlas)
+    wordGap: 25,       // separación horizontal entre palabras, en px reales (column-gap)
+    maxChars: 25,      // número máximo de caracteres permitidos POR LÍNEA en el texto dinámico
   },
 };
 /* ============================================================ */
@@ -255,6 +297,11 @@ const staticImagesLayer = document.getElementById('staticImagesLayer');
 const staticTextLayer = document.getElementById('staticTextLayer');
 const dynamicTextLayer = document.getElementById('dynamicTextLayer');
 const userImage = document.getElementById('userImage');
+
+// Devuelve el tamaño de fuente configurado según la letra 'a' o 'b'
+function fontSizeFor(font){
+  return (font === 'b' ? CONFIG.dynamicText.fontSizeB : CONFIG.dynamicText.fontSizeA);
+}
 
 function init(){
   stage.style.width = CONFIG.canvas.width + 'px';
@@ -271,9 +318,57 @@ function init(){
 
   staticTextLayer.textContent = CONFIG.staticText.content;
   staticTextLayer.style.top = CONFIG.staticText.top + 'px';
+  staticTextLayer.style.fontSize = CONFIG.staticText.fontSize + 'px';
+
   dynamicTextLayer.style.top = CONFIG.dynamicText.top + 'px';
+  // row-gap no admite valores negativos en CSS (el navegador lo ignora y lo deja en 0),
+  // así que la separación entre líneas se aplica como margin-top por línea (ver splitBtn),
+  // que sí admite valores negativos y permite acercar las líneas.
+
+  updateCharCount();
 
   fitStage();
+}
+
+// Reajusta el texto en líneas automáticamente: nunca corta una palabra.
+// Si una palabra no cabe en la línea actual, pasa entera a la línea siguiente.
+function autoWrapText(){
+  const max = CONFIG.dynamicText.maxChars;
+  const cursorAtEnd = dynamicTextInput.selectionStart === dynamicTextInput.value.length;
+
+  // Aplana el texto (los saltos de línea existentes se tratan como espacios: el ajuste es 100% automático)
+  const words = dynamicTextInput.value.replace(/\n+/g, ' ').split(/\s+/).filter(w => w.length > 0);
+
+  const lines = [];
+  let currentLine = '';
+  words.forEach(word => {
+    if (currentLine === '') {
+      currentLine = word; // si la palabra sola ya supera el máximo, se deja intacta (nunca se corta)
+    } else if ((currentLine + ' ' + word).length <= max) {
+      currentLine += ' ' + word;
+    } else {
+      lines.push(currentLine);
+      currentLine = word;
+    }
+  });
+  if (currentLine !== '') lines.push(currentLine);
+
+  const newValue = lines.join('\n');
+  if (newValue !== dynamicTextInput.value) {
+    dynamicTextInput.value = newValue;
+    if (cursorAtEnd) {
+      dynamicTextInput.selectionStart = dynamicTextInput.selectionEnd = newValue.length;
+    }
+  }
+}
+
+// Muestra cuántas líneas resultan del ajuste automático y el límite por línea
+function updateCharCount(){
+  autoWrapText();
+  const max = CONFIG.dynamicText.maxChars;
+  const lineCount = dynamicTextInput.value ? dynamicTextInput.value.split('\n').length : 0;
+  charCount.textContent = lineCount + (lineCount === 1 ? ' línea' : ' líneas') + ' · máx. ' + max + ' caracteres por línea (ajuste automático, sin cortar palabras)';
+  charCount.style.color = '#777';
 }
 
 function fitStage(){
@@ -302,6 +397,9 @@ const stepWords = document.getElementById('stepWords');
 const dynamicTextInput = document.getElementById('dynamicTextInput');
 const modalPreview = document.getElementById('modalPreview');
 const wordChips = document.getElementById('wordChips');
+const charCount = document.getElementById('charCount');
+
+dynamicTextInput.addEventListener('input', updateCharCount);
 
 function openSheet(){
   sheetBackdrop.classList.add('open');
@@ -325,19 +423,35 @@ document.getElementById('backToTextBtn').addEventListener('click', () => {
 });
 sheetBackdrop.addEventListener('click', closeSheet);
 
-// Paso 1 -> Paso 2: separar el texto en palabras
+// Paso 1 -> Paso 2: construir las líneas reales en el lienzo (capa 4)
+// Usa las líneas que ya dejó armadas autoWrapText (una línea = un salto de línea del textarea),
+// así el resultado en la imagen final coincide exactamente con lo que se ve en el textarea.
 document.getElementById('splitBtn').addEventListener('click', () => {
-  const text = dynamicTextInput.value.trim();
-  if (!text) return;
+  if (!dynamicTextInput.value.trim()) return;
 
-  // Construye las palabras directamente en el lienzo real (capa 4)
   dynamicTextLayer.innerHTML = '';
-  text.split(/\s+/).forEach(word => {
-    const span = document.createElement('span');
-    span.textContent = word;
-    span.className = 'word font-a';
-    span.dataset.font = 'a';
-    dynamicTextLayer.appendChild(span);
+  const lines = dynamicTextInput.value.split('\n').filter(l => l.trim().length > 0);
+
+  lines.forEach((lineText, index) => {
+    const lineDiv = document.createElement('div');
+    lineDiv.className = 'dynamic-line';
+    lineDiv.style.columnGap = CONFIG.dynamicText.wordGap + 'px';
+    // La primera línea no lleva separación previa; las siguientes usan lineGap
+    // como margin-top (admite negativos, a diferencia de row-gap).
+    if (index > 0) {
+      lineDiv.style.marginTop = CONFIG.dynamicText.lineGap + 'px';
+    }
+
+    lineText.trim().split(/\s+/).forEach(word => {
+      const span = document.createElement('span');
+      span.textContent = word;
+      span.className = 'word font-a';
+      span.dataset.font = 'a';
+      span.style.fontSize = fontSizeFor('a') + 'px';
+      lineDiv.appendChild(span);
+    });
+
+    dynamicTextLayer.appendChild(lineDiv);
   });
 
   buildWordChips();
@@ -347,10 +461,10 @@ document.getElementById('splitBtn').addEventListener('click', () => {
   stepWords.style.display = 'block';
 });
 
-// Genera los chips del formulario, uno por palabra ya insertada en el lienzo
+// Genera los chips del formulario, uno por palabra ya insertada en el lienzo (busca dentro de todas las líneas)
 function buildWordChips(){
   wordChips.innerHTML = '';
-  Array.from(dynamicTextLayer.children).forEach(span => {
+  dynamicTextLayer.querySelectorAll('.word').forEach(span => {
     const chip = document.createElement('div');
     chip.className = 'chip' + (span.dataset.font === 'b' ? ' font-b' : '');
     chip.innerHTML = span.textContent + '<span class="tag">' + (span.dataset.font === 'b' ? 'Fuente 2' : 'Fuente 1') + '</span>';
@@ -359,6 +473,7 @@ function buildWordChips(){
       const wasA = span.dataset.font === 'a';
       span.dataset.font = wasA ? 'b' : 'a';
       span.classList.toggle('font-b', wasA);
+      span.style.fontSize = fontSizeFor(span.dataset.font) + 'px';
 
       chip.classList.toggle('font-b', wasA);
       chip.querySelector('.tag').textContent = wasA ? 'Fuente 2' : 'Fuente 1';
@@ -371,9 +486,10 @@ function buildWordChips(){
 }
 
 // Vista previa dentro del formulario, en directo, además del lienzo real detrás
+// (aplanada en una sola fila: es solo un resumen rápido, el lienzo real de abajo respeta las líneas)
 function syncModalPreview(){
   modalPreview.innerHTML = '';
-  Array.from(dynamicTextLayer.children).forEach(span => {
+  dynamicTextLayer.querySelectorAll('.word').forEach(span => {
     const s = document.createElement('span');
     s.textContent = span.textContent;
     s.className = 'word' + (span.dataset.font === 'b' ? ' font-b' : '');
