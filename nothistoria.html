@@ -335,6 +335,11 @@ function init(){
 function autoWrapText(){
   const max = CONFIG.dynamicText.maxChars;
   const cursorAtEnd = dynamicTextInput.selectionStart === dynamicTextInput.value.length;
+  // FIX iPhone: si el usuario acaba de teclear un espacio al final del texto,
+  // hay que conservarlo. Antes, el split/join siguiente lo descartaba al instante
+  // (porque un espacio final no forma "palabra"), dando la sensación de que el
+  // espaciador no funcionaba en Safari/iOS.
+  const endsWithSpace = cursorAtEnd && /\s$/.test(dynamicTextInput.value);
 
   // Aplana el texto (los saltos de línea existentes se tratan como espacios: el ajuste es 100% automático)
   const words = dynamicTextInput.value.replace(/\n+/g, ' ').split(/\s+/).filter(w => w.length > 0);
@@ -353,7 +358,11 @@ function autoWrapText(){
   });
   if (currentLine !== '') lines.push(currentLine);
 
-  const newValue = lines.join('\n');
+  let newValue = lines.join('\n');
+  if (endsWithSpace) {
+    newValue += ' '; // conserva el espacio que el usuario acaba de escribir
+  }
+
   if (newValue !== dynamicTextInput.value) {
     dynamicTextInput.value = newValue;
     if (cursorAtEnd) {
