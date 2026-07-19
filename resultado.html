@@ -439,25 +439,37 @@ const ELIM_CFG = {
 
 // ═══════════════════════════════════════════════════
 // ICON LAYERS CONFIG
+// Iconos pequeños (uno por tipo de evento, ej. icons/missed_penalty.png).
+// Se colocan en la misma fila (altura) que el texto de jugador/minuto,
+// pero con una X distinta según sea equipo LOCAL o VISITANTE.
 // ═══════════════════════════════════════════════════
-const ICON_CFG = { x:0, y:0, width:2000, height:2500 };
+const ICON_CFG = {
+  width:  53,   // ancho original del icono (px)
+  height: 35,   // alto original del icono (px)
+  scale:  1,    // multiplicador de tamaño: 1 = tamaño original, 2 = doble, 0.5 = mitad... — AJUSTAR AQUÍ
+  xLocal: -1130, // posición X de los iconos del LOCAL (negativo = distancia desde el borde derecho, igual criterio que TEXT_CFG)
+  xVis:    1145, // posición X de los iconos del VISITANTE (positivo = distancia desde el borde izquierdo)
+  y1:     TEXT_CFG.y1,     // mismo punto de partida vertical que los textos (fila 1) — se mantiene sincronizado con TEXT_CFG
+  rowGap: TEXT_CFG.rowGap, // mismo espacio entre filas que los textos — se mantiene sincronizado con TEXT_CFG
+  yOffset: 0,   // ajuste fino vertical (px) por si el icono no queda centrado respecto al texto de su fila
+};
 const ICON_LAYERS = [
-  {id:'layer-icon-1_L',key:'1_L_Tipo',folder:'1_L'},
-  {id:'layer-icon-2_L',key:'2_L_Tipo',folder:'2_L'},
-  {id:'layer-icon-3_L',key:'3_L_Tipo',folder:'3_L'},
-  {id:'layer-icon-4_L',key:'4_L_Tipo',folder:'4_L'},
-  {id:'layer-icon-5_L',key:'5_L_Tipo',folder:'5_L'},
-  {id:'layer-icon-6_L',key:'6_L_Tipo',folder:'6_L'},
-  {id:'layer-icon-7_L',key:'7_L_Tipo',folder:'7_L'},
-  {id:'layer-icon-8_L',key:'8_L_Tipo',folder:'8_L'},
-  {id:'layer-icon-1_V',key:'1_V_Tipo',folder:'1_V'},
-  {id:'layer-icon-2_V',key:'2_V_Tipo',folder:'2_V'},
-  {id:'layer-icon-3_V',key:'3_V_Tipo',folder:'3_V'},
-  {id:'layer-icon-4_V',key:'4_V_Tipo',folder:'4_V'},
-  {id:'layer-icon-5_V',key:'5_V_Tipo',folder:'5_V'},
-  {id:'layer-icon-6_V',key:'6_V_Tipo',folder:'6_V'},
-  {id:'layer-icon-7_V',key:'7_V_Tipo',folder:'7_V'},
-  {id:'layer-icon-8_V',key:'8_V_Tipo',folder:'8_V'},
+  {id:'layer-icon-1_L',key:'1_L_Tipo',side:'L',row:1},
+  {id:'layer-icon-2_L',key:'2_L_Tipo',side:'L',row:2},
+  {id:'layer-icon-3_L',key:'3_L_Tipo',side:'L',row:3},
+  {id:'layer-icon-4_L',key:'4_L_Tipo',side:'L',row:4},
+  {id:'layer-icon-5_L',key:'5_L_Tipo',side:'L',row:5},
+  {id:'layer-icon-6_L',key:'6_L_Tipo',side:'L',row:6},
+  {id:'layer-icon-7_L',key:'7_L_Tipo',side:'L',row:7},
+  {id:'layer-icon-8_L',key:'8_L_Tipo',side:'L',row:8},
+  {id:'layer-icon-1_V',key:'1_V_Tipo',side:'V',row:1},
+  {id:'layer-icon-2_V',key:'2_V_Tipo',side:'V',row:2},
+  {id:'layer-icon-3_V',key:'3_V_Tipo',side:'V',row:3},
+  {id:'layer-icon-4_V',key:'4_V_Tipo',side:'V',row:4},
+  {id:'layer-icon-5_V',key:'5_V_Tipo',side:'V',row:5},
+  {id:'layer-icon-6_V',key:'6_V_Tipo',side:'V',row:6},
+  {id:'layer-icon-7_V',key:'7_V_Tipo',side:'V',row:7},
+  {id:'layer-icon-8_V',key:'8_V_Tipo',side:'V',row:8},
 ];
 
 // ═══════════════════════════════════════════════════
@@ -615,17 +627,41 @@ function applyLayerStyles() {
 }
 
 function applyIconLayers() {
+  var w = ICON_CFG.width * ICON_CFG.scale;
+  var h = ICON_CFG.height * ICON_CFG.scale;
   ICON_LAYERS.forEach(function(layer) {
     var el = document.getElementById(layer.id);
     if (!el) return;
-    el.style.left=ICON_CFG.x+'px'; el.style.top=ICON_CFG.y+'px';
-    el.style.width=ICON_CFG.width+'px'; el.style.height=ICON_CFG.height+'px';
     var val = sheetData[layer.key];
-    if (val!==undefined&&val!==null&&val!=='') {
-      el.src = GITHUB_BASE+'icons/'+layer.folder+'/'+layer.folder+'_'+val+'.png';
-      el.style.display = 'block';
-    } else { el.style.display='none'; }
+    if (val===undefined||val===null||val==='') { el.style.display='none'; return; }
+
+    var rowY = ICON_CFG.y1 + (layer.row-1)*ICON_CFG.rowGap + ICON_CFG.yOffset;
+    el.style.width  = w+'px';
+    el.style.height = h+'px';
+    el.style.top    = rowY+'px';
+    el.style.left   = 'auto';
+    el.style.right  = 'auto';
+    if (layer.side==='L') {
+      el.style.right = Math.abs(ICON_CFG.xLocal)+'px';
+    } else {
+      el.style.left = ICON_CFG.xVis+'px';
+    }
+
+    el.src = GITHUB_BASE+'icons/'+val+'.png';
+    el.style.display = 'block';
   });
+}
+
+// Calcula la posición/tamaño real (en px de la tarjeta 2000x2500) de un icono,
+// a partir de ICON_CFG. Se usa tanto en pantalla como al exportar la imagen final.
+function computeIconRect(layer) {
+  var w = ICON_CFG.width * ICON_CFG.scale;
+  var h = ICON_CFG.height * ICON_CFG.scale;
+  var y = ICON_CFG.y1 + (layer.row-1)*ICON_CFG.rowGap + ICON_CFG.yOffset;
+  var x = (layer.side==='L')
+    ? (2000 - Math.abs(ICON_CFG.xLocal) - w)
+    : ICON_CFG.xVis;
+  return {x:x, y:y, w:w, h:h};
 }
 
 function applyTextLayers() {
@@ -921,10 +957,17 @@ async function exportCard() {
     ctx.globalCompositeOperation='source-over';
     ctx.drawImage(txtCanvas, 0, 0, W, H);
 
-    // ── ICONOS ──
+    // ── ICONOS (tamaño y posición reales, no a pantalla completa) ──
     for (var layer of ICON_LAYERS) {
       var iconEl=document.getElementById(layer.id);
-      if (iconEl.style.display!=='none'&&iconEl.src) draw(await loadImg(iconEl.src));
+      if (iconEl.style.display!=='none'&&iconEl.src) {
+        var iconImg = await loadImg(iconEl.src);
+        if (iconImg) {
+          var rect = computeIconRect(layer);
+          ctx.globalCompositeOperation='source-over';
+          ctx.drawImage(iconImg, rect.x, rect.y, rect.w, rect.h);
+        }
+      }
     }
 
     // ── COMPETICIÓN (capa superior, siempre encima de todo) ──
