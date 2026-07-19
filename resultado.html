@@ -57,6 +57,10 @@
   .match-team { font-size:14px; font-weight:700; color:var(--text); letter-spacing:.03em; }
   .match-vs { font-size:11px; font-weight:600; color:var(--muted); letter-spacing:.1em; text-transform:uppercase; }
   .match-loading { font-size:12px; color:var(--muted); font-style:italic; }
+  .match-switch { display:flex; align-items:center; gap:8px; }
+  .match-switch label { font-size:11px; color:var(--muted); text-transform:uppercase; letter-spacing:.05em; white-space:nowrap; }
+  .match-switch select { background:var(--surface); border:1px solid var(--border); border-radius:8px; padding:8px 10px; color:var(--text); font-size:13px; font-family:inherit; max-width:280px; }
+  .match-switch select:focus { outline:none; border-color:var(--gold); }
   .spacer { flex:1; }
   .data-pill { display:flex; align-items:center; gap:8px; font-size:11px; color:var(--muted); }
   .dot { width:7px; height:7px; border-radius:50%; background:var(--muted); transition:background .3s; }
@@ -121,6 +125,8 @@
     .match-badge { padding:5px 12px; gap:7px; }
     .match-team, .match-vs { font-size:12px; }
     .data-pill { font-size:10px; }
+    .match-switch { width:100%; order:10; }
+    .match-switch select { flex:1; max-width:none; font-size:16px; min-height:40px; }
     .updated { display:none; } /* ahorra espacio en pantallas pequeñas */
 
     .toolbar { padding:8px 12px; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
@@ -224,6 +230,10 @@
     <span id="matchHome" class="match-loading">Cargando…</span>
     <span class="match-vs">vs</span>
     <span id="matchAway" class="match-loading"></span>
+  </div>
+  <div class="match-switch">
+    <label for="matchSelector">Partido</label>
+    <select id="matchSelector" onchange="onMatchSelectorChange(this.value)"></select>
   </div>
   <div class="spacer"></div>
   <div class="data-pill">
@@ -333,6 +343,9 @@
       <img id="layer-icon-6_V" class="card-layer" src="" alt="" crossorigin="anonymous" style="display:none;z-index:113;">
       <img id="layer-icon-7_V" class="card-layer" src="" alt="" crossorigin="anonymous" style="display:none;z-index:114;">
       <img id="layer-icon-8_V" class="card-layer" src="" alt="" crossorigin="anonymous" style="display:none;z-index:115;">
+
+      <!-- z1000: Competición (logo) — capa dinámica SIEMPRE arriba del todo, tomada de la variable "comp" -->
+      <img id="layer-comp-top" class="card-layer" src="" alt="" crossorigin="anonymous" style="display:none;z-index:1000;">
 
       <!-- Warm-up fuente: fuerza al navegador a activar Paralucent en el DOM antes del export -->
       <div style="position:absolute;opacity:0;pointer-events:none;left:-9999px;top:0;font-family:'Paralucent';font-weight:500;font-size:41px;">Aihen Muñoz</div>
@@ -489,6 +502,9 @@ function loadBackground(input) {
 // DATA
 // ═══════════════════════════════════════════════════
 let sheetData = {};
+let allMatches = [];
+let currentMatchIndex = 0;
+
 function setStatus(state, msg) {
   document.getElementById('statusDot').className = 'dot '+state;
   document.getElementById('statusText').textContent = msg;
@@ -499,7 +515,11 @@ function fetchData() {
   fetch(DATA_URL)
     .then(r=>r.text())
     .then(text=>{
-      sheetData = JSON.parse(text)[0];
+      const parsed = JSON.parse(text);
+      allMatches = Array.isArray(parsed) ? parsed : [parsed];
+      if (currentMatchIndex >= allMatches.length) currentMatchIndex = 0;
+      sheetData = allMatches[currentMatchIndex] || {};
+      populateMatchSelector();
       applyDataToLayers();
       updateMatchHeader();
       setStatus('ok','Datos al día');
@@ -508,6 +528,38 @@ function fetchData() {
         '- '+now.toLocaleTimeString('es-ES',{hour:'2-digit',minute:'2-digit'});
     })
     .catch(err=>{ setStatus('err','Error al cargar'); console.error(err); });
+}
+
+// ═══════════════════════════════════════════════════
+// SELECTOR DE PARTIDO
+// ═══════════════════════════════════════════════════
+function populateMatchSelector() {
+  const sel = document.getElementById('matchSelector');
+  if (!sel) return;
+  sel.innerHTML = '';
+  allMatches.forEach((m, i) => {
+    const opt = document.createElement('option');
+    opt.value = i;
+    opt.textContent = (m['Local']||'?')+' vs '+(m['Visitante']||'?');
+    sel.appendChild(opt);
+  });
+  sel.value = String(currentMatchIndex);
+}
+
+function onMatchSelectorChange(value) {
+  const idx = parseInt(value, 10);
+  if (isNaN(idx) || !allMatches[idx]) return;
+  currentMatchIndex = idx;
+  manualMode = false;
+  document.getElementById('liveBtn').style.display = 'none';
+  sheetData = allMatches[idx];
+  applyDataToLayers();
+  updateMatchHeader();
+  setStatus('ok','Datos al día');
+  // Si el editor de datos manual está abierto, refrescar sus campos con los del partido seleccionado
+  if (document.getElementById('editModal').classList.contains('open')) {
+    fillEditFormFromData();
+  }
 }
 
 function applyDataToLayers() {
@@ -549,6 +601,9 @@ function applyLayerStyles() {
   // comp
   var cv = sheetData['comp'];
   imgLayer('layer-comp', (cv&&cv!=='') ? GITHUB_BASE+'comp/'+cv+'.png' : null, fullCfg);
+
+  // comp (capa superior — misma variable "comp", pero SIEMPRE por encima de todo lo demás)
+  imgLayer('layer-comp-top', (cv&&cv!=='') ? GITHUB_BASE+'comp/'+cv+'.png' : null, fullCfg);
 
   // Res_local número
   var rl = sheetData['Res_local'];
@@ -871,6 +926,10 @@ async function exportCard() {
       var iconEl=document.getElementById(layer.id);
       if (iconEl.style.display!=='none'&&iconEl.src) draw(await loadImg(iconEl.src));
     }
+
+    // ── COMPETICIÓN (capa superior, siempre encima de todo) ──
+    var compTopEl=document.getElementById('layer-comp-top');
+    if (compTopEl.style.display!=='none'&&compTopEl.src) draw(await loadImg(compTopEl.src));
 
     const filename = '1909rso_'+Date.now()+'.png';
 
