@@ -107,6 +107,107 @@
   .section-title { font-size:12px; font-weight:700; color:var(--gold); text-transform:uppercase; letter-spacing:.06em; margin:18px 0 8px; border-bottom:1px solid var(--border); padding-bottom:6px; }
   .two-col { display:grid; grid-template-columns:1fr 1fr; gap:0 24px; }
   .modal-actions { display:flex; gap:10px; justify-content:flex-end; margin-top:20px; flex-wrap:wrap; }
+
+  /* ═══════════════════════════════════════════════════
+     RESPONSIVE / MÓVIL (iPhone y pantallas táctiles)
+     ═══════════════════════════════════════════════════ */
+  html { -webkit-text-size-adjust:100%; text-size-adjust:100%; }
+  body { -webkit-tap-highlight-color:transparent; }
+  button, .btn, .zoom-fit { touch-action:manipulation; }
+
+  @media (max-width: 720px) {
+    header { padding:10px 12px; gap:10px; }
+    .logo { font-size:11px; }
+    .match-badge { padding:5px 12px; gap:7px; }
+    .match-team, .match-vs { font-size:12px; }
+    .data-pill { font-size:10px; }
+    .updated { display:none; } /* ahorra espacio en pantallas pequeñas */
+
+    .toolbar { padding:8px 12px; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .toolbar .btn { flex:0 0 auto; padding:10px 14px; font-size:13px; white-space:nowrap; }
+
+    .canvas-area { padding:16px 8px 90px; }
+
+    .zoom-bar {
+      bottom:calc(14px + env(safe-area-inset-bottom));
+      padding:8px 14px;
+      gap:8px;
+    }
+    .zoom-bar button { font-size:20px; padding:4px 8px; min-width:36px; }
+
+    /* ── Modal a pantalla completa tipo hoja móvil ── */
+    .modal-overlay { padding:0; align-items:stretch; }
+    .modal-overlay.open { display:flex; }
+    .modal-box {
+      max-width:100%;
+      width:100%;
+      min-height:100%;
+      border-radius:0;
+      padding:16px 14px calc(16px + env(safe-area-inset-bottom));
+      display:flex;
+      flex-direction:column;
+    }
+    .modal-box h2 { font-size:17px; }
+    .modal-sub { font-size:12.5px; }
+
+    /* Un solo campo por fila: mucho más fácil de tocar y leer */
+    .field-grid { grid-template-columns:1fr; gap:12px; }
+    .field label { font-size:11px; }
+    .field input, .field select {
+      font-size:16px; /* evita el zoom automático de iOS al enfocar */
+      padding:12px 10px;
+      min-height:44px; /* tamaño táctil recomendado por Apple HIG */
+      border-radius:8px;
+    }
+
+    /* Eventos: local y visitante apilados en vez de en columnas */
+    .two-col { grid-template-columns:1fr; gap:22px 0; }
+
+    /* Cada evento se reorganiza en 2 filas para que quepa cómodo */
+    .event-row {
+      grid-template-columns:28px 1fr 78px;
+      grid-template-rows:auto auto;
+      gap:6px 8px;
+      margin-bottom:10px;
+      padding-bottom:10px;
+      border-bottom:1px solid var(--border);
+    }
+    .event-row span {
+      grid-column:1; grid-row:1 / span 2;
+      display:flex; align-items:center; justify-content:center;
+      font-size:12px; font-weight:700; color:var(--gold);
+    }
+    .event-row input[id*="_Jug"] { grid-column:2 / span 2; grid-row:1; }
+    .event-row input[id*="_Min"] { grid-column:2; grid-row:2; }
+    .event-row select { grid-column:3; grid-row:2; }
+    .event-row input, .event-row select {
+      font-size:16px; /* evita el zoom automático de iOS */
+      padding:10px 8px;
+      min-height:44px;
+      border-radius:8px;
+    }
+
+    /* Botones de acción del modal: fijos abajo, siempre accesibles */
+    .modal-actions {
+      position:sticky;
+      bottom:0;
+      background:var(--navy2);
+      margin:20px -14px 0;
+      padding:12px 14px calc(12px + env(safe-area-inset-bottom));
+      border-top:1px solid var(--border);
+      justify-content:stretch;
+    }
+    .modal-actions .btn { flex:1 1 0; justify-content:center; min-height:46px; font-size:14px; }
+
+    /* Botones generales más fáciles de pulsar con el dedo */
+    .btn { min-height:40px; }
+    .btn-edit, .btn-export { min-height:44px; }
+  }
+
+  @media (max-width: 400px) {
+    .field-grid { gap:10px; }
+    .event-row { grid-template-columns:24px 1fr 70px; }
+  }
 </style>
 </head>
 <body>
