@@ -218,7 +218,7 @@ const CONFIG = {
   // En modo 2 LÍNEAS, es la parte de ABAJO de la línea de ABAJO (la línea
   // de arriba se coloca por encima usando lineGapRatio).
   // ⚠️ Este valor SOLO se cambia aquí, en el código — no hay control en el menú.
-  startY: 2330,
+  startY: 2325,
 
   // Distancia entre la línea de ARRIBA y la línea de ABAJO, en modo 2
   // líneas — como fracción del tamaño de fuente, NO en píxeles fijos.
@@ -228,7 +228,7 @@ const CONFIG = {
   // El tamaño usado es el promedio del tamaño de ambas líneas.
   // 1 = separación equivalente a un tamaño de fuente completo.
   // ⚠️ Fijo — SOLO se cambia aquí, no hay control en el menú.
-  lineGapRatio: 1,
+  lineGapRatio: 0.8,
 
   // Espaciado extra entre letras, como fracción del tamaño de fuente.
   // 0 = espaciado nativo de la fuente (normal). Positivo = separa más las
@@ -241,11 +241,10 @@ const CONFIG = {
   // el autoajuste. 1 = normal. 1.2 = un 20% más alto. 0.85 = más bajo/aplastado.
   // Se aplica alrededor de la línea base, así que el texto crece hacia
   // arriba (y un poco hacia abajo si hay letras con rabito, como "g" o "j").
-  // ⚠️ Solo se aplica en modo 2 LÍNEAS, y únicamente a la línea de ABAJO.
-  // En modo 1 línea el texto siempre queda normal (sin deformar), y la
-  // línea de arriba en modo 2 líneas también queda siempre normal.
-  // Solo editable aquí en el código, no hay control en el menú.
-  textVerticalStretch: 2,
+  // Se aplica por igual en modo 1 línea y en las dos líneas del modo 2
+  // líneas — no depende de cuántas líneas haya.
+  // ⚠️ Solo editable aquí en el código, no hay control en el menú.
+  textVerticalStretch: 1.2,
 
   // El espaciado entre letras usa el avance NATIVO de cada glifo de la fuente
   // (más el ajuste de letterSpacingRatio de arriba) — no es editable desde el menú.
@@ -492,10 +491,11 @@ function redraw() {
   const bottomY = CONFIG.startY; // fijo desde el código — parte de ABAJO del texto
   const fullText = textInput.value || '';
 
+  const stretch = CONFIG.textVerticalStretch || 1;
+
   if (!twoLines) {
-    // Modo 1 línea: SIEMPRE normal, sin deformación vertical.
     const size = fitFontSize(fullText, maxWidth);
-    drawTextLine(fullText, size, bottomY, 1);
+    drawTextLine(fullText, size, bottomY, stretch);
   } else {
     const [t1, t2] = splitIntoTwoLines(fullText);
     const size1 = fitFontSize(t1, maxWidth);
@@ -509,10 +509,10 @@ function redraw() {
     // (igual que en modo 1 línea, para que el ancla sea coherente en
     // ambos modos). La línea de arriba se coloca "gap" píxeles por
     // encima de esa referencia.
-    // La deformación vertical (CONFIG.textVerticalStretch) solo afecta a
-    // la línea de ABAJO; la línea de arriba siempre queda normal.
-    drawTextLine(t1, size1, bottomY - gap, 1);
-    drawTextLine(t2, size2, bottomY, CONFIG.textVerticalStretch || 1);
+    // La deformación vertical (CONFIG.textVerticalStretch) se aplica por
+    // igual a ambas líneas, sea modo 1 o 2 líneas.
+    drawTextLine(t1, size1, bottomY - gap, stretch);
+    drawTextLine(t2, size2, bottomY, stretch);
   }
 }
 
