@@ -159,7 +159,7 @@
 
     <div class="field" style="min-width:320px;">
       <label>Texto</label>
-      <input type="text" id="textInput" value="RENOVADO HASTA 2028">
+      <input type="text" id="textInput" value="RENOVADO">
     </div>
 
     <button class="btn" id="toggleLinesBtn">2 líneas</button>
@@ -174,7 +174,7 @@
       <div id="stage">
         <canvas id="canvas" width="2000" height="2500"></canvas>
       </div>
-      <div id="hint">Márgenes laterales fijos de 175px · Posición Y de inicio fija en el código (CONFIG.startY) · Espaciado de letras nativo de la fuente, con el carácter de espacio corregido</div>
+      <div id="hint">Márgenes laterales fijos de 175px · Posición ancla la parte de ABAJO del texto (CONFIG.startY) · Espaciado entre letras editable en CONFIG.letterSpacingRatio · Carácter de espacio corregido</div>
     </div>
   </div>
 
@@ -188,24 +188,40 @@ const CONFIG = {
   canvasW: 2000,
   canvasH: 2500,
 
-  marginX: 175,           // distancia lateral fija a cada lado (px)
+  marginX: 75,           // distancia lateral fija a cada lado (px)
 
-  // El texto SIEMPRE empieza en este píxel (top de la 1ª línea).
+  // El texto SIEMPRE termina (parte de ABAJO de las letras, ej. la base
+  // de la "R") en este píxel — no es la parte de arriba.
   // ⚠️ Este valor SOLO se cambia aquí, en el código — no hay control en el menú.
-  startY: 400,
+  startY: 2330,
 
-  // Distancia (en px) entre el TOP de una línea y el TOP de la siguiente,
-  // en modo 2 líneas. ⚠️ Fijo — SOLO se cambia aquí, no hay control en el menú.
-  lineGapDefault: 230,
+  // Distancia (en px) entre la parte de ABAJO de una línea y la parte de
+  // ABAJO de la siguiente, en modo 2 líneas.
+  // ⚠️ Fijo — SOLO se cambia aquí, no hay control en el menú.
+  lineGapDefault: 400,
+
+  // Espaciado extra entre letras, como fracción del tamaño de fuente.
+  // 0 = espaciado nativo de la fuente (normal). Positivo = separa más las
+  // letras, negativo = las junta más. ⚠️ Solo editable aquí en el código,
+  // no hay control en el menú.
+  letterSpacingRatio: 0.05,
+
+  // Deformación vertical del texto: estira (o comprime) la altura de las
+  // letras SIN cambiar su anchura, manteniendo el ancho ya calculado por
+  // el autoajuste. 1 = normal. 1.2 = un 20% más alto. 0.85 = más bajo/aplastado.
+  // Se aplica alrededor de la línea base, así que el texto crece hacia
+  // arriba (y un poco hacia abajo si hay letras con rabito, como "g" o "j").
+  // ⚠️ Solo editable aquí en el código, no hay control en el menú.
+  textVerticalStretch: 1,
 
   // El espaciado entre letras usa el avance NATIVO de cada glifo de la fuente
-  // (sin espaciado artificial añadido) — no es editable desde el menú.
+  // (más el ajuste de letterSpacingRatio de arriba) — no es editable desde el menú.
   // El único carácter roto en la fuente FBR es el espacio (" "), así que se
   // sustituye su ancho por esta fracción del tamaño de fuente. Edítalo aquí
   // si el hueco entre palabras se ve muy grande o muy pequeño.
   spaceWidthRatio: 0.28,
 
-  maxFontSize: 420,
+  maxFontSize: 500,
   minFontSize: 30,
 
   colorTop: '#fefefe',    // arriba del degradado
@@ -285,12 +301,18 @@ function charWidth(ch, fontSize) {
   return ctx.measureText(ch).width;
 }
 
+function letterSpacingPx(fontSize) {
+  return fontSize * CONFIG.letterSpacingRatio;
+}
+
 function measureTextNative(text, fontSize) {
   ctx.font = `${fontSize}px ${CONFIG.fontFamily}`;
+  const spacing = letterSpacingPx(fontSize);
   let width = 0;
   for (const ch of text) {
-    width += charWidth(ch, fontSize);
+    width += charWidth(ch, fontSize) + spacing;
   }
+  width -= spacing; // sin espaciado extra tras el último carácter
   return Math.max(width, 0);
 }
 
@@ -307,31 +329,44 @@ function fitFontSize(text, maxWidth) {
   return best;
 }
 
-function drawTextLine(text, fontSize, topY) {
+function drawTextLine(text, fontSize, bottomY) {
   ctx.font = `${fontSize}px ${CONFIG.fontFamily}`;
   const metrics = ctx.measureText(text || 'M');
   const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.75;
   const descent = metrics.actualBoundingBoxDescent || fontSize * 0.2;
-  const baseline = topY + ascent;
-  const bottom = baseline + descent;
+  const stretch = CONFIG.textVerticalStretch || 1;
 
-  const gradient = ctx.createLinearGradient(0, topY, 0, bottom);
+  // bottomY es la parte de ABAJO del texto (ej. la base de la "R"), medida
+  // SIN deformar. La línea base se calcula a partir de ahí y se mantiene
+  // fija; la deformación vertical crece/decrece alrededor de esa base.
+  const baseline = bottomY - descent;
+  const topY = baseline - ascent * stretch;
+  const visualBottom = baseline + descent * stretch;
+
+  const gradient = ctx.createLinearGradient(0, topY, 0, visualBottom);
   gradient.addColorStop(0, CONFIG.colorTop);
   gradient.addColorStop(1, CONFIG.colorBottom);
 
-  const totalWidth = measureTextNative(text, fontSize);
+  const spacing = letterSpacingPx(fontSize);
+  const totalWidth = measureTextNative(text, fontSize); // ancho SIN deformar
   let cx = (CONFIG.canvasW - totalWidth) / 2;
 
   ctx.fillStyle = gradient;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 
+  // La deformación vertical se aplica con un escalado en Y alrededor de la
+  // línea base; el eje X no se toca, así que la anchura no cambia.
+  ctx.save();
+  ctx.translate(0, baseline);
+  ctx.scale(1, stretch);
   for (const ch of text) {
-    if (ch !== ' ') ctx.fillText(ch, cx, baseline);
-    cx += charWidth(ch, fontSize);
+    if (ch !== ' ') ctx.fillText(ch, cx, 0);
+    cx += charWidth(ch, fontSize) + spacing;
   }
+  ctx.restore();
 
-  return { top: topY, bottom };
+  return { top: topY, bottom: visualBottom };
 }
 
 // Divide el texto en 2 líneas equilibradas partiendo por palabras completas
@@ -380,19 +415,19 @@ function redraw() {
   if (!fontReady) return;
 
   const maxWidth = CONFIG.canvasW - CONFIG.marginX * 2;
-  const startY = CONFIG.startY; // fijo desde el código (ver CONFIG arriba)
+  const bottomY = CONFIG.startY; // fijo desde el código — parte de ABAJO del texto
   const fullText = textInput.value || '';
 
   if (!twoLines) {
     const size = fitFontSize(fullText, maxWidth);
-    drawTextLine(fullText, size, startY);
+    drawTextLine(fullText, size, bottomY);
   } else {
     const gap = CONFIG.lineGapDefault; // fijo desde el código, ver CONFIG arriba
     const [t1, t2] = splitIntoTwoLines(fullText);
     const size1 = fitFontSize(t1, maxWidth);
     const size2 = fitFontSize(t2, maxWidth);
-    drawTextLine(t1, size1, startY);
-    drawTextLine(t2, size2, startY + gap);
+    drawTextLine(t1, size1, bottomY);
+    drawTextLine(t2, size2, bottomY + gap);
   }
 }
 
