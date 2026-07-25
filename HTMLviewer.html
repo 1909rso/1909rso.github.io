@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Editor y Previsualizador HTML</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: #0f172a;
+    color: #e2e8f0;
+    height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+  header {
+    padding: 14px 20px;
+    background: #1e293b;
+    border-bottom: 1px solid #334155;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  header h1 {
+    font-size: 16px;
+    margin: 0;
+    font-weight: 600;
+    color: #f8fafc;
+  }
+  .toolbar {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+  }
+  button {
+    background: #334155;
+    color: #e2e8f0;
+    border: 1px solid #475569;
+    padding: 8px 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    transition: background 0.15s, transform 0.1s;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+  button:hover { background: #475569; }
+  button:active { transform: scale(0.97); }
+  button.primary { background: #2563eb; border-color: #2563eb; }
+  button.primary:hover { background: #1d4ed8; }
+  button.success { background: #16a34a; border-color: #16a34a; }
+  button.success:hover { background: #15803d; }
+  .main {
+    flex: 1;
+    display: flex;
+    min-height: 0;
+  }
+  .pane {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+  .pane-header {
+    padding: 8px 14px;
+    background: #1e293b;
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: #94a3b8;
+    border-bottom: 1px solid #334155;
+  }
+  textarea {
+    flex: 1;
+    background: #0b1220;
+    color: #e2e8f0;
+    border: none;
+    outline: none;
+    padding: 16px;
+    font-family: "SF Mono", Menlo, Consolas, monospace;
+    font-size: 13px;
+    line-height: 1.5;
+    resize: none;
+    tab-size: 2;
+  }
+  .divider { width: 1px; background: #334155; }
+  iframe {
+    flex: 1;
+    border: none;
+    background: #fff;
+  }
+  #status {
+    font-size: 12px;
+    color: #94a3b8;
+    padding: 0 6px;
+    align-self: center;
+  }
+  @media (max-width: 800px) {
+    .main { flex-direction: column; }
+    .divider { width: auto; height: 1px; }
+    textarea, iframe { min-height: 260px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🌐 Editor y Previsualizador HTML</h1>
+  <div class="toolbar">
+    <button id="btnPegar">📋 Pegar</button>
+    <button id="btnCopiar">📄 Copiar</button>
+    <button id="btnCargar" class="primary">▶️ Cargar previsualización</button>
+    <button id="btnDescargar" class="success">⬇️ Descargar HTML</button>
+    <span id="status"></span>
+  </div>
+</header>
+
+<div class="main">
+  <div class="pane">
+    <div class="pane-header">Código HTML</div>
+    <textarea id="codeArea" spellcheck="false" placeholder="Pega aquí tu código HTML..."></textarea>
+  </div>
+  <div class="divider"></div>
+  <div class="pane">
+    <div class="pane-header">Previsualización</div>
+    <iframe id="preview" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+  </div>
+</div>
+
+<script>
+  const codeArea = document.getElementById('codeArea');
+  const preview = document.getElementById('preview');
+  const status = document.getElementById('status');
+
+  function showStatus(msg) {
+    status.textContent = msg;
+    setTimeout(() => { status.textContent = ''; }, 2000);
+  }
+
+  function cargarPreview() {
+    const code = codeArea.value;
+    preview.srcdoc = code;
+    showStatus('✅ Previsualización cargada');
+  }
+
+  document.getElementById('btnCargar').addEventListener('click', cargarPreview);
+
+  document.getElementById('btnCopiar').addEventListener('click', async () => {
+    try {
+      await navigator.clipboard.writeText(codeArea.value);
+      showStatus('✅ Copiado al portapapeles');
+    } catch (err) {
+      codeArea.select();
+      document.execCommand('copy');
+      showStatus('✅ Copiado (modo alternativo)');
+    }
+  });
+
+  document.getElementById('btnPegar').addEventListener('click', async () => {
+    try {
+      const text = await navigator.clipboard.readText();
+      codeArea.value = text;
+      showStatus('✅ Pegado desde portapapeles');
+      cargarPreview();
+    } catch (err) {
+      showStatus('⚠️ Permiso de portapapeles denegado, pega con Ctrl+V');
+    }
+  });
+
+  document.getElementById('btnDescargar').addEventListener('click', () => {
+    const code = codeArea.value;
+    if (!code.trim()) {
+      showStatus('⚠️ No hay código para descargar');
+      return;
+    }
+    const blob = new Blob([code], { type: 'text/html' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'pagina.html';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    showStatus('✅ Archivo descargado');
+  });
+
+  // Cargar automáticamente al escribir (con pequeño retraso)
+  let debounceTimer;
+  codeArea.addEventListener('input', () => {
+    clearTimeout(debounceTimer);
+    debounceTimer = setTimeout(cargarPreview, 600);
+  });
+
+  // Permitir pegar directamente con Ctrl+V y autocargar
+  codeArea.addEventListener('paste', () => {
+    setTimeout(cargarPreview, 100);
+  });
+</script>
+
+</body>
+</html>
