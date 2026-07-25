@@ -137,6 +137,29 @@
     font-size: 11px;
     color: #5b6579;
     margin-top: 6px;
+    padding: 0 4px;
+  }
+
+  #stage {
+    width: min(640px, 92vw);
+  }
+
+  /* -------- Móvil: panel apilado a pantalla completa -------- */
+  @media (max-width: 640px) {
+    #topbar {
+      flex-direction: column;
+      align-items: stretch;
+      padding: 12px;
+      gap: 10px;
+    }
+    .brand { margin-right: 0; }
+    .divider { display: none; }
+    .field { min-width: 0; width: 100%; }
+    .field input[type=text] { width: 100%; min-width: 0; font-size: 16px; }
+    .btn { width: 100%; text-align: center; }
+    .filebtn { width: 100%; }
+    #stage-wrap { padding: 16px 10px 40px; }
+    #stage { width: 100%; }
   }
 </style>
 </head>
@@ -192,13 +215,20 @@ const CONFIG = {
 
   // El texto SIEMPRE termina (parte de ABAJO de las letras, ej. la base
   // de la "R") en este píxel — no es la parte de arriba.
+  // En modo 2 LÍNEAS, es la parte de ABAJO de la línea de ABAJO (la línea
+  // de arriba se coloca por encima usando lineGapRatio).
   // ⚠️ Este valor SOLO se cambia aquí, en el código — no hay control en el menú.
   startY: 2330,
 
-  // Distancia (en px) entre la parte de ABAJO de una línea y la parte de
-  // ABAJO de la siguiente, en modo 2 líneas.
+  // Distancia entre la línea de ARRIBA y la línea de ABAJO, en modo 2
+  // líneas — como fracción del tamaño de fuente, NO en píxeles fijos.
+  // Así, si el texto tiene más caracteres y el autoajuste reduce el
+  // tamaño de la fuente, la distancia entre líneas se hace menor en la
+  // misma proporción (y crece si la fuente es más grande).
+  // El tamaño usado es el promedio del tamaño de ambas líneas.
+  // 1 = separación equivalente a un tamaño de fuente completo.
   // ⚠️ Fijo — SOLO se cambia aquí, no hay control en el menú.
-  lineGapDefault: 400,
+  lineGapRatio: 0.8,
 
   // Espaciado extra entre letras, como fracción del tamaño de fuente.
   // 0 = espaciado nativo de la fuente (normal). Positivo = separa más las
@@ -211,7 +241,10 @@ const CONFIG = {
   // el autoajuste. 1 = normal. 1.2 = un 20% más alto. 0.85 = más bajo/aplastado.
   // Se aplica alrededor de la línea base, así que el texto crece hacia
   // arriba (y un poco hacia abajo si hay letras con rabito, como "g" o "j").
-  // ⚠️ Solo editable aquí en el código, no hay control en el menú.
+  // ⚠️ Solo se aplica en modo 2 LÍNEAS, y únicamente a la línea de ABAJO.
+  // En modo 1 línea el texto siempre queda normal (sin deformar), y la
+  // línea de arriba en modo 2 líneas también queda siempre normal.
+  // Solo editable aquí en el código, no hay control en el menú.
   textVerticalStretch: 1,
 
   // El espaciado entre letras usa el avance NATIVO de cada glifo de la fuente
@@ -282,10 +315,49 @@ toggleLinesBtn.addEventListener('click', () => {
 });
 
 downloadBtn.addEventListener('click', () => {
-  const link = document.createElement('a');
-  link.download = 'renovado_1909rso.png';
-  link.href = canvas.toDataURL('image/png');
-  link.click();
+  downloadBtn.disabled = true;
+  const originalLabel = downloadBtn.textContent;
+  downloadBtn.textContent = 'Generando…';
+
+  canvas.toBlob(async (blob) => {
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = originalLabel;
+    if (!blob) return;
+
+    const fileName = 'renovado_1909rso.png';
+    const file = new File([blob], fileName, { type: 'image/png' });
+
+    // iPhone/Safari: el <a download> no siempre funciona (sobre todo en
+    // Safari o dentro de apps con webview). El Web Share API permite
+    // guardar en Fotos o compartir directamente, y es el método fiable
+    // en iOS. Si no está disponible, caemos a la descarga clásica y,
+    // como último recurso, abrimos la imagen en una pestaña nueva para
+    // que el usuario pueda mantener pulsado y guardarla.
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: '1909 RSO' });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return; // usuario canceló
+        // si falla el share, seguimos con el fallback de abajo
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    // Fallback adicional para Safari/iOS antiguo, que ignora el atributo
+    // "download": abrimos la imagen en una pestaña nueva.
+    setTimeout(() => {
+      window.open(url, '_blank');
+      URL.revokeObjectURL(url);
+    }, 300);
+  }, 'image/png');
 });
 
 /* ============================================================
@@ -329,12 +401,11 @@ function fitFontSize(text, maxWidth) {
   return best;
 }
 
-function drawTextLine(text, fontSize, bottomY) {
+function drawTextLine(text, fontSize, bottomY, stretch = 1) {
   ctx.font = `${fontSize}px ${CONFIG.fontFamily}`;
   const metrics = ctx.measureText(text || 'M');
   const ascent = metrics.actualBoundingBoxAscent || fontSize * 0.75;
   const descent = metrics.actualBoundingBoxDescent || fontSize * 0.2;
-  const stretch = CONFIG.textVerticalStretch || 1;
 
   // bottomY es la parte de ABAJO del texto (ej. la base de la "R"), medida
   // SIN deformar. La línea base se calcula a partir de ahí y se mantiene
@@ -343,23 +414,29 @@ function drawTextLine(text, fontSize, bottomY) {
   const topY = baseline - ascent * stretch;
   const visualBottom = baseline + descent * stretch;
 
-  const gradient = ctx.createLinearGradient(0, topY, 0, visualBottom);
-  gradient.addColorStop(0, CONFIG.colorTop);
-  gradient.addColorStop(1, CONFIG.colorBottom);
-
   const spacing = letterSpacingPx(fontSize);
   const totalWidth = measureTextNative(text, fontSize); // ancho SIN deformar
   let cx = (CONFIG.canvasW - totalWidth) / 2;
 
-  ctx.fillStyle = gradient;
   ctx.textAlign = 'left';
   ctx.textBaseline = 'alphabetic';
 
   // La deformación vertical se aplica con un escalado en Y alrededor de la
   // línea base; el eje X no se toca, así que la anchura no cambia.
+  // ⚠️ El degradado se crea DESPUÉS de aplicar translate+scale, usando
+  // coordenadas LOCALES (relativas a la línea base). Si se crea antes con
+  // coordenadas absolutas, el motor del canvas reinterpreta esas
+  // coordenadas bajo la nueva transformación al pintar y el degradado
+  // sale desplazado / roto — por eso fallaba.
   ctx.save();
   ctx.translate(0, baseline);
   ctx.scale(1, stretch);
+
+  const gradient = ctx.createLinearGradient(0, -ascent, 0, descent);
+  gradient.addColorStop(0, CONFIG.colorTop);
+  gradient.addColorStop(1, CONFIG.colorBottom);
+  ctx.fillStyle = gradient;
+
   for (const ch of text) {
     if (ch !== ' ') ctx.fillText(ch, cx, 0);
     cx += charWidth(ch, fontSize) + spacing;
@@ -369,24 +446,21 @@ function drawTextLine(text, fontSize, bottomY) {
   return { top: topY, bottom: visualBottom };
 }
 
-// Divide el texto en 2 líneas equilibradas partiendo por palabras completas
-// (nunca corta una palabra por la mitad). Si solo hay una palabra, la
-// segunda línea queda vacía.
+// Divide el texto en 2 líneas partiendo por palabras completas (nunca corta
+// una palabra por la mitad), buscando que cada línea tenga la MISMA cantidad
+// de texto (o lo más parecida posible), midiendo por número de caracteres —
+// sin tener en cuenta cuántas palabras caen en cada línea.
+// Si solo hay una palabra, la segunda línea queda vacía.
 function splitIntoTwoLines(text) {
   const words = (text || '').trim().split(/\s+/).filter(Boolean);
   if (words.length <= 1) return [words.join(' '), ''];
-
-  const refSize = 200; // tamaño de referencia solo para comparar anchuras
-  ctx.font = `${refSize}px ${CONFIG.fontFamily}`;
 
   let bestSplit = 1;
   let bestDiff = Infinity;
   for (let k = 1; k < words.length; k++) {
     const line1 = words.slice(0, k).join(' ');
     const line2 = words.slice(k).join(' ');
-    const w1 = measureTextNative(line1, refSize);
-    const w2 = measureTextNative(line2, refSize);
-    const diff = Math.abs(w1 - w2);
+    const diff = Math.abs(line1.length - line2.length);
     if (diff < bestDiff) { bestDiff = diff; bestSplit = k; }
   }
   return [words.slice(0, bestSplit).join(' '), words.slice(bestSplit).join(' ')];
@@ -419,15 +493,26 @@ function redraw() {
   const fullText = textInput.value || '';
 
   if (!twoLines) {
+    // Modo 1 línea: SIEMPRE normal, sin deformación vertical.
     const size = fitFontSize(fullText, maxWidth);
-    drawTextLine(fullText, size, bottomY);
+    drawTextLine(fullText, size, bottomY, 1);
   } else {
-    const gap = CONFIG.lineGapDefault; // fijo desde el código, ver CONFIG arriba
     const [t1, t2] = splitIntoTwoLines(fullText);
     const size1 = fitFontSize(t1, maxWidth);
     const size2 = fitFontSize(t2, maxWidth);
-    drawTextLine(t1, size1, bottomY);
-    drawTextLine(t2, size2, bottomY + gap);
+    // La distancia entre líneas se calcula a partir del tamaño de fuente
+    // de ambas líneas (promedio), así que se adapta automáticamente: si
+    // una línea tiene más caracteres y su fuente se reduce, la separación
+    // también se reduce en proporción.
+    const gap = ((size1 + size2) / 2) * CONFIG.lineGapRatio;
+    // CONFIG.startY es SIEMPRE la parte de ABAJO de la línea de ABAJO
+    // (igual que en modo 1 línea, para que el ancla sea coherente en
+    // ambos modos). La línea de arriba se coloca "gap" píxeles por
+    // encima de esa referencia.
+    // La deformación vertical (CONFIG.textVerticalStretch) solo afecta a
+    // la línea de ABAJO; la línea de arriba siempre queda normal.
+    drawTextLine(t1, size1, bottomY - gap, 1);
+    drawTextLine(t2, size2, bottomY, CONFIG.textVerticalStretch || 1);
   }
 }
 
