@@ -95,6 +95,7 @@
   .btn.primary { background: #3457d5; border-color: #4a6bea; }
   .btn.primary:hover { background: #3d63ec; }
   .btn.toggle-on { background: #1e7a4d; border-color: #269a61; }
+  .btn.subtle { background: #1a2029; border-color: #2a3140; font-weight: 500; }
 
   .filebtn {
     position: relative;
@@ -195,6 +196,13 @@
 
     <button class="btn" id="toggleLinesBtn">2 líneas</button>
 
+    <div class="field" id="lineGapField" style="display:none;">
+      <label>Distancia entre líneas <span class="valtag" id="lineGapValue">1.40</span></label>
+      <input type="range" id="lineGapSlider" min="0.3" max="3" step="0.01" value="1.4">
+    </div>
+
+    <button class="btn subtle" id="resetLineGapBtn" style="display:none;">Restablecer distancia</button>
+
     <div class="divider"></div>
 
     <button class="btn primary" id="downloadBtn">Descargar PNG</button>
@@ -205,7 +213,7 @@
       <div id="stage">
         <canvas id="canvas" width="2000" height="2500"></canvas>
       </div>
-      <div id="hint">Márgenes laterales fijos de 175px · Posición ancla la parte de ABAJO del texto (CONFIG.startY) · Espaciado entre letras editable en CONFIG.letterSpacingRatio · En modo "2 líneas", pulsa Intro dentro del campo de texto para elegir tú dónde se parte: todo lo que escribas antes del Intro es la línea de arriba, y todo lo que escribas después (aunque tenga más Intros) se une como la línea de abajo.</div>
+      <div id="hint">Márgenes laterales fijos de 175px · Posición ancla la parte de ABAJO del texto (CONFIG.startY) · Espaciado entre letras editable en CONFIG.letterSpacingRatio · En modo "2 líneas", pulsa Intro dentro del campo de texto para elegir tú dónde se parte: todo lo que escribas antes del Intro es la línea de arriba, y todo lo que escribas después (aunque tenga más Intros) se une como la línea de abajo · Al activar el modo 2 líneas aparece el control "Distancia entre líneas" para ajustar la separación entre ellas.</div>
     </div>
   </div>
 
@@ -235,7 +243,9 @@ const CONFIG = {
   // misma proporción (y crece si la fuente es más grande).
   // El tamaño usado es el promedio del tamaño de ambas líneas.
   // 1 = separación equivalente a un tamaño de fuente completo.
-  // ⚠️ Fijo — SOLO se cambia aquí, no hay control en el menú.
+  // Editable desde el slider "Distancia entre líneas" del menú, que solo
+  // aparece cuando el modo 2 líneas está activo. El valor de aquí es el
+  // que se usa como valor inicial / al restablecer.
   lineGapRatio: 1.4,
 
   // Espaciado extra entre letras, como fracción del tamaño de fuente.
@@ -296,6 +306,11 @@ const bgInput = document.getElementById('bgInput');
 const textInput = document.getElementById('textInput');
 const toggleLinesBtn = document.getElementById('toggleLinesBtn');
 const downloadBtn = document.getElementById('downloadBtn');
+const lineGapField = document.getElementById('lineGapField');
+const lineGapSlider = document.getElementById('lineGapSlider');
+const lineGapValue = document.getElementById('lineGapValue');
+const resetLineGapBtn = document.getElementById('resetLineGapBtn');
+const DEFAULT_LINE_GAP_RATIO = CONFIG.lineGapRatio; // valor original, para el botón "Restablecer distancia"
 
 let twoLines = false;
 
@@ -318,6 +333,26 @@ toggleLinesBtn.addEventListener('click', () => {
   twoLines = !twoLines;
   toggleLinesBtn.textContent = twoLines ? '1 línea' : '2 líneas';
   toggleLinesBtn.classList.toggle('toggle-on', twoLines);
+  lineGapField.style.display = twoLines ? '' : 'none';
+  resetLineGapBtn.style.display = twoLines ? '' : 'none';
+  redraw();
+});
+
+function updateLineGapLabel() {
+  lineGapValue.textContent = CONFIG.lineGapRatio.toFixed(2);
+}
+updateLineGapLabel();
+
+lineGapSlider.addEventListener('input', () => {
+  CONFIG.lineGapRatio = parseFloat(lineGapSlider.value);
+  updateLineGapLabel();
+  redraw();
+});
+
+resetLineGapBtn.addEventListener('click', () => {
+  CONFIG.lineGapRatio = DEFAULT_LINE_GAP_RATIO;
+  lineGapSlider.value = DEFAULT_LINE_GAP_RATIO;
+  updateLineGapLabel();
   redraw();
 });
 
