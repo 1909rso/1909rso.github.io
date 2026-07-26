@@ -211,7 +211,8 @@
 
     <div class="field" style="min-width:320px;">
       <label>Texto principal (Intro = línea de abajo)</label>
-      <textarea id="mainTextInput" rows="2" autocapitalize="characters" autocorrect="off" spellcheck="false" autocomplete="off">RENOVADO</textarea>
+      <textarea id="mainTextInput" rows="2" autocapitalize="characters" autocorrect="off" spellcheck="false" autocomplete="off">MAITASUN BATEK BILTZEN
+GAITU ZU ZELAIAN GU</textarea>
     </div>
 
     <button class="btn subtle" id="resetColorsBtn">Restablecer colores</button>
@@ -220,7 +221,7 @@
 
     <div class="field" style="min-width:220px;">
       <label>Pertsona</label>
-      <input type="text" id="pertsonaTextInput" value="" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" enterkeyhint="done">
+      <input type="text" id="pertsonaTextInput" value="MIKEL OYARZABAL" autocapitalize="off" autocorrect="off" spellcheck="false" autocomplete="off" enterkeyhint="done">
     </div>
 
     <div class="divider"></div>
@@ -288,8 +289,9 @@ const CONFIG = {
 
   // Texto "pertsona" — capa de texto independiente en DejaVu Sans Bold,
   // siempre blanca. Su contenido se edita desde el menú (campo "Pertsona"),
-  // pero tamaño, altura, posición horizontal y espaciado entre letras se
-  // ajustan ÚNICAMENTE aquí, en el código — no hay controles en el menú.
+  // pero tamaño, altura, posición horizontal, espaciado entre letras y
+  // deformación horizontal se ajustan ÚNICAMENTE aquí, en el código — no
+  // hay controles en el menú.
   pertsona: {
     fontFamily: 'FBR2',
     color: '#ffffff',
@@ -297,7 +299,7 @@ const CONFIG = {
     y: 2378,                 // altura: coordenada Y (parte de ARRIBA del texto). ⚠️ Solo editable aquí.
     x: 1000,                 // posición horizontal: coordenada X del CENTRO del texto (1000 = centrado en el lienzo de 2000px). ⚠️ Solo editable aquí.
     letterSpacing: 3,       // espaciado extra entre letras, en px. 0 = espaciado nativo de la fuente. ⚠️ Solo editable aquí.
-    horizontalScale: 1,     // deformación horizontal: estira (>1) o comprime (<1) el ancho de las letras SIN tocar su altura. 1 = normal. Se aplica alrededor del centro (x). ⚠️ Solo editable aquí.
+    horizontalScale: 1,     // deformación horizontal: estira (>1) o comprime (<1) el ancho de las letras SIN tocar su altura. 1 = normal (sin deformar). Aumentar este valor estira el ancho en el mismo porcentaje (ej. 1.2 = +20% de ancho); reducirlo por debajo de 1 lo comprime. Se aplica alrededor del centro (x). ⚠️ Solo editable aquí.
   },
 };
 const DEFAULT_LINE_GAP_RATIO = CONFIG.lineGapRatio; // valor original, para el botón "Restablecer distancia"
@@ -389,6 +391,17 @@ resetLineGapBtn.addEventListener('click', () => {
   redraw();
 });
 pertsonaTextInput.addEventListener('input', redraw);
+
+// Al tocar/enfocar estos campos, se selecciona todo su contenido, de modo
+// que el texto por defecto se reemplaza automáticamente en cuanto el
+// usuario empieza a escribir, sin tener que borrarlo a mano primero.
+function selectAllOnFocus(el) {
+  el.addEventListener('focus', () => {
+    el.select();
+  });
+}
+selectAllOnFocus(mainTextInput);
+selectAllOnFocus(pertsonaTextInput);
 
 downloadBtn.addEventListener('click', () => {
   downloadBtn.disabled = true;
