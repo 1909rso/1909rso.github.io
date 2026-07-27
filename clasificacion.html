@@ -78,22 +78,22 @@
     position:absolute;z-index:3;color:#fff;font-weight:700;letter-spacing:1px;
   }
   #colHeader{
-    position:absolute;z-index:3;display:flex;font-weight:500;color:rgba(255,255,255,.65);
+    position:absolute;z-index:3;display:flex;font-weight:500;color:#fff;
   }
   #colHeader span{display:inline-block;text-align:right;}
   #rows{position:absolute;z-index:3;top:0;left:0;right:0;bottom:0;}
   .row{position:absolute;left:0;right:0;display:flex;align-items:center;}
-  .row .bar{position:absolute;left:0;top:8%;bottom:8%;border-radius:3px;}
+  .row .bar{position:absolute;left:0;top:8%;bottom:8%;border-radius:0;}
   .row .rank{color:#fff;font-weight:500;text-align:center;}
   .row .crestbox{display:flex;align-items:center;justify-content:center;}
   .row .crestbox img{max-width:100%;max-height:100%;object-fit:contain;}
   .row .name{color:#fff;font-weight:600;white-space:nowrap;}
-  .row .num{color:rgba(255,255,255,.88);font-weight:500;text-align:right;}
+  .row .num{color:#fff;font-weight:500;text-align:right;}
   .row .pts{color:#fff;font-weight:700;text-align:right;}
-  #legend{position:absolute;z-index:3;display:flex;flex-wrap:wrap;align-items:center;}
-  #legend .item{display:flex;align-items:center;}
-  #legend .swatch{border-radius:3px;flex-shrink:0;}
-  #legend .lbl{color:rgba(255,255,255,.85);font-weight:300;font-style:italic;white-space:nowrap;}
+  #legend{position:absolute;z-index:3;display:grid;justify-content:center;align-content:start;}
+  #legend .item{display:flex;flex-direction:row;align-items:center;justify-content:flex-start;}
+  #legend .swatch{border-radius:0;flex-shrink:0;}
+  #legend .lbl{color:#fff;font-style:italic;text-align:left;}
 
   /* font preload (invisible, forces @font-face fetch) */
   #fontPreload{position:absolute;left:-9999px;top:-9999px;visibility:hidden;}
@@ -255,7 +255,7 @@
     </div>
     <div id="rowLayoutEditor"></div>
 
-    <div class="section-title">Números (rank / PJ / DG / Pts)</div>
+    <div class="section-title">Números (PJ / DG / Pts)</div>
     <div class="field-row">
       <label>Fuente</label>
       <input type="text" id="cfgNumFontFamily" placeholder="Inter">
@@ -272,6 +272,25 @@
     <div class="field-row checkline">
       <label>Nº tabulares</label>
       <input type="checkbox" id="cfgTabularNums">
+    </div>
+
+    <div class="section-title">Puesto (rank)</div>
+    <div class="field-row">
+      <label>Fuente</label>
+      <input type="text" id="cfgRankFontFamily" placeholder="Inter">
+    </div>
+    <div class="field-row">
+      <label>Grosor</label>
+      <select id="cfgRankWeight">
+        <option value="400">400</option>
+        <option value="500">500</option>
+        <option value="600">600</option>
+        <option value="700">700</option>
+      </select>
+    </div>
+    <div class="field-row checkline">
+      <label>Nº tabulares</label>
+      <input type="checkbox" id="cfgRankTabularNums">
     </div>
 
     <div class="section-title">Leyenda / clasificaciones</div>
@@ -317,12 +336,20 @@ const COMP_FILE_MAP = {
   "europa-league": "Europa-League"
 };
 
+// nombre "bonito" de cada competición para el texto de cabecera (TABLE / LaLiga / etc.)
+const COMP_DISPLAY_NAME = {
+  "la-liga": "LaLiga",
+  "europa-league": "Europa League"
+};
+
 // colores + etiqueta de leyenda por código de "Clasif" (config por defecto, editable en runtime)
 const CLASIF_CONFIG_DEFAULTS = {
-  "UCL":  { color:"#3B6FED", color2:"#1c3f9c", gradient:false, angle:135, label:"Champions League" },
+   "UCL":  { color:"#3B6FED", color2:"#1c3f9c", gradient:false, angle:135, label:"Champions League" },
   "UEL":  { color:"#F2820C", color2:"#a85400", gradient:false, angle:135, label:"Europa League" },
   "UCOL": { color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, label:"Conference League" },
-  "DESC": { color:"#E0483F", color2:"#8f231d", gradient:false, angle:135, label:"Descenso" }
+  "DESC": { color:"#E0483F", color2:"#8f231d", gradient:false, angle:135, label:"Descenso" },
+  "ascenso": {  color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, label:"Ascenso directo" },
+  "playoff": { color:"#F2820C", color2:"#a85400", gradient:false, angle:135, label:"Playoffs" }
 };
 // clon editable: el usuario puede activar degradado y cambiar colores/tamaños sin tocar el código
 let classifConfig = JSON.parse(JSON.stringify(CLASIF_CONFIG_DEFAULTS));
@@ -331,8 +358,8 @@ const DEFAULT_BAR_COLOR = "rgba(255,255,255,.18)";
 // alias de nombres: si el nombre del equipo coincide (tal cual llega), se muestra el alias en su lugar.
 // editable en runtime desde el panel "Alias de nombres"; el usuario puede añadir más pares.
 const NAME_ALIAS_DEFAULTS = {
-  "Atlético de Madrid": "Atl. Madrid",
-  "Atletico de Madrid": "Atl. Madrid"
+  "Atlético Madrid": "Atl. Madrid",
+  "Deportivo Alavés": "Alavés"
 };
 let nameAliasConfig = JSON.parse(JSON.stringify(NAME_ALIAS_DEFAULTS));
 function displayName(name){
@@ -345,16 +372,19 @@ const CANVAS_W = 2000, CANVAS_H = 2500;
 /* layout base (a 2000x2500), todo en px sobre ese lienzo. Mutable: se edita desde el panel. */
 let LAYOUT = {
   logo:      { top:95,  left:510,  w:130, h:130},
-  heading:   { top:250, left:80,  size:34 },
-  colHeader: { top:250, right:80, size:26, gpW:90, gdW:90, ptsW:110, gap:0 },
+  heading:   { top:250, left:0, width:2000, size:170 },
+  // cabecera de columnas (GP/GD/PTS) para tablas con <= rowsThreshold equipos (config actual)
+  colHeader22: { top:480, right:1070, size:23, gpW:90, gdW:90, ptsW:110, gap:0 },
+  // cabecera de columnas (GP/GD/PTS) para tablas con > rowsThreshold equipos (edítala aparte)
+  colHeaderOver: { top:280, right:80, size:16, gpW:72, gdW:72, ptsW:92, gap:0 },
   textScale: 1,          // multiplicador global de todos los tamaños de texto
   rowsThreshold: 22,     // a partir de cuántos equipos se usa el layout "rowsOver"
   // layout de filas para tablas con <= rowsThreshold equipos
   rows22: {
     top: 515, bottom: 2000, left: 180, right: 530,
-    barW: 8, barGap: 22, rankW: 70,
-    crestW: 46, crestH: 46, crestGap: 22, nameGap: 26,
-    numColW: 90, ptsColW: 110,
+    barW: 8, barGap: 22, rankW: 100,
+    crestW: 46, crestH: 46, crestGap: 35, nameGap: 100,
+    numColW: 90, ptsColW: 84,
     rankFontSize: 42, nameFontSize: 42, numFontSize: 43 // 0 = automático según alto de fila
   },
   // layout de filas para tablas con > rowsThreshold equipos (más equipos = filas más compactas)
@@ -365,12 +395,26 @@ let LAYOUT = {
     numColW: 72, ptsColW: 92,
     rankFontSize: 0, nameFontSize: 0, numFontSize: 0
   },
-  // estilo tipográfico común para rank / PJ / DG / Pts (los "números" de cada fila)
-  numberStyle: { fontFamily: "Inter", weight: 500, tabularNums: true },
-  legend: { bottom:70, left:80, right:80, swatchW:20, swatchH:20, gap:10, itemGap:34, size:24 }
+  // estilo tipográfico común para PJ / DG / Pts (los "números" de cada fila)
+  numberStyle: { fontFamily: "Inter", weight: 400, tabularNums: true },
+  // estilo tipográfico independiente para el "puesto" (rank)
+  rankStyle: { fontFamily: "Inter", weight: 400, tabularNums: true },
+  legend: {
+    bottom:70, left:80, right:80,
+    swatchW:32, swatchH:32,   // tamaño de los cuadros de la leyenda (agrándalos aquí)
+    gap:8,                    // separación horizontal entre el cuadro y el texto
+    itemGap:40,               // separación entre cada bloque cuadro+texto (rejilla)
+    columns:2,                // nº de columnas: con 4 clasificaciones -> 2 arriba y 2 abajo
+    size:24,                  // tamaño de fuente del texto
+    fontFamily:"Inter",       // fuente del texto de la leyenda
+    weight:300                // grosor: 300=fina, 400=normal, 600=semibold, 700=bold
+  }
 };
 function getRowsLayout(n){
   return (n <= LAYOUT.rowsThreshold) ? LAYOUT.rows22 : LAYOUT.rowsOver;
+}
+function getColHeaderLayout(n){
+  return (n <= LAYOUT.rowsThreshold) ? LAYOUT.colHeader22 : LAYOUT.colHeaderOver;
 }
 
 /* ======================================================================
@@ -446,7 +490,7 @@ function selectTable(pos){
   state.bgFile   = COMP_FILE_MAP[compKey] || defaultFileName(compKey);
   state.bgCustomDataUrl = null;
   state.showHeading = group.length <= 22;
-  state.headingText = "TABLE";
+  state.headingText = COMP_DISPLAY_NAME[compKey] || (compKey ? compKey.toUpperCase() : "TABLE");
   state.rows = group.map(r => ({
     rank: r.Id || "",
     crestName: r.comp || "",
@@ -499,7 +543,9 @@ function render(){
   heading.style.display = state.showHeading ? "block" : "none";
   heading.textContent = state.headingText || "TABLE";
   heading.style.top = LAYOUT.heading.top+"px";
-  heading.style.left = LAYOUT.heading.left+"px";
+  heading.style.left = (LAYOUT.heading.left||0)+"px";
+  heading.style.width = (LAYOUT.heading.width || CANVAS_W)+"px";
+  heading.style.textAlign = "center";
   heading.style.fontSize = (LAYOUT.heading.size*ts)+"px";
 
   const n = state.rows.length;
@@ -518,17 +564,21 @@ function render(){
   const crestW = clamp(rowsLayout.crestW, 4, rowH*2.2);
   const crestH = clamp(rowsLayout.crestH, 4, rowH*2.2);
 
-  // estilo común de "números" (rank, PJ, DG, Pts) — misma fuente/peso que la columna PJ
+  // estilo común de "números" (PJ, DG, Pts) — misma fuente/peso
   const numStyle = LAYOUT.numberStyle || {fontFamily:"Inter", weight:500, tabularNums:true};
   const numFontCss = `font-family:'${numStyle.fontFamily||"Inter"}',sans-serif;font-weight:${numStyle.weight||500};${numStyle.tabularNums!==false?'font-variant-numeric:tabular-nums;':''}`;
   // los puntos (Pts) siempre en negrita, con la misma familia/tabular-nums pero peso fijo 700
   const ptsFontCss = `font-family:'${numStyle.fontFamily||"Inter"}',sans-serif;font-weight:700;${numStyle.tabularNums!==false?'font-variant-numeric:tabular-nums;':''}`;
+  // estilo independiente para el "puesto" (rank)
+  const rankStyle = LAYOUT.rankStyle || {fontFamily:"Inter", weight:500, tabularNums:true};
+  const rankFontCss = `font-family:'${rankStyle.fontFamily||"Inter"}',sans-serif;font-weight:${rankStyle.weight||500};${rankStyle.tabularNums!==false?'font-variant-numeric:tabular-nums;':''}`;
 
   // cabecera de columnas (GP GD PTS) alineada con las columnas numéricas
+  const colHeaderLayout = getColHeaderLayout(n);
   const colH = $("colHeader");
-  colH.style.top = LAYOUT.colHeader.top+"px";
-  colH.style.right = LAYOUT.colHeader.right+"px";
-  colH.style.fontSize = (LAYOUT.colHeader.size*ts)+"px";
+  colH.style.top = colHeaderLayout.top+"px";
+  colH.style.right = colHeaderLayout.right+"px";
+  colH.style.fontSize = (colHeaderLayout.size*ts)+"px";
   colH.style.gap = "0px";
   $("hGP").style.width = rowsLayout.numColW+"px";
   $("hGD").style.width = rowsLayout.numColW+"px";
@@ -552,7 +602,7 @@ function render(){
     const bar = `<div class="bar" style="left:0;width:${rowsLayout.barW}px;background:${barColor};"></div>`;
     x += rowsLayout.barW + rowsLayout.barGap;
 
-    const rankHtml = `<div class="rank" style="position:absolute;left:${x}px;width:${rowsLayout.rankW}px;font-size:${fRank}px;${numFontCss}">${escapeHtml(row.rank)}</div>`;
+    const rankHtml = `<div class="rank" style="position:absolute;left:${x}px;width:${rowsLayout.rankW}px;font-size:${fRank}px;${rankFontCss}">${escapeHtml(row.rank)}</div>`;
     x += rowsLayout.rankW;
 
     const initials = escapeHtml((row.name||"?").slice(0,3).toUpperCase());
@@ -604,14 +654,20 @@ function renderLegend(){
   legend.style.bottom = lg.bottom+"px";
   legend.style.left = lg.left+"px";
   legend.style.right = lg.right+"px";
+  // rejilla: nº de columnas fijo (con 4 clasificaciones y columns:2 -> 2 filas de 2)
+  legend.style.gridTemplateColumns = `repeat(${lg.columns || 2}, auto)`;
+  legend.style.columnGap = lg.itemGap+"px";
+  legend.style.rowGap = lg.itemGap+"px";
   legend.innerHTML = "";
+  const fontCss = `font-family:'${lg.fontFamily||"Inter"}',sans-serif;font-weight:${lg.weight||300};`;
   usedCodes.forEach(code=>{
     const cfg = classifConfig[code];
     const item = document.createElement("div");
     item.className = "item";
-    item.style.marginRight = lg.itemGap+"px";
+    // una palabra por línea dentro de la etiqueta
+    const labelHtml = String(cfg.label||"").split(" ").filter(Boolean).map(w=>escapeHtml(w)).join("<br>");
     item.innerHTML = `<div class="swatch" style="width:${swW}px;height:${swH}px;background:${classifBg(cfg)};margin-right:${lg.gap}px;"></div>
-      <div class="lbl" style="font-size:${(lg.size*ts).toFixed(1)}px;">${escapeHtml(cfg.label)}</div>`;
+      <div class="lbl" style="font-size:${(lg.size*ts).toFixed(1)}px;${fontCss}">${labelHtml}</div>`;
     legend.appendChild(item);
   });
 }
@@ -723,6 +779,9 @@ function syncEditorFromState(){
   $("cfgNumFontFamily").value = LAYOUT.numberStyle.fontFamily;
   $("cfgNumWeight").value = String(LAYOUT.numberStyle.weight);
   $("cfgTabularNums").checked = !!LAYOUT.numberStyle.tabularNums;
+  $("cfgRankFontFamily").value = LAYOUT.rankStyle.fontFamily;
+  $("cfgRankWeight").value = String(LAYOUT.rankStyle.weight);
+  $("cfgRankTabularNums").checked = !!LAYOUT.rankStyle.tabularNums;
   $("cfgLegendW").value = LAYOUT.legend.swatchW;
   $("cfgLegendH").value = LAYOUT.legend.swatchH;
 
@@ -790,6 +849,20 @@ $("cfgNumWeight").addEventListener('change', ()=>{
 });
 $("cfgTabularNums").addEventListener('change', ()=>{
   LAYOUT.numberStyle.tabularNums = $("cfgTabularNums").checked;
+  markDirty(); render();
+});
+
+/* ---- Fuente del puesto (independiente de PJ/DG/Pts) ---- */
+$("cfgRankFontFamily").addEventListener('input', ()=>{
+  LAYOUT.rankStyle.fontFamily = $("cfgRankFontFamily").value || "Inter";
+  markDirty(); render();
+});
+$("cfgRankWeight").addEventListener('change', ()=>{
+  LAYOUT.rankStyle.weight = parseInt($("cfgRankWeight").value,10);
+  markDirty(); render();
+});
+$("cfgRankTabularNums").addEventListener('change', ()=>{
+  LAYOUT.rankStyle.tabularNums = $("cfgRankTabularNums").checked;
   markDirty(); render();
 });
 
