@@ -1,1 +1,1041 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>1909 RSO · Clasificación</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --ui-bg:#0d0f14;
+    --ui-panel:#171a21;
+    --ui-panel2:#1f232c;
+    --ui-border:#2b303a;
+    --ui-text:#f2f3f5;
+    --ui-muted:#9aa1ad;
+    --ui-accent:#3b6fed;
+    --ui-danger:#e0483f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--ui-bg);color:var(--ui-text);font-family:'Inter',sans-serif;}
 
+  /* ---------------- viewport / chrome ---------------- */
+  .app{display:flex;flex-direction:column;min-height:100vh;}
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;gap:8px;
+    padding:10px 12px;background:var(--ui-panel);
+    border-bottom:1px solid var(--ui-border);
+    overflow-x:auto;
+  }
+  .topbar .tabs{display:flex;gap:6px;flex:1;}
+  .tab-btn{
+    flex-shrink:0;padding:8px 14px;border-radius:20px;border:1px solid var(--ui-border);
+    background:var(--ui-panel2);color:var(--ui-muted);font-size:13px;font-weight:600;
+    cursor:pointer;white-space:nowrap;
+  }
+  .tab-btn.active{background:var(--ui-accent);color:#fff;border-color:var(--ui-accent);}
+  .icon-btn{
+    flex-shrink:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--ui-border);
+    background:var(--ui-panel2);color:var(--ui-text);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .status{padding:4px 12px;font-size:12px;color:var(--ui-muted);}
+  .status.err{color:var(--ui-danger);}
+
+  .stage-wrap{
+    flex:1;display:flex;align-items:flex-start;justify-content:center;
+    padding:16px;overflow:hidden;background:
+      radial-gradient(circle at 50% 0%, #1a1e27 0%, #0d0f14 60%);
+  }
+  #stageOuter{position:relative;flex-shrink:0;overflow:hidden;cursor:grab;touch-action:none;}
+  #stageOuter.dragging{cursor:grabbing;}
+  .zoom-controls{display:flex;gap:6px;align-items:center;}
+  .zoom-controls .icon-btn{width:34px;height:34px;font-size:15px;}
+  .zoom-pct{font-size:11px;color:var(--ui-muted);min-width:38px;text-align:center;}
+
+  /* ---------------- the exportable 2000x2500 stage ---------------- */
+  #stage{
+    width:2000px;height:2500px;position:absolute;top:0;left:0;overflow:hidden;
+    background:#0a0c10;
+    font-family:'Inter',sans-serif;
+    transform-origin:top left;
+  }
+  #stage img.bg-layer{
+    position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;
+  }
+  #stage .scrim{
+    position:absolute;inset:0;z-index:2;
+    background:linear-gradient(180deg, rgba(6,8,12,.55) 0%, rgba(6,8,12,.30) 22%, rgba(6,8,12,.55) 78%, rgba(6,8,12,.80) 100%);
+  }
+  #compLogo{
+    position:absolute;z-index:3;object-fit:contain;
+  }
+  #tableHeading{
+    position:absolute;z-index:3;color:#fff;font-weight:700;letter-spacing:1px;
+  }
+  #colHeader{
+    position:absolute;z-index:3;display:flex;font-weight:500;color:rgba(255,255,255,.65);
+  }
+  #colHeader span{display:inline-block;text-align:right;}
+  #rows{position:absolute;z-index:3;top:0;left:0;right:0;bottom:0;}
+  .row{position:absolute;left:0;right:0;display:flex;align-items:center;}
+  .row .bar{position:absolute;left:0;top:8%;bottom:8%;border-radius:3px;}
+  .row .rank{color:#fff;font-weight:500;text-align:center;}
+  .row .crestbox{display:flex;align-items:center;justify-content:center;}
+  .row .crestbox img{max-width:100%;max-height:100%;object-fit:contain;}
+  .row .name{color:#fff;font-weight:600;white-space:nowrap;}
+  .row .num{color:rgba(255,255,255,.88);font-weight:500;text-align:right;}
+  .row .pts{color:#fff;font-weight:700;text-align:right;}
+  #legend{position:absolute;z-index:3;display:flex;flex-wrap:wrap;align-items:center;}
+  #legend .item{display:flex;align-items:center;}
+  #legend .swatch{border-radius:3px;flex-shrink:0;}
+  #legend .lbl{color:rgba(255,255,255,.85);font-weight:300;font-style:italic;white-space:nowrap;}
+
+  /* font preload (invisible, forces @font-face fetch) */
+  #fontPreload{position:absolute;left:-9999px;top:-9999px;visibility:hidden;}
+
+  /* ---------------- bottom sheet editor ---------------- */
+  #sheetOverlay{
+    position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:99;display:none;
+  }
+  #sheetOverlay.open{display:block;}
+  #sheet{
+    position:fixed;left:0;right:0;bottom:0;z-index:100;
+    max-height:86vh;background:var(--ui-panel);
+    border-radius:16px 16px 0 0;border:1px solid var(--ui-border);
+    transform:translateY(100%);transition:transform .25s ease;
+    display:flex;flex-direction:column;
+  }
+  #sheet.open{transform:translateY(0);}
+  #sheet .handle{width:40px;height:4px;background:#3a3f4a;border-radius:2px;margin:10px auto;}
+  #sheet .sheet-head{padding:0 16px 8px;display:flex;align-items:center;justify-content:space-between;}
+  #sheet .sheet-head h2{font-size:15px;margin:0;font-weight:700;}
+  #sheet .sheet-body{overflow-y:auto;padding:0 16px 16px;}
+  .section-title{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--ui-muted);margin:16px 0 8px;}
+  .field-row{display:flex;gap:8px;margin-bottom:8px;align-items:center;}
+  .field-row label{flex:0 0 84px;font-size:12px;color:var(--ui-muted);}
+  .field-row input, .field-row select{
+    flex:1;min-width:0;background:var(--ui-panel2);border:1px solid var(--ui-border);
+    color:var(--ui-text);border-radius:8px;padding:8px 10px;font-size:13px;font-family:inherit;
+  }
+  .field-row.checkline{gap:8px;}
+  .field-row.checkline input{flex:0 0 auto;width:18px;height:18px;}
+  .row-card{
+    background:var(--ui-panel2);border:1px solid var(--ui-border);border-radius:10px;
+    padding:10px;margin-bottom:8px;
+  }
+  .row-card .rc-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px;}
+  .row-card .rc-top b{font-size:12px;color:var(--ui-muted);}
+  .row-card .rc-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;}
+  .row-card .rc-grid .full{grid-column:1/-1;}
+  .row-card input, .row-card select{
+    width:100%;background:#141821;border:1px solid var(--ui-border);color:var(--ui-text);
+    border-radius:7px;padding:7px 8px;font-size:12.5px;font-family:inherit;
+  }
+  .row-card .rc-grid label{display:block;font-size:10px;color:var(--ui-muted);margin-bottom:2px;}
+  .mini-btn{
+    border:none;border-radius:7px;padding:6px 10px;font-size:12px;font-weight:600;cursor:pointer;
+  }
+  .mini-btn.del{background:rgba(224,72,63,.15);color:#ff8a83;}
+  .mini-btn.add{background:rgba(59,111,237,.18);color:#7ea3ff;width:100%;padding:10px;margin-top:4px;}
+  .sheet-footer{
+    display:flex;gap:8px;padding:12px 16px;border-top:1px solid var(--ui-border);
+  }
+  .btn{
+    flex:1;padding:12px;border-radius:10px;border:none;font-weight:700;font-size:13px;cursor:pointer;
+  }
+  .btn.primary{background:var(--ui-accent);color:#fff;}
+  .btn.ghost{background:var(--ui-panel2);color:var(--ui-text);border:1px solid var(--ui-border);}
+
+  @media (max-width:640px){
+    .field-row label{flex-basis:72px;font-size:11.5px;}
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="tabs" id="tabs">
+      <button class="tab-btn" data-pos="1">Tabla 1</button>
+      <button class="tab-btn" data-pos="2">Tabla 2</button>
+      <button class="tab-btn" data-pos="3">Tabla 3</button>
+    </div>
+    <div class="zoom-controls">
+      <button class="icon-btn" id="btnZoomOut" title="Alejar">−</button>
+      <span class="zoom-pct" id="zoomPct">100%</span>
+      <button class="icon-btn" id="btnZoomIn" title="Acercar">+</button>
+      <button class="icon-btn" id="btnZoomReset" title="Restablecer vista">⤢</button>
+    </div>
+    <button class="icon-btn" id="btnReload" title="Recargar datos">⟳</button>
+    <button class="icon-btn" id="btnQuickBg" title="Subir imagen de fondo">🖼️</button>
+    <button class="icon-btn" id="btnEdit" title="Editar">✏️</button>
+    <button class="icon-btn" id="btnExport" title="Exportar imagen">⬇️</button>
+  </div>
+  <div class="status" id="status">Cargando datos…</div>
+
+  <div class="stage-wrap">
+    <div id="stageOuter">
+      <div id="stage">
+        <img class="bg-layer" id="bgLayer" src="" alt="">
+        <div class="scrim"></div>
+        <img id="compLogo" src="" alt="">
+        <div id="tableHeading">TABLE</div>
+        <div id="colHeader"><span id="hGP">GP</span><span id="hGD">GD</span><span id="hPTS">PTS</span></div>
+        <div id="rows"></div>
+        <div id="legend"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- hidden font preloader: forces every weight/style we use to actually fetch -->
+<div id="fontPreload">
+  <span style="font-family:'Inter';font-weight:300;font-style:italic;">Aa</span>
+  <span style="font-family:'Inter';font-weight:400;">Aa</span>
+  <span style="font-family:'Inter';font-weight:500;">Aa</span>
+  <span style="font-family:'Inter';font-weight:600;">Aa</span>
+  <span style="font-family:'Inter';font-weight:700;">Aa</span>
+</div>
+
+<!-- ---------------- editor bottom sheet ---------------- -->
+<div id="sheetOverlay"></div>
+<div id="sheet">
+  <div class="handle"></div>
+  <div class="sheet-head"><h2>Editar clasificación</h2><button class="icon-btn" id="btnCloseSheet">✕</button></div>
+  <div class="sheet-body">
+
+    <div class="section-title">Ajustes generales</div>
+    <div class="field-row">
+      <label>Competición</label>
+      <input type="text" id="cfgCompKey" placeholder="la-liga">
+    </div>
+    <div class="field-row">
+      <label>Logo (archivo)</label>
+      <input type="text" id="cfgLogoFile" placeholder="La-Liga">
+    </div>
+    <div class="field-row">
+      <label>Fondo (archivo)</label>
+      <input type="text" id="cfgBgFile" placeholder="La-Liga">
+    </div>
+    <div class="field-row">
+      <label>Fondo (subir)</label>
+      <button class="mini-btn add" id="btnPickBg" style="flex:1;margin-top:0;">🖼️ Elegir imagen de fondo</button>
+      <input type="file" accept="image/*" id="cfgBgUpload" style="display:none;">
+    </div>
+    <div class="field-row" id="rowClearBgUpload" style="display:none;">
+      <label></label>
+      <button class="mini-btn del" id="btnClearBgUpload" style="width:100%;">Quitar imagen de fondo personalizada</button>
+    </div>
+    <div class="field-row checkline">
+      <label>Título "TABLE"</label>
+      <input type="checkbox" id="cfgShowHeading">
+      <input type="text" id="cfgHeadingText" placeholder="TABLE" style="flex:1;">
+    </div>
+
+    <div class="section-title">Texto</div>
+    <div class="field-row">
+      <label>Escala texto</label>
+      <input type="range" id="cfgTextScale" min="0.5" max="2" step="0.05" style="flex:1;">
+      <span class="zoom-pct" id="cfgTextScaleVal" style="min-width:40px;">100%</span>
+    </div>
+
+    <div class="section-title">Diseño de filas</div>
+    <div class="field-row">
+      <label>Umbral equipos</label>
+      <input type="number" id="cfgRowsThreshold" min="1" step="1">
+    </div>
+    <div class="field-row">
+      <button class="mini-btn add" id="btnVariant22" style="flex:1;margin-top:0;">≤ umbral</button>
+      <button class="mini-btn add" id="btnVariantOver" style="flex:1;margin-top:0;">&gt; umbral</button>
+    </div>
+    <div id="rowLayoutEditor"></div>
+
+    <div class="section-title">Números (rank / PJ / DG / Pts)</div>
+    <div class="field-row">
+      <label>Fuente</label>
+      <input type="text" id="cfgNumFontFamily" placeholder="Inter">
+    </div>
+    <div class="field-row">
+      <label>Grosor</label>
+      <select id="cfgNumWeight">
+        <option value="400">400</option>
+        <option value="500">500</option>
+        <option value="600">600</option>
+        <option value="700">700</option>
+      </select>
+    </div>
+    <div class="field-row checkline">
+      <label>Nº tabulares</label>
+      <input type="checkbox" id="cfgTabularNums">
+    </div>
+
+    <div class="section-title">Leyenda / clasificaciones</div>
+    <div class="field-row">
+      <label>Ancho cuadro</label>
+      <input type="number" id="cfgLegendW" min="2" step="1">
+      <label style="flex:0 0 60px;">Alto</label>
+      <input type="number" id="cfgLegendH" min="2" step="1">
+    </div>
+    <div id="legendEditor"></div>
+
+    <div class="section-title">Alias de nombres</div>
+    <div id="nameAliasEditor"></div>
+    <button class="mini-btn add" id="btnAddNameAlias">+ Añadir alias</button>
+
+    <div class="section-title">Equipos <span id="rowCount" style="color:#7ea3ff;"></span></div>
+    <div id="rowsEditor"></div>
+    <button class="mini-btn add" id="btnAddRow">+ Añadir equipo</button>
+
+  </div>
+  <div class="sheet-footer">
+    <button class="btn ghost" id="btnResetData">Restaurar original</button>
+    <button class="btn primary" id="btnApply">Listo</button>
+  </div>
+</div>
+
+<script>
+/* ======================================================================
+   CONFIG — todo lo tocable a mano vive aquí
+   ====================================================================== */
+const DATA_URL = "https://script.google.com/macros/s/AKfycbwncNzGGRiS6NYzHn5RxXVBGYLyMUv5UfnZKy0bwvHlHUDU2MhNdXAfjRZsR6awID0Svw/exec";
+
+const ASSET = {
+  crestBase: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/main/clasificacion/escudos/",
+  logoBase:  "https://raw.githubusercontent.com/1909rso/1909rso.github.io/main/clasificacion/comp/",
+  bgBase:    "https://raw.githubusercontent.com/1909rso/1909rso.github.io/main/clasificacion/bg/",
+  suffix:    ""
+};
+
+// mapeo "comp" (clave de dato) -> nombre de archivo en GitHub (editable por equipo/torneo)
+const COMP_FILE_MAP = {
+  "la-liga": "La-Liga",
+  "europa-league": "Europa-League"
+};
+
+// colores + etiqueta de leyenda por código de "Clasif" (config por defecto, editable en runtime)
+const CLASIF_CONFIG_DEFAULTS = {
+  "UCL":  { color:"#3B6FED", color2:"#1c3f9c", gradient:false, angle:135, label:"Champions League" },
+  "UEL":  { color:"#F2820C", color2:"#a85400", gradient:false, angle:135, label:"Europa League" },
+  "UCOL": { color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, label:"Conference League" },
+  "DESC": { color:"#E0483F", color2:"#8f231d", gradient:false, angle:135, label:"Descenso" }
+};
+// clon editable: el usuario puede activar degradado y cambiar colores/tamaños sin tocar el código
+let classifConfig = JSON.parse(JSON.stringify(CLASIF_CONFIG_DEFAULTS));
+const DEFAULT_BAR_COLOR = "rgba(255,255,255,.18)";
+
+// alias de nombres: si el nombre del equipo coincide (tal cual llega), se muestra el alias en su lugar.
+// editable en runtime desde el panel "Alias de nombres"; el usuario puede añadir más pares.
+const NAME_ALIAS_DEFAULTS = {
+  "Atlético de Madrid": "Atl. Madrid",
+  "Atletico de Madrid": "Atl. Madrid"
+};
+let nameAliasConfig = JSON.parse(JSON.stringify(NAME_ALIAS_DEFAULTS));
+function displayName(name){
+  const key = String(name ?? "");
+  return (nameAliasConfig[key] !== undefined && nameAliasConfig[key] !== "") ? nameAliasConfig[key] : key;
+}
+
+const CANVAS_W = 2000, CANVAS_H = 2500;
+
+/* layout base (a 2000x2500), todo en px sobre ese lienzo. Mutable: se edita desde el panel. */
+let LAYOUT = {
+  logo:      { top:95,  left:510,  w:130, h:130},
+  heading:   { top:250, left:80,  size:34 },
+  colHeader: { top:250, right:80, size:26, gpW:90, gdW:90, ptsW:110, gap:0 },
+  textScale: 1,          // multiplicador global de todos los tamaños de texto
+  rowsThreshold: 22,     // a partir de cuántos equipos se usa el layout "rowsOver"
+  // layout de filas para tablas con <= rowsThreshold equipos
+  rows22: {
+    top: 515, bottom: 2000, left: 180, right: 530,
+    barW: 8, barGap: 22, rankW: 70,
+    crestW: 46, crestH: 46, crestGap: 22, nameGap: 26,
+    numColW: 90, ptsColW: 110,
+    rankFontSize: 42, nameFontSize: 42, numFontSize: 43 // 0 = automático según alto de fila
+  },
+  // layout de filas para tablas con > rowsThreshold equipos (más equipos = filas más compactas)
+  rowsOver: {
+    top: 320, bottom: 2260, left: 80, right: 80,
+    barW: 6, barGap: 16, rankW: 56,
+    crestW: 42, crestH: 42, crestGap: 16, nameGap: 18,
+    numColW: 72, ptsColW: 92,
+    rankFontSize: 0, nameFontSize: 0, numFontSize: 0
+  },
+  // estilo tipográfico común para rank / PJ / DG / Pts (los "números" de cada fila)
+  numberStyle: { fontFamily: "Inter", weight: 500, tabularNums: true },
+  legend: { bottom:70, left:80, right:80, swatchW:20, swatchH:20, gap:10, itemGap:34, size:24 }
+};
+function getRowsLayout(n){
+  return (n <= LAYOUT.rowsThreshold) ? LAYOUT.rows22 : LAYOUT.rowsOver;
+}
+
+/* ======================================================================
+   ESTADO
+   ====================================================================== */
+let RAW = [];            // datos tal cual llegan del endpoint
+let GROUPS = {};          // agrupados por Standings Position
+let currentPos = null;
+let isDirty = false;      // true en cuanto el usuario toca algo a mano -> el auto-recarga no lo pisa
+let state = { compKey:"", logoFile:"", bgFile:"", bgCustomDataUrl:null, showHeading:true, headingText:"TABLE", rows:[] };
+
+const $ = (id) => document.getElementById(id);
+function markDirty(){ isDirty = true; }
+
+/* ======================================================================
+   CARGA DE DATOS
+   ====================================================================== */
+async function loadData(auto){
+  if(!auto) setStatus("Cargando datos…", false);
+  try{
+    const res = await fetch(DATA_URL, {cache:"no-store"});
+    const json = await res.json();
+    RAW = json;
+    GROUPS = {};
+    RAW.forEach(r=>{
+      const pos = String(r["Standings Position"]||"").trim();
+      if(!GROUPS[pos]) GROUPS[pos] = [];
+      GROUPS[pos].push(r);
+    });
+    Object.keys(GROUPS).forEach(pos=>{
+      GROUPS[pos].sort((a,b)=> parseInt(a.Id||0) - parseInt(b.Id||0));
+    });
+    const positions = Object.keys(GROUPS).sort();
+    // ajustar pestañas a las posiciones reales encontradas
+    document.querySelectorAll('#tabs .tab-btn').forEach((btn,i)=>{
+      const pos = positions[i];
+      if(pos){ btn.dataset.pos = pos; btn.style.display=''; btn.textContent = "Tabla " + pos; }
+      else { btn.style.display='none'; }
+    });
+
+    const targetPos = (currentPos && GROUPS[currentPos]) ? currentPos : positions[0];
+
+    if(auto && isDirty){
+      // hay ediciones manuales sin guardar: no pisamos la vista, solo avisamos
+      setStatus("Datos nuevos disponibles (" + new Date().toLocaleTimeString() + ") · edición manual activa, no se han aplicado", false);
+    } else {
+      isDirty = false;
+      selectTable(targetPos);
+      setStatus("Datos cargados (" + RAW.length + " filas) · " + new Date().toLocaleTimeString(), false);
+    }
+  }catch(err){
+    console.error(err);
+    setStatus("Error al cargar datos: " + err.message, true);
+  }
+}
+
+function setStatus(msg, isErr){
+  const el = $("status");
+  el.textContent = msg;
+  el.classList.toggle("err", !!isErr);
+}
+
+function selectTable(pos){
+  if(!GROUPS[pos]) return;
+  currentPos = pos;
+  document.querySelectorAll('#tabs .tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.pos === pos));
+
+  const group = GROUPS[pos];
+  const compKey = (group[0] && group[0]["Standings Points"]) ? group[0]["Standings Points"].trim() : "";
+
+  state.compKey = compKey;
+  state.logoFile = COMP_FILE_MAP[compKey] || defaultFileName(compKey);
+  state.bgFile   = COMP_FILE_MAP[compKey] || defaultFileName(compKey);
+  state.bgCustomDataUrl = null;
+  state.showHeading = group.length <= 22;
+  state.headingText = "TABLE";
+  state.rows = group.map(r => ({
+    rank: r.Id || "",
+    crestName: r.comp || "",
+    name: r.comp || "",
+    gp: (r["Standings Goal Diff"] ?? "").toString().trim(),
+    gd: (r["Standings Name"] ?? "").toString().trim(),
+    pts: (r["Standings Played"] ?? "").toString().trim(),
+    clasif: (r["Clasif"] ?? "").toString().trim()
+  }));
+  isDirty = false;
+  if($("cfgBgUpload")) $("cfgBgUpload").value = "";
+  $("rowClearBgUpload").style.display = "none";
+
+  render();
+  syncEditorFromState();
+}
+
+function defaultFileName(key){
+  if(!key) return "";
+  return key.split("-").map(w => w.charAt(0).toUpperCase()+w.slice(1)).join("-");
+}
+
+/* ======================================================================
+   RENDER DEL STAGE (2000x2500)
+   ====================================================================== */
+function assetUrl(base, file){
+  if(!file) return "";
+  return base + encodeURIComponent(file) + ".png" + ASSET.suffix;
+}
+function crestUrl(teamName){
+  return ASSET.crestBase + encodeURIComponent(teamName) + ".png" + ASSET.suffix;
+}
+
+function render(){
+  // fondo + logo
+  $("bgLayer").setAttribute("crossorigin","anonymous");
+  $("bgLayer").src = state.bgCustomDataUrl || assetUrl(ASSET.bgBase, state.bgFile);
+  const logo = $("compLogo");
+  logo.setAttribute("crossorigin","anonymous");
+  logo.src = assetUrl(ASSET.logoBase, state.logoFile);
+  logo.style.top = LAYOUT.logo.top+"px";
+  logo.style.left = LAYOUT.logo.left+"px";
+  logo.style.width = LAYOUT.logo.w+"px";
+  logo.style.height = LAYOUT.logo.h+"px";
+
+  const ts = LAYOUT.textScale || 1;
+
+  // título TABLE
+  const heading = $("tableHeading");
+  heading.style.display = state.showHeading ? "block" : "none";
+  heading.textContent = state.headingText || "TABLE";
+  heading.style.top = LAYOUT.heading.top+"px";
+  heading.style.left = LAYOUT.heading.left+"px";
+  heading.style.fontSize = (LAYOUT.heading.size*ts)+"px";
+
+  const n = state.rows.length;
+  // layout de filas según nº de equipos (umbral configurable) + tamaño de fila adaptativo
+  const rowsLayout = getRowsLayout(n);
+  const available = rowsLayout.bottom - rowsLayout.top;
+  let rowH = n > 0 ? available / n : 0;
+  rowH = Math.max(24, Math.min(160, rowH));
+  const totalUsed = rowH * n;
+  const startTop = rowsLayout.top + Math.max(0, (available - totalUsed))/2;
+
+  // escala tipográfica: automática según alto de fila, o fija si se define un tamaño explícito
+  const fRank = (rowsLayout.rankFontSize>0 ? rowsLayout.rankFontSize : clamp(rowH*0.34, 20, 34)) * ts;
+  const fName = (rowsLayout.nameFontSize>0 ? rowsLayout.nameFontSize : clamp(rowH*0.36, 20, 32)) * ts;
+  const fNum  = (rowsLayout.numFontSize>0  ? rowsLayout.numFontSize  : clamp(rowH*0.30, 16, 26)) * ts;
+  const crestW = clamp(rowsLayout.crestW, 4, rowH*2.2);
+  const crestH = clamp(rowsLayout.crestH, 4, rowH*2.2);
+
+  // estilo común de "números" (rank, PJ, DG, Pts) — misma fuente/peso que la columna PJ
+  const numStyle = LAYOUT.numberStyle || {fontFamily:"Inter", weight:500, tabularNums:true};
+  const numFontCss = `font-family:'${numStyle.fontFamily||"Inter"}',sans-serif;font-weight:${numStyle.weight||500};${numStyle.tabularNums!==false?'font-variant-numeric:tabular-nums;':''}`;
+  // los puntos (Pts) siempre en negrita, con la misma familia/tabular-nums pero peso fijo 700
+  const ptsFontCss = `font-family:'${numStyle.fontFamily||"Inter"}',sans-serif;font-weight:700;${numStyle.tabularNums!==false?'font-variant-numeric:tabular-nums;':''}`;
+
+  // cabecera de columnas (GP GD PTS) alineada con las columnas numéricas
+  const colH = $("colHeader");
+  colH.style.top = LAYOUT.colHeader.top+"px";
+  colH.style.right = LAYOUT.colHeader.right+"px";
+  colH.style.fontSize = (LAYOUT.colHeader.size*ts)+"px";
+  colH.style.gap = "0px";
+  $("hGP").style.width = rowsLayout.numColW+"px";
+  $("hGD").style.width = rowsLayout.numColW+"px";
+  $("hPTS").style.width = rowsLayout.ptsColW+"px";
+
+  const rowsEl = $("rows");
+  rowsEl.innerHTML = "";
+  state.rows.forEach((row, i)=>{
+    const top = startTop + i*rowH;
+    const el = document.createElement("div");
+    el.className = "row";
+    el.style.top = top+"px";
+    el.style.height = rowH+"px";
+    el.style.left = rowsLayout.left+"px";
+    el.style.right = rowsLayout.right+"px";
+
+    const clasifCfg = classifConfig[row.clasif];
+    const barColor = clasifCfg ? classifBg(clasifCfg) : DEFAULT_BAR_COLOR;
+
+    let x = 0;
+    const bar = `<div class="bar" style="left:0;width:${rowsLayout.barW}px;background:${barColor};"></div>`;
+    x += rowsLayout.barW + rowsLayout.barGap;
+
+    const rankHtml = `<div class="rank" style="position:absolute;left:${x}px;width:${rowsLayout.rankW}px;font-size:${fRank}px;${numFontCss}">${escapeHtml(row.rank)}</div>`;
+    x += rowsLayout.rankW;
+
+    const initials = escapeHtml((row.name||"?").slice(0,3).toUpperCase());
+    const crestHtml = `<div class="crestbox" style="position:absolute;left:${x}px;width:${crestW}px;height:${crestH}px;top:50%;transform:translateY(-50%);">
+        <img src="${crestUrl(row.crestName)}" crossorigin="anonymous" style="max-width:100%;max-height:100%;object-fit:contain;" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+        <span style="display:none;align-items:center;justify-content:center;width:100%;height:100%;color:#fff;font-size:${(fNum*0.7).toFixed(0)}px;font-weight:600;opacity:.6;">${initials}</span>
+      </div>`;
+    x += crestW + rowsLayout.crestGap;
+
+    const nameRight = rowsLayout.right + rowsLayout.numColW*2 + rowsLayout.ptsColW + rowsLayout.nameGap;
+    const nameHtml = `<div class="name" style="position:absolute;left:${x}px;right:${nameRight}px;font-size:${fName}px;">${escapeHtml(displayName(row.name))}</div>`;
+
+    const gpRight = rowsLayout.right + rowsLayout.numColW + rowsLayout.ptsColW;
+    const gdRight = rowsLayout.right + rowsLayout.ptsColW;
+    const gpHtml = `<div class="num" style="position:absolute;right:${gpRight}px;width:${rowsLayout.numColW}px;font-size:${fNum}px;${numFontCss}">${escapeHtml(row.gp)}</div>`;
+    const gdHtml = `<div class="num" style="position:absolute;right:${gdRight}px;width:${rowsLayout.numColW}px;font-size:${fNum}px;${numFontCss}">${formatGD(row.gd)}</div>`;
+    const ptsHtml = `<div class="pts" style="position:absolute;right:${rowsLayout.right}px;width:${rowsLayout.ptsColW}px;font-size:${(fNum*1.05).toFixed(1)}px;${ptsFontCss}">${escapeHtml(row.pts)}</div>`;
+
+    el.innerHTML = bar + rankHtml + crestHtml + nameHtml + gpHtml + gdHtml + ptsHtml;
+    rowsEl.appendChild(el);
+  });
+
+  renderLegend();
+  fitStageToViewport();
+}
+
+// color sólido o degradado (para barras de fila y cuadros de leyenda)
+function classifBg(cfg){
+  if(cfg && cfg.gradient && cfg.color2){
+    return `linear-gradient(${cfg.angle||135}deg, ${cfg.color}, ${cfg.color2})`;
+  }
+  return cfg ? cfg.color : DEFAULT_BAR_COLOR;
+}
+
+function formatGD(v){
+  if(v === "" || v === null || v === undefined) return "";
+  const num = parseInt(v,10);
+  if(isNaN(num)) return escapeHtml(v);
+  return (num > 0 ? "+"+num : String(num));
+}
+
+function renderLegend(){
+  const usedCodes = [...new Set(state.rows.map(r=>r.clasif).filter(c=> c && classifConfig[c]))];
+  const legend = $("legend");
+  const ts = LAYOUT.textScale || 1;
+  const lg = LAYOUT.legend;
+  const swW = lg.swatchW || lg.swatch || 20;
+  const swH = lg.swatchH || lg.swatch || 20;
+  legend.style.bottom = lg.bottom+"px";
+  legend.style.left = lg.left+"px";
+  legend.style.right = lg.right+"px";
+  legend.innerHTML = "";
+  usedCodes.forEach(code=>{
+    const cfg = classifConfig[code];
+    const item = document.createElement("div");
+    item.className = "item";
+    item.style.marginRight = lg.itemGap+"px";
+    item.innerHTML = `<div class="swatch" style="width:${swW}px;height:${swH}px;background:${classifBg(cfg)};margin-right:${lg.gap}px;"></div>
+      <div class="lbl" style="font-size:${(lg.size*ts).toFixed(1)}px;">${escapeHtml(cfg.label)}</div>`;
+    legend.appendChild(item);
+  });
+}
+
+function clamp(v,min,max){ return Math.max(min, Math.min(max, v)); }
+function escapeHtml(s){
+  return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+}
+
+/* ---------------- zoom / pan de la previsualización ----------------
+   fitScale = escala automática para que la tabla quepa en pantalla (no afecta a la exportación)
+   userZoom = zoom manual adicional que aplica el usuario sobre esa base
+   panX/panY = desplazamiento manual (arrastre) */
+let fitScale = 1, userZoom = 1, panX = 0, panY = 0;
+
+function fitStageToViewport(){
+  const wrap = document.querySelector('.stage-wrap');
+  const maxW = wrap.clientWidth - 32;
+  const maxH = window.innerHeight - 170;
+  fitScale = Math.min(maxW/CANVAS_W, maxH/CANVAS_H, 1);
+  $("stageOuter").style.width = (CANVAS_W*fitScale)+"px";
+  $("stageOuter").style.height = (CANVAS_H*fitScale)+"px";
+  applyStageTransform();
+}
+window.addEventListener('resize', fitStageToViewport);
+
+function applyStageTransform(){
+  const stage = $("stage");
+  stage.style.transform = `translate(${panX}px,${panY}px) scale(${fitScale*userZoom})`;
+  $("zoomPct").textContent = Math.round(userZoom*100)+"%";
+}
+
+function setZoom(z, aroundCenter){
+  userZoom = Math.max(0.4, Math.min(6, z));
+  applyStageTransform();
+}
+function resetView(){
+  userZoom = 1; panX = 0; panY = 0;
+  applyStageTransform();
+}
+
+$("btnZoomIn").addEventListener('click', ()=> setZoom(userZoom*1.25));
+$("btnZoomOut").addEventListener('click', ()=> setZoom(userZoom/1.25));
+$("btnZoomReset").addEventListener('click', resetView);
+
+// arrastrar para mover la previsualización (ratón y táctil, vía Pointer Events)
+(function setupPan(){
+  const outer = $("stageOuter");
+  let dragging = false, startX=0, startY=0, startPanX=0, startPanY=0;
+  outer.addEventListener('pointerdown', (e)=>{
+    dragging = true;
+    outer.classList.add('dragging');
+    startX = e.clientX; startY = e.clientY;
+    startPanX = panX; startPanY = panY;
+    outer.setPointerCapture(e.pointerId);
+  });
+  outer.addEventListener('pointermove', (e)=>{
+    if(!dragging) return;
+    panX = startPanX + (e.clientX - startX);
+    panY = startPanY + (e.clientY - startY);
+    applyStageTransform();
+  });
+  function endDrag(e){
+    dragging = false;
+    outer.classList.remove('dragging');
+  }
+  outer.addEventListener('pointerup', endDrag);
+  outer.addEventListener('pointercancel', endDrag);
+  outer.addEventListener('pointerleave', endDrag);
+  // rueda del ratón / trackpad para zoom
+  outer.addEventListener('wheel', (e)=>{
+    e.preventDefault();
+    const delta = e.deltaY > 0 ? 0.9 : 1.1;
+    setZoom(userZoom*delta);
+  }, {passive:false});
+})();
+
+/* ======================================================================
+   TABS
+   ====================================================================== */
+document.querySelectorAll('#tabs .tab-btn').forEach(btn=>{
+  btn.addEventListener('click', ()=> selectTable(btn.dataset.pos));
+});
+$("btnReload").addEventListener('click', ()=>{ isDirty = false; loadData(false); });
+
+/* ======================================================================
+   EDITOR (bottom sheet) — pensado para el pulgar en móvil
+   ====================================================================== */
+function openSheet(){ $("sheetOverlay").classList.add('open'); $("sheet").classList.add('open'); }
+function closeSheet(){ $("sheetOverlay").classList.remove('open'); $("sheet").classList.remove('open'); }
+$("btnEdit").addEventListener('click', openSheet);
+$("btnCloseSheet").addEventListener('click', closeSheet);
+$("sheetOverlay").addEventListener('click', closeSheet);
+$("btnApply").addEventListener('click', closeSheet);
+
+function syncEditorFromState(){
+  $("cfgCompKey").value = state.compKey;
+  $("cfgLogoFile").value = state.logoFile;
+  $("cfgBgFile").value = state.bgFile;
+  $("cfgShowHeading").checked = state.showHeading;
+  $("cfgHeadingText").value = state.headingText;
+  $("rowClearBgUpload").style.display = state.bgCustomDataUrl ? "" : "none";
+  $("rowCount").textContent = "(" + state.rows.length + ")";
+  buildRowsEditor();
+
+  $("cfgTextScale").value = LAYOUT.textScale;
+  $("cfgTextScaleVal").textContent = Math.round(LAYOUT.textScale*100)+"%";
+  $("cfgRowsThreshold").value = LAYOUT.rowsThreshold;
+  $("cfgNumFontFamily").value = LAYOUT.numberStyle.fontFamily;
+  $("cfgNumWeight").value = String(LAYOUT.numberStyle.weight);
+  $("cfgTabularNums").checked = !!LAYOUT.numberStyle.tabularNums;
+  $("cfgLegendW").value = LAYOUT.legend.swatchW;
+  $("cfgLegendH").value = LAYOUT.legend.swatchH;
+
+  // por defecto, edita el layout de filas que corresponde al nº de equipos actual
+  currentVariant = (state.rows.length <= LAYOUT.rowsThreshold) ? "rows22" : "rowsOver";
+  updateVariantButtons();
+  buildRowLayoutEditor();
+  buildLegendEditor();
+  buildNameAliasEditor();
+}
+
+/* ---- Texto ---- */
+$("cfgTextScale").addEventListener('input', ()=>{
+  LAYOUT.textScale = parseFloat($("cfgTextScale").value) || 1;
+  $("cfgTextScaleVal").textContent = Math.round(LAYOUT.textScale*100)+"%";
+  markDirty(); render();
+});
+
+/* ---- Diseño de filas por umbral de equipos ---- */
+let currentVariant = "rows22";
+const ROW_FIELDS = [
+  ["top","Arriba"], ["bottom","Abajo"], ["left","Izquierda"], ["right","Derecha"],
+  ["barW","Ancho barra"], ["barGap","Sep. barra"], ["rankW","Ancho puesto"],
+  ["crestW","Ancho escudo"], ["crestH","Alto escudo"], ["crestGap","Sep. escudo"],
+  ["nameGap","Sep. nombre-núm."], ["numColW","Ancho col. PJ/DG"], ["ptsColW","Ancho col. Pts"],
+  ["rankFontSize","Tamaño puesto (0=auto)"], ["nameFontSize","Tamaño nombre (0=auto)"], ["numFontSize","Tamaño núm. (0=auto)"]
+];
+function updateVariantButtons(){
+  $("btnVariant22").style.opacity = currentVariant==="rows22" ? "1" : ".55";
+  $("btnVariantOver").style.opacity = currentVariant==="rowsOver" ? "1" : ".55";
+}
+$("btnVariant22").addEventListener('click', ()=>{ currentVariant="rows22"; updateVariantButtons(); buildRowLayoutEditor(); });
+$("btnVariantOver").addEventListener('click', ()=>{ currentVariant="rowsOver"; updateVariantButtons(); buildRowLayoutEditor(); });
+$("cfgRowsThreshold").addEventListener('input', ()=>{
+  LAYOUT.rowsThreshold = parseInt($("cfgRowsThreshold").value,10) || 22;
+  markDirty(); render();
+});
+
+function buildRowLayoutEditor(){
+  const wrap = $("rowLayoutEditor");
+  const cfg = LAYOUT[currentVariant];
+  wrap.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "row-card";
+  card.innerHTML = `<div class="rc-grid">` + ROW_FIELDS.map(([field,label])=>
+    `<div><label>${label}</label><input type="number" step="1" data-field="${field}" value="${cfg[field]}"></div>`
+  ).join("") + `</div>`;
+  wrap.appendChild(card);
+  card.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      cfg[inp.dataset.field] = parseFloat(inp.value) || 0;
+      markDirty(); render();
+    });
+  });
+}
+
+/* ---- Fuente de los números ---- */
+$("cfgNumFontFamily").addEventListener('input', ()=>{
+  LAYOUT.numberStyle.fontFamily = $("cfgNumFontFamily").value || "Inter";
+  markDirty(); render();
+});
+$("cfgNumWeight").addEventListener('change', ()=>{
+  LAYOUT.numberStyle.weight = parseInt($("cfgNumWeight").value,10);
+  markDirty(); render();
+});
+$("cfgTabularNums").addEventListener('change', ()=>{
+  LAYOUT.numberStyle.tabularNums = $("cfgTabularNums").checked;
+  markDirty(); render();
+});
+
+/* ---- Leyenda / clasificaciones (color sólido o degradado + tamaño de cuadro) ---- */
+$("cfgLegendW").addEventListener('input', ()=>{
+  LAYOUT.legend.swatchW = parseFloat($("cfgLegendW").value) || 20;
+  markDirty(); render();
+});
+$("cfgLegendH").addEventListener('input', ()=>{
+  LAYOUT.legend.swatchH = parseFloat($("cfgLegendH").value) || 20;
+  markDirty(); render();
+});
+function buildLegendEditor(){
+  const wrap = $("legendEditor");
+  wrap.innerHTML = "";
+  Object.keys(classifConfig).forEach(code=>{
+    const cfg = classifConfig[code];
+    const card = document.createElement("div");
+    card.className = "row-card";
+    card.innerHTML = `
+      <div class="rc-top"><b>${code}</b></div>
+      <div class="rc-grid">
+        <div class="full"><label>Etiqueta</label><input type="text" data-code="${code}" data-field="label" value="${escapeAttr(cfg.label)}"></div>
+        <div><label>Color 1</label><input type="color" data-code="${code}" data-field="color" value="${cfg.color}"></div>
+        <div><label>Color 2</label><input type="color" data-code="${code}" data-field="color2" value="${cfg.color2}"></div>
+        <div><label>Degradado</label><select data-code="${code}" data-field="gradient">
+          <option value="0" ${!cfg.gradient?'selected':''}>Sólido</option>
+          <option value="1" ${cfg.gradient?'selected':''}>Degradado</option>
+        </select></div>
+        <div><label>Ángulo (°)</label><input type="number" data-code="${code}" data-field="angle" value="${cfg.angle}"></div>
+      </div>`;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('input, select').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const code = inp.dataset.code, field = inp.dataset.field;
+      let val = inp.value;
+      if(field === "gradient") val = (val === "1");
+      if(field === "angle") val = parseFloat(val) || 0;
+      classifConfig[code][field] = val;
+      markDirty(); render();
+    });
+  });
+}
+
+[["cfgCompKey","compKey"],["cfgLogoFile","logoFile"],["cfgBgFile","bgFile"],["cfgHeadingText","headingText"]]
+  .forEach(([id,key])=>{
+    $(id).addEventListener('input', ()=>{ state[key] = $(id).value; markDirty(); render(); });
+  });
+$("cfgShowHeading").addEventListener('change', ()=>{ state.showHeading = $("cfgShowHeading").checked; markDirty(); render(); });
+
+$("btnPickBg").addEventListener('click', ()=> $("cfgBgUpload").click());
+$("btnQuickBg").addEventListener('click', ()=> $("cfgBgUpload").click());
+$("cfgBgUpload").addEventListener('change', (e)=>{
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = ()=>{
+    state.bgCustomDataUrl = reader.result;
+    $("rowClearBgUpload").style.display = "";
+    markDirty();
+    render();
+  };
+  reader.readAsDataURL(file);
+});
+$("btnClearBgUpload").addEventListener('click', ()=>{
+  state.bgCustomDataUrl = null;
+  $("cfgBgUpload").value = "";
+  $("rowClearBgUpload").style.display = "none";
+  markDirty();
+  render();
+});
+
+/* ---- Alias de nombres (p.ej. "Atlético de Madrid" -> "Atl. Madrid") ---- */
+function buildNameAliasEditor(){
+  const wrap = $("nameAliasEditor");
+  wrap.innerHTML = "";
+  Object.keys(nameAliasConfig).forEach(original=>{
+    const card = document.createElement("div");
+    card.className = "row-card";
+    card.innerHTML = `
+      <div class="rc-top"><b>Alias</b><button class="mini-btn del" data-original="${escapeAttr(original)}">Eliminar</button></div>
+      <div class="rc-grid">
+        <div class="full"><label>Nombre original (tal cual llega)</label><input type="text" data-original="${escapeAttr(original)}" data-field="original" value="${escapeAttr(original)}"></div>
+        <div class="full"><label>Mostrar como</label><input type="text" data-original="${escapeAttr(original)}" data-field="alias" value="${escapeAttr(nameAliasConfig[original])}"></div>
+      </div>`;
+    wrap.appendChild(card);
+  });
+  wrap.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const original = inp.dataset.original, field = inp.dataset.field;
+      if(field === "alias"){
+        nameAliasConfig[original] = inp.value;
+      } else {
+        // cambiar la clave (nombre original) manteniendo el alias ya escrito
+        const alias = nameAliasConfig[original];
+        delete nameAliasConfig[original];
+        nameAliasConfig[inp.value] = alias;
+        inp.dataset.original = inp.value;
+      }
+      markDirty(); render();
+    });
+    inp.addEventListener('blur', ()=>{ buildNameAliasEditor(); });
+  });
+  wrap.querySelectorAll('.mini-btn.del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      delete nameAliasConfig[btn.dataset.original];
+      markDirty();
+      buildNameAliasEditor();
+      render();
+    });
+  });
+}
+$("btnAddNameAlias").addEventListener('click', ()=>{
+  let key = "Nuevo equipo", n = 1;
+  while(nameAliasConfig[key] !== undefined){ key = "Nuevo equipo " + (++n); }
+  nameAliasConfig[key] = "";
+  markDirty();
+  buildNameAliasEditor();
+  render();
+});
+
+function buildRowsEditor(){
+  const wrap = $("rowsEditor");
+  wrap.innerHTML = "";
+  state.rows.forEach((row, idx)=>{
+    const card = document.createElement("div");
+    card.className = "row-card";
+    const clasifOptions = ["", ...Object.keys(classifConfig)]
+      .map(code => `<option value="${code}" ${row.clasif===code?'selected':''}>${code || "— sin —"}</option>`).join("");
+    card.innerHTML = `
+      <div class="rc-top"><b>#${idx+1}</b><button class="mini-btn del" data-idx="${idx}">Eliminar</button></div>
+      <div class="rc-grid">
+        <div><label>Puesto</label><input type="text" data-idx="${idx}" data-field="rank" value="${escapeAttr(row.rank)}"></div>
+        <div><label>Clasif.</label><select data-idx="${idx}" data-field="clasif">${clasifOptions}</select></div>
+        <div class="full"><label>Equipo (nombre visible)</label><input type="text" data-idx="${idx}" data-field="name" value="${escapeAttr(row.name)}"></div>
+        <div class="full"><label>Escudo (archivo en /escudos/)</label><input type="text" data-idx="${idx}" data-field="crestName" value="${escapeAttr(row.crestName)}"></div>
+        <div><label>PJ</label><input type="text" data-idx="${idx}" data-field="gp" value="${escapeAttr(row.gp)}"></div>
+        <div><label>DG</label><input type="text" data-idx="${idx}" data-field="gd" value="${escapeAttr(row.gd)}"></div>
+        <div><label>Pts</label><input type="text" data-idx="${idx}" data-field="pts" value="${escapeAttr(row.pts)}"></div>
+      </div>`;
+    wrap.appendChild(card);
+  });
+
+  wrap.querySelectorAll('input, select').forEach(inp=>{
+    inp.addEventListener('input', onRowFieldChange);
+    inp.addEventListener('change', onRowFieldChange);
+  });
+  wrap.querySelectorAll('.mini-btn.del').forEach(btn=>{
+    btn.addEventListener('click', ()=>{
+      const idx = parseInt(btn.dataset.idx,10);
+      state.rows.splice(idx,1);
+      markDirty();
+      syncEditorFromState();
+      render();
+    });
+  });
+}
+function escapeAttr(s){ return String(s ?? "").replace(/"/g,'&quot;'); }
+
+function onRowFieldChange(e){
+  const idx = parseInt(e.target.dataset.idx,10);
+  const field = e.target.dataset.field;
+  state.rows[idx][field] = e.target.value;
+  markDirty();
+  render();
+}
+
+$("btnAddRow").addEventListener('click', ()=>{
+  state.rows.push({rank:String(state.rows.length+1), crestName:"", name:"Nuevo equipo", gp:"", gd:"", pts:"", clasif:""});
+  markDirty();
+  syncEditorFromState();
+  render();
+});
+$("btnResetData").addEventListener('click', ()=>{
+  isDirty = false;
+  if(currentPos) selectTable(currentPos);
+});
+
+/* ======================================================================
+   EXPORTAR IMAGEN (html2canvas + fallback Web Share iOS Safari)
+   ====================================================================== */
+async function waitForFonts(){
+  const specs = ["italic 300 20px Inter","400 20px Inter","500 20px Inter","600 20px Inter","700 20px Inter"];
+  try{
+    await Promise.all(specs.map(s=>document.fonts.load(s)));
+    await document.fonts.ready;
+  }catch(e){ /* seguimos igualmente */ }
+}
+
+$("btnExport").addEventListener('click', async ()=>{
+  const btn = $("btnExport");
+  const original = btn.textContent;
+  btn.textContent = "…";
+  btn.disabled = true;
+  try{
+    await waitForFonts();
+    const stage = $("stage");
+    const prevTransform = stage.style.transform;
+    stage.style.transform = "none"; // capturar a resolución real 2000x2500
+    const canvas = await html2canvas(stage, {
+      width: CANVAS_W, height: CANVAS_H,
+      useCORS: true, allowTaint: true, backgroundColor: "#0a0c10", scale: 1
+    });
+    stage.style.transform = prevTransform;
+
+    const filename = "1909rso_clasificacion_" + (state.compKey||"tabla") + ".png";
+    canvas.toBlob(async (blob)=>{
+      if(!blob){ btn.textContent = original; btn.disabled=false; return; }
+      const file = new File([blob], filename, {type:"image/png"});
+      if(navigator.canShare && navigator.canShare({files:[file]})){
+        try{
+          await navigator.share({files:[file], title: filename});
+        }catch(shareErr){
+          openInNewTab(blob);
+        }
+      } else {
+        // fallback: descarga directa (o nueva pestaña si el navegador la bloquea)
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(()=> URL.revokeObjectURL(url), 4000);
+      }
+      btn.textContent = original;
+      btn.disabled = false;
+    }, "image/png", 1.0);
+  }catch(err){
+    console.error(err);
+    setStatus("Error al exportar: " + err.message, true);
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+});
+
+function openInNewTab(blob){
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+  setTimeout(()=> URL.revokeObjectURL(url), 15000);
+}
+
+/* ======================================================================
+   INIT
+   ====================================================================== */
+loadData(false);
+setInterval(()=> loadData(true), 120000); // recarga cada 2 minutos; si hay ediciones manuales, no se aplican
+</script>
+</body>
+</html>
