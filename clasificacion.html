@@ -295,11 +295,10 @@
 
     <div class="section-title">Leyenda / clasificaciones</div>
     <div class="field-row">
-      <label>Ancho cuadro</label>
-      <input type="number" id="cfgLegendW" min="2" step="1">
-      <label style="flex:0 0 60px;">Alto</label>
-      <input type="number" id="cfgLegendH" min="2" step="1">
+      <button class="mini-btn add" id="btnLegendVariant22" style="flex:1;margin-top:0;">≤ umbral</button>
+      <button class="mini-btn add" id="btnLegendVariantOver" style="flex:1;margin-top:0;">&gt; umbral</button>
     </div>
+    <div id="legendLayoutEditor"></div>
     <div id="legendEditor"></div>
 
     <div class="section-title">Alias de nombres</div>
@@ -342,14 +341,23 @@ const COMP_DISPLAY_NAME = {
   "europa-league": "Europa League"
 };
 
+// título forzado según la pestaña "Tabla N" (independiente de lo que traigan los datos)
+// ej: la pestaña "Tabla 2" siempre mostrará "LaLiga2" como título, pase lo que pase en los datos
+const TABLE_POS_DISPLAY_NAME = {
+  "2": "LaLiga2"
+};
+
 // colores + etiqueta de leyenda por código de "Clasif" (config por defecto, editable en runtime)
 const CLASIF_CONFIG_DEFAULTS = {
-   "UCL":  { color:"#3B6FED", color2:"#1c3f9c", gradient:false, angle:135, label:"Champions League" },
-  "UEL":  { color:"#F2820C", color2:"#a85400", gradient:false, angle:135, label:"Europa League" },
-  "UCOL": { color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, label:"Conference League" },
-  "DESC": { color:"#E0483F", color2:"#8f231d", gradient:false, angle:135, label:"Descenso" },
-  "ascenso": {  color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, label:"Ascenso directo" },
-  "playoff": { color:"#F2820C", color2:"#a85400", gradient:false, angle:135, label:"Playoffs" }
+   "UCL":  { color:"#3B6FED", color2:"#1c3f9c", gradient:false, angle:135, opacity:100, label:"Champions League" },
+  "UEL":  { color:"#F2820C", color2:"#a85400", gradient:false, angle:135, opacity:100, label:"Europa League" },
+  "UCOL": { color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, opacity:100, label:"Conference League" },
+  "DESC": { color:"#E0483F", color2:"#8f231d", gradient:false, angle:135, opacity:100, label:"Descenso" },
+  "ascenso": {  color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, opacity:100, label:"Ascenso directo" },
+  "eu-playoff":  { color:"#F2820C", color2:"#ffffff", gradient:true, angle:135, opacity:100, label:"PlayOffs" },
+  "octavos": { color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, opacity:100, label:"Octavos" },
+  "ascenso": {  color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, opacity:100, label:"Ascenso directo" },
+  "playoff": { color:"#F2820C", color2:"#a85400", gradient:false, angle:135, opacity:100, label:"Playoffs" }
 };
 // clon editable: el usuario puede activar degradado y cambiar colores/tamaños sin tocar el código
 let classifConfig = JSON.parse(JSON.stringify(CLASIF_CONFIG_DEFAULTS));
@@ -359,6 +367,7 @@ const DEFAULT_BAR_COLOR = "rgba(255,255,255,.18)";
 // editable en runtime desde el panel "Alias de nombres"; el usuario puede añadir más pares.
 const NAME_ALIAS_DEFAULTS = {
   "Atlético Madrid": "Atl. Madrid",
+  "Olympique Lyonnais": "Lyon",
   "Deportivo Alavés": "Alavés"
 };
 let nameAliasConfig = JSON.parse(JSON.stringify(NAME_ALIAS_DEFAULTS));
@@ -376,7 +385,7 @@ let LAYOUT = {
   // cabecera de columnas (GP/GD/PTS) para tablas con <= rowsThreshold equipos (config actual)
   colHeader22: { top:480, right:1070, size:23, gpW:90, gdW:90, ptsW:110, gap:0 },
   // cabecera de columnas (GP/GD/PTS) para tablas con > rowsThreshold equipos (edítala aparte)
-  colHeaderOver: { top:280, right:80, size:16, gpW:72, gdW:72, ptsW:92, gap:0 },
+  colHeaderOver: { top:230, right:1025, size:23, gpW:72, gdW:72, ptsW:92, gap:0 },
   textScale: 1,          // multiplicador global de todos los tamaños de texto
   rowsThreshold: 22,     // a partir de cuántos equipos se usa el layout "rowsOver"
   // layout de filas para tablas con <= rowsThreshold equipos
@@ -389,17 +398,18 @@ let LAYOUT = {
   },
   // layout de filas para tablas con > rowsThreshold equipos (más equipos = filas más compactas)
   rowsOver: {
-    top: 320, bottom: 2260, left: 80, right: 80,
-    barW: 6, barGap: 16, rankW: 56,
-    crestW: 42, crestH: 42, crestGap: 16, nameGap: 18,
-    numColW: 72, ptsColW: 92,
-    rankFontSize: 0, nameFontSize: 0, numFontSize: 0
+    top: 270, bottom: 2290, left: 145, right: 510,
+    barW: 20, barGap: 30, rankW: 105,
+    crestW: 42, crestH: 42, crestGap: 35, nameGap: 100,
+    numColW: 97, ptsColW: 92,
+    rankFontSize: 42, nameFontSize: 42, numFontSize: 43
   },
   // estilo tipográfico común para PJ / DG / Pts (los "números" de cada fila)
   numberStyle: { fontFamily: "Inter", weight: 400, tabularNums: true },
   // estilo tipográfico independiente para el "puesto" (rank)
   rankStyle: { fontFamily: "Inter", weight: 400, tabularNums: true },
-  legend: {
+  // leyenda para tablas con <= rowsThreshold equipos
+  legend22: {
     bottom:70, left:80, right:80,
     swatchW:32, swatchH:32,   // tamaño de los cuadros de la leyenda (agrándalos aquí)
     gap:8,                    // separación horizontal entre el cuadro y el texto
@@ -408,10 +418,24 @@ let LAYOUT = {
     size:24,                  // tamaño de fuente del texto
     fontFamily:"Inter",       // fuente del texto de la leyenda
     weight:300                // grosor: 300=fina, 400=normal, 600=semibold, 700=bold
+  },
+  // leyenda para tablas con > rowsThreshold equipos
+  legendOver: {
+    bottom:110, left:0, right:970,
+    swatchW:32, swatchH:32,
+    gap:18,
+    itemGap:100,
+    columns:2,
+    size:30,
+    fontFamily:"Inter",
+    weight:300
   }
 };
 function getRowsLayout(n){
   return (n <= LAYOUT.rowsThreshold) ? LAYOUT.rows22 : LAYOUT.rowsOver;
+}
+function getLegendLayout(n){
+  return (n <= LAYOUT.rowsThreshold) ? LAYOUT.legend22 : LAYOUT.legendOver;
 }
 function getColHeaderLayout(n){
   return (n <= LAYOUT.rowsThreshold) ? LAYOUT.colHeader22 : LAYOUT.colHeaderOver;
@@ -490,7 +514,7 @@ function selectTable(pos){
   state.bgFile   = COMP_FILE_MAP[compKey] || defaultFileName(compKey);
   state.bgCustomDataUrl = null;
   state.showHeading = group.length <= 22;
-  state.headingText = COMP_DISPLAY_NAME[compKey] || (compKey ? compKey.toUpperCase() : "TABLE");
+  state.headingText = TABLE_POS_DISPLAY_NAME[pos] || COMP_DISPLAY_NAME[compKey] || (compKey ? compKey.toUpperCase() : "TABLE");
   state.rows = group.map(r => ({
     rank: r.Id || "",
     crestName: r.comp || "",
@@ -629,12 +653,27 @@ function render(){
   fitStageToViewport();
 }
 
-// color sólido o degradado (para barras de fila y cuadros de leyenda)
+// convierte un color hex (#rrggbb) a rgba aplicando un % de opacidad (100 = totalmente opaco)
+function hexToRgba(hex, opacityPct){
+  const o = (opacityPct===undefined || opacityPct===null || opacityPct==="") ? 100 : opacityPct;
+  const a = clamp(parseFloat(o) || 0, 0, 100) / 100;
+  const h = String(hex||"").replace('#','');
+  if(h.length !== 6) return hex;
+  const r = parseInt(h.substring(0,2),16);
+  const g = parseInt(h.substring(2,4),16);
+  const b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+
+// color sólido o degradado (para barras de fila y cuadros de leyenda), con opacidad ajustable
 function classifBg(cfg){
-  if(cfg && cfg.gradient && cfg.color2){
-    return `linear-gradient(${cfg.angle||135}deg, ${cfg.color}, ${cfg.color2})`;
+  if(!cfg) return DEFAULT_BAR_COLOR;
+  const c1 = hexToRgba(cfg.color, cfg.opacity);
+  if(cfg.gradient && cfg.color2){
+    const c2 = hexToRgba(cfg.color2, cfg.opacity);
+    return `linear-gradient(${cfg.angle||135}deg, ${c1}, ${c2})`;
   }
-  return cfg ? cfg.color : DEFAULT_BAR_COLOR;
+  return c1;
 }
 
 function formatGD(v){
@@ -648,7 +687,7 @@ function renderLegend(){
   const usedCodes = [...new Set(state.rows.map(r=>r.clasif).filter(c=> c && classifConfig[c]))];
   const legend = $("legend");
   const ts = LAYOUT.textScale || 1;
-  const lg = LAYOUT.legend;
+  const lg = getLegendLayout(state.rows.length);
   const swW = lg.swatchW || lg.swatch || 20;
   const swH = lg.swatchH || lg.swatch || 20;
   legend.style.bottom = lg.bottom+"px";
@@ -782,13 +821,16 @@ function syncEditorFromState(){
   $("cfgRankFontFamily").value = LAYOUT.rankStyle.fontFamily;
   $("cfgRankWeight").value = String(LAYOUT.rankStyle.weight);
   $("cfgRankTabularNums").checked = !!LAYOUT.rankStyle.tabularNums;
-  $("cfgLegendW").value = LAYOUT.legend.swatchW;
-  $("cfgLegendH").value = LAYOUT.legend.swatchH;
 
   // por defecto, edita el layout de filas que corresponde al nº de equipos actual
   currentVariant = (state.rows.length <= LAYOUT.rowsThreshold) ? "rows22" : "rowsOver";
   updateVariantButtons();
   buildRowLayoutEditor();
+
+  // por defecto, edita el layout de leyenda que corresponde al nº de equipos actual
+  currentLegendVariant = (state.rows.length <= LAYOUT.rowsThreshold) ? "legend22" : "legendOver";
+  updateLegendVariantButtons();
+  buildLegendLayoutEditor();
   buildLegendEditor();
   buildNameAliasEditor();
 }
@@ -866,15 +908,40 @@ $("cfgRankTabularNums").addEventListener('change', ()=>{
   markDirty(); render();
 });
 
-/* ---- Leyenda / clasificaciones (color sólido o degradado + tamaño de cuadro) ---- */
-$("cfgLegendW").addEventListener('input', ()=>{
-  LAYOUT.legend.swatchW = parseFloat($("cfgLegendW").value) || 20;
-  markDirty(); render();
-});
-$("cfgLegendH").addEventListener('input', ()=>{
-  LAYOUT.legend.swatchH = parseFloat($("cfgLegendH").value) || 20;
-  markDirty(); render();
-});
+/* ---- Leyenda: posición/tamaño, por umbral de equipos (legend22 / legendOver) ---- */
+let currentLegendVariant = "legend22";
+const LEGEND_FIELDS = [
+  ["bottom","Abajo"], ["left","Izquierda"], ["right","Derecha"],
+  ["swatchW","Ancho cuadro"], ["swatchH","Alto cuadro"],
+  ["gap","Sep. cuadro-texto"], ["itemGap","Sep. entre items"], ["columns","Nº columnas"],
+  ["size","Tamaño texto"], ["weight","Grosor texto"]
+];
+function updateLegendVariantButtons(){
+  $("btnLegendVariant22").style.opacity = currentLegendVariant==="legend22" ? "1" : ".55";
+  $("btnLegendVariantOver").style.opacity = currentLegendVariant==="legendOver" ? "1" : ".55";
+}
+$("btnLegendVariant22").addEventListener('click', ()=>{ currentLegendVariant="legend22"; updateLegendVariantButtons(); buildLegendLayoutEditor(); });
+$("btnLegendVariantOver").addEventListener('click', ()=>{ currentLegendVariant="legendOver"; updateLegendVariantButtons(); buildLegendLayoutEditor(); });
+
+function buildLegendLayoutEditor(){
+  const wrap = $("legendLayoutEditor");
+  const cfg = LAYOUT[currentLegendVariant];
+  wrap.innerHTML = "";
+  const card = document.createElement("div");
+  card.className = "row-card";
+  card.innerHTML = `<div class="rc-grid">` + LEGEND_FIELDS.map(([field,label])=>
+    `<div><label>${label}</label><input type="number" step="1" data-field="${field}" value="${cfg[field]}"></div>`
+  ).join("") + `<div class="full"><label>Fuente texto</label><input type="text" data-field="fontFamily" value="${escapeAttr(cfg.fontFamily)}"></div>` + `</div>`;
+  wrap.appendChild(card);
+  card.querySelectorAll('input').forEach(inp=>{
+    inp.addEventListener('input', ()=>{
+      const field = inp.dataset.field;
+      cfg[field] = (field === "fontFamily") ? (inp.value || "Inter") : (parseFloat(inp.value) || 0);
+      markDirty(); render();
+    });
+  });
+}
+
 function buildLegendEditor(){
   const wrap = $("legendEditor");
   wrap.innerHTML = "";
@@ -893,6 +960,7 @@ function buildLegendEditor(){
           <option value="1" ${cfg.gradient?'selected':''}>Degradado</option>
         </select></div>
         <div><label>Ángulo (°)</label><input type="number" data-code="${code}" data-field="angle" value="${cfg.angle}"></div>
+        <div><label>Opacidad (%)</label><input type="number" min="0" max="100" step="1" data-code="${code}" data-field="opacity" value="${cfg.opacity!==undefined?cfg.opacity:100}"></div>
       </div>`;
     wrap.appendChild(card);
   });
@@ -901,7 +969,7 @@ function buildLegendEditor(){
       const code = inp.dataset.code, field = inp.dataset.field;
       let val = inp.value;
       if(field === "gradient") val = (val === "1");
-      if(field === "angle") val = parseFloat(val) || 0;
+      if(field === "angle" || field === "opacity") val = parseFloat(val) || 0;
       classifConfig[code][field] = val;
       markDirty(); render();
     });
