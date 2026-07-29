@@ -236,6 +236,18 @@
       <input type="checkbox" id="cfgShowHeading">
       <input type="text" id="cfgHeadingText" placeholder="TABLE" style="flex:1;">
     </div>
+    <div class="field-row">
+      <label>Título arriba</label>
+      <input type="number" id="cfgHeadingTop" step="1">
+      <label style="flex:0 0 60px;">tamaño</label>
+      <input type="number" id="cfgHeadingSize" step="1">
+    </div>
+    <div class="field-row">
+      <label>Título izq.</label>
+      <input type="number" id="cfgHeadingLeft" step="1">
+      <label style="flex:0 0 60px;">ancho</label>
+      <input type="number" id="cfgHeadingWidth" step="1">
+    </div>
 
     <div class="section-title">Texto</div>
     <div class="field-row">
@@ -348,19 +360,35 @@ const TABLE_POS_DISPLAY_NAME = {
 };
 
 // colores + etiqueta de leyenda por código de "Clasif" (config por defecto, editable en runtime)
-const CLASIF_CONFIG_DEFAULTS = {
-   "UCL":  { color:"#3B6FED", color2:"#1c3f9c", gradient:false, angle:135, opacity:100, label:"Champions League" },
-  "UEL":  { color:"#F2820C", color2:"#a85400", gradient:false, angle:135, opacity:100, label:"Europa League" },
-  "UCOL": { color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, opacity:100, label:"Conference League" },
-  "DESC": { color:"#E0483F", color2:"#8f231d", gradient:false, angle:135, opacity:100, label:"Descenso" },
-  "ascenso": {  color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, opacity:100, label:"Ascenso directo" },
+// -> versión para tablas con <= LAYOUT.rowsThreshold equipos (p.ej. LaLiga normal, 20 equipos)
+const CLASIF_CONFIG_DEFAULTS_22 = {
+   "UCL":  { color:"#3B6FED", color2:"#1c3f9c", gradient:true, angle:135, opacity:100, label:"Champions League" },
+  "UEL":  { color:"#F2820C", color2:"#a85400", gradient:true, angle:135, opacity:100, label:"Europa League" },
+  "UCOL": { color:"#1AA260", color2:"#0d5c37", gradient:true, angle:135, opacity:100, label:"Conference League" },
+  "DESC": { color:"#E0483F", color2:"#8f231d", gradient:true, angle:135, opacity:100, label:"Descenso" },
+  "ascenso": {  color:"#1AA260", color2:"#0d5c37", gradient:true, angle:135, opacity:100, label:"Ascenso directo" },
   "eu-playoff":  { color:"#F2820C", color2:"#ffffff", gradient:true, angle:135, opacity:100, label:"PlayOffs" },
-  "octavos": { color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, opacity:100, label:"Octavos" },
-  "ascenso": {  color:"#1AA260", color2:"#0d5c37", gradient:false, angle:135, opacity:100, label:"Ascenso directo" },
-  "playoff": { color:"#F2820C", color2:"#a85400", gradient:false, angle:135, opacity:100, label:"Playoffs" }
+  "octavos": { color:"#1AA260", color2:"#0d5c37", gradient:true, angle:135, opacity:100, label:"Octavos" },
+  "playoff": { color:"#F2820C", color2:"#a85400", gradient:true, angle:135, opacity:100, label:"Playoffs" }
 };
-// clon editable: el usuario puede activar degradado y cambiar colores/tamaños sin tocar el código
-let classifConfig = JSON.parse(JSON.stringify(CLASIF_CONFIG_DEFAULTS));
+// -> versión para tablas con > LAYOUT.rowsThreshold equipos (p.ej. Segunda con 22+ equipos, filas más finas)
+// mismos colores base pero degradado vertical (angle:180), que se ve mejor en barras más estrechas
+const CLASIF_CONFIG_DEFAULTS_OVER = {
+   "UCL":  { color:"#3B6FED", color2:"#1c3f9c", gradient:true, angle:180, opacity:100, label:"Champions League" },
+  "UEL":  { color:"#F2820C", color2:"#a85400", gradient:true, angle:180, opacity:100, label:"Europa League" },
+  "UCOL": { color:"#1AA260", color2:"#0d5c37", gradient:true, angle:180, opacity:100, label:"Conference League" },
+  "DESC": { color:"#E0483F", color2:"#8f231d", gradient:true, angle:180, opacity:100, label:"Descenso" },
+  "ascenso": {  color:"#1AA260", color2:"#0d5c37", gradient:true, angle:180, opacity:100, label:"Ascenso directo" },
+  "eu-playoff":  { color:"#F2820C", color2:"#ffffff", gradient:true, angle:180, opacity:100, label:"PlayOffs" },
+  "octavos": { color:"#1AA260", color2:"#0d5c37", gradient:true, angle:180, opacity:100, label:"Octavos" },
+  "playoff": { color:"#F2820C", color2:"#a85400", gradient:true, angle:180, opacity:100, label:"Playoffs" }
+};
+// devuelve el juego de colores/degradado por defecto según el nº de equipos de la tabla actual
+function getClasifDefaults(n){
+  return (n <= LAYOUT.rowsThreshold) ? CLASIF_CONFIG_DEFAULTS_22 : CLASIF_CONFIG_DEFAULTS_OVER;
+}
+// clon editable: el usuario puede activar/desactivar degradado y cambiar colores/tamaños sin tocar el código
+let classifConfig = JSON.parse(JSON.stringify(CLASIF_CONFIG_DEFAULTS_22));
 const DEFAULT_BAR_COLOR = "rgba(255,255,255,.18)";
 
 // alias de nombres: si el nombre del equipo coincide (tal cual llega), se muestra el alias en su lugar.
@@ -381,7 +409,7 @@ const CANVAS_W = 2000, CANVAS_H = 2500;
 /* layout base (a 2000x2500), todo en px sobre ese lienzo. Mutable: se edita desde el panel. */
 let LAYOUT = {
   logo:      { top:95,  left:510,  w:130, h:130},
-  heading:   { top:250, left:0, width:2000, size:170 },
+  heading:   { top:240, left:-430, width:2000, size:170 },
   // cabecera de columnas (GP/GD/PTS) para tablas con <= rowsThreshold equipos (config actual)
   colHeader22: { top:480, right:1070, size:23, gpW:90, gdW:90, ptsW:110, gap:0 },
   // cabecera de columnas (GP/GD/PTS) para tablas con > rowsThreshold equipos (edítala aparte)
@@ -410,12 +438,12 @@ let LAYOUT = {
   rankStyle: { fontFamily: "Inter", weight: 400, tabularNums: true },
   // leyenda para tablas con <= rowsThreshold equipos
   legend22: {
-    bottom:70, left:80, right:80,
+    bottom:160, left:0, right:970,
     swatchW:32, swatchH:32,   // tamaño de los cuadros de la leyenda (agrándalos aquí)
-    gap:8,                    // separación horizontal entre el cuadro y el texto
-    itemGap:40,               // separación entre cada bloque cuadro+texto (rejilla)
+    gap:18,                    // separación horizontal entre el cuadro y el texto
+    itemGap:100,               // separación entre cada bloque cuadro+texto (rejilla)
     columns:2,                // nº de columnas: con 4 clasificaciones -> 2 arriba y 2 abajo
-    size:24,                  // tamaño de fuente del texto
+    size:30,                  // tamaño de fuente del texto
     fontFamily:"Inter",       // fuente del texto de la leyenda
     weight:300                // grosor: 300=fina, 400=normal, 600=semibold, 700=bold
   },
@@ -503,6 +531,7 @@ function setStatus(msg, isErr){
 
 function selectTable(pos){
   if(!GROUPS[pos]) return;
+  const wasDirty = isDirty; // si el usuario ya tocó colores/degradado a mano, no se los pisamos
   currentPos = pos;
   document.querySelectorAll('#tabs .tab-btn').forEach(b=> b.classList.toggle('active', b.dataset.pos === pos));
 
@@ -524,6 +553,9 @@ function selectTable(pos){
     pts: (r["Standings Played"] ?? "").toString().trim(),
     clasif: (r["Clasif"] ?? "").toString().trim()
   }));
+  if(!wasDirty){
+    classifConfig = JSON.parse(JSON.stringify(getClasifDefaults(state.rows.length)));
+  }
   isDirty = false;
   if($("cfgBgUpload")) $("cfgBgUpload").value = "";
   $("rowClearBgUpload").style.display = "none";
@@ -808,6 +840,10 @@ function syncEditorFromState(){
   $("cfgBgFile").value = state.bgFile;
   $("cfgShowHeading").checked = state.showHeading;
   $("cfgHeadingText").value = state.headingText;
+  $("cfgHeadingTop").value = LAYOUT.heading.top;
+  $("cfgHeadingSize").value = LAYOUT.heading.size;
+  $("cfgHeadingLeft").value = LAYOUT.heading.left || 0;
+  $("cfgHeadingWidth").value = LAYOUT.heading.width || CANVAS_W;
   $("rowClearBgUpload").style.display = state.bgCustomDataUrl ? "" : "none";
   $("rowCount").textContent = "(" + state.rows.length + ")";
   buildRowsEditor();
@@ -981,6 +1017,10 @@ function buildLegendEditor(){
     $(id).addEventListener('input', ()=>{ state[key] = $(id).value; markDirty(); render(); });
   });
 $("cfgShowHeading").addEventListener('change', ()=>{ state.showHeading = $("cfgShowHeading").checked; markDirty(); render(); });
+$("cfgHeadingTop").addEventListener('input', ()=>{ LAYOUT.heading.top = parseFloat($("cfgHeadingTop").value) || 0; markDirty(); render(); });
+$("cfgHeadingSize").addEventListener('input', ()=>{ LAYOUT.heading.size = parseFloat($("cfgHeadingSize").value) || 0; markDirty(); render(); });
+$("cfgHeadingLeft").addEventListener('input', ()=>{ LAYOUT.heading.left = parseFloat($("cfgHeadingLeft").value) || 0; markDirty(); render(); });
+$("cfgHeadingWidth").addEventListener('input', ()=>{ LAYOUT.heading.width = parseFloat($("cfgHeadingWidth").value) || CANVAS_W; markDirty(); render(); });
 
 $("btnPickBg").addEventListener('click', ()=> $("cfgBgUpload").click());
 $("btnQuickBg").addEventListener('click', ()=> $("cfgBgUpload").click());
