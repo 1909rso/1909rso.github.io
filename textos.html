@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>1909 RSO · Generador de texto</title>
+<style>
+  :root{
+    --navy: #071227;
+    --navy-2: #0c1c3a;
+    --panel: #0f2143;
+    --line: #1c355f;
+    --blue: #1c5cff;
+    --blue-2: #4d7dff;
+    --white: #f5f7fb;
+    --dim: #7c8bab;
+    --gold: #e8b74b;
+    --red: #d94848;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:
+      radial-gradient(1200px 600px at 50% -10%, rgba(28,92,255,0.18), transparent 60%),
+      var(--navy);
+    color:var(--white);
+    font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
+    min-height:100vh;
+    padding-bottom:60px;
+  }
+
+  /* ticker header */
+  .ticker{
+    background:var(--blue);
+    color:var(--white);
+    font-family:'SF Mono','Roboto Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.12em;
+    font-weight:700;
+    padding:7px 0;
+    overflow:hidden;
+    white-space:nowrap;
+    border-bottom:1px solid rgba(255,255,255,0.15);
+  }
+  .ticker span{
+    display:inline-block;
+    padding-left:100%;
+    animation:scroll 16s linear infinite;
+  }
+  @keyframes scroll{
+    0%{transform:translateX(0);}
+    100%{transform:translateX(-100%);}
+  }
+
+  header{
+    padding:28px 20px 18px;
+    border-bottom:1px solid var(--line);
+  }
+  .eyebrow{
+    font-family:'SF Mono','Roboto Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.18em;
+    color:var(--blue-2);
+    font-weight:700;
+    text-transform:uppercase;
+    margin-bottom:6px;
+  }
+  h1{
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-0.01em;
+    margin:0;
+    line-height:1.15;
+  }
+  h1 em{
+    font-style:normal;
+    color:var(--gold);
+  }
+  .sub{
+    color:var(--dim);
+    font-size:13.5px;
+    margin-top:8px;
+    line-height:1.4;
+  }
+
+  /* style selector */
+  .styles-wrap{
+    padding:18px 20px 6px;
+  }
+  .section-label{
+    font-family:'SF Mono','Roboto Mono',monospace;
+    font-size:11px;
+    letter-spacing:0.14em;
+    text-transform:uppercase;
+    color:var(--dim);
+    margin-bottom:10px;
+    display:flex;
+    align-items:center;
+    gap:8px;
+  }
+  .section-label::after{
+    content:"";
+    flex:1;
+    height:1px;
+    background:var(--line);
+  }
+  .styles{
+    display:flex;
+    gap:8px;
+    overflow-x:auto;
+    padding-bottom:10px;
+    -webkit-overflow-scrolling:touch;
+    scrollbar-width:none;
+  }
+  .styles::-webkit-scrollbar{display:none;}
+  .style-pill{
+    flex:0 0 auto;
+    background:var(--panel);
+    border:1px solid var(--line);
+    color:var(--dim);
+    padding:9px 14px;
+    border-radius:100px;
+    font-size:13px;
+    font-weight:600;
+    cursor:pointer;
+    white-space:nowrap;
+    transition:all .15s ease;
+  }
+  .style-pill.active{
+    background:var(--blue);
+    border-color:var(--blue);
+    color:var(--white);
+  }
+  .style-pill:active{transform:scale(0.96);}
+
+  main{padding:8px 20px 20px;}
+
+  .card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    margin-bottom:10px;
+    overflow:hidden;
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease;
+    position:relative;
+  }
+  .card:active{background:#132552;}
+  .card-bar{
+    height:3px;
+    background:linear-gradient(90deg, var(--blue), var(--gold));
+    opacity:0.9;
+  }
+  .card-inner{
+    padding:16px 16px 14px;
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    gap:12px;
+  }
+  .card-text{
+    font-size:22px;
+    font-weight:700;
+    line-height:1.2;
+    word-break:break-word;
+    letter-spacing:0.01em;
+  }
+  .card-label{
+    font-family:'SF Mono','Roboto Mono',monospace;
+    font-size:9.5px;
+    letter-spacing:0.1em;
+    color:var(--dim);
+    text-transform:uppercase;
+    margin-top:4px;
+  }
+  .copy-btn{
+    flex:0 0 auto;
+    background:var(--navy-2);
+    border:1px solid var(--line);
+    color:var(--white);
+    font-size:11px;
+    font-weight:700;
+    letter-spacing:0.04em;
+    padding:8px 12px;
+    border-radius:8px;
+    text-transform:uppercase;
+  }
+  .card.copied .copy-btn{
+    background:var(--blue);
+    border-color:var(--blue);
+  }
+  .card.copied .copy-btn::after{
+    content:" ✓";
+  }
+
+  /* custom text */
+  .custom-card{
+    background:var(--panel);
+    border:1px solid var(--line);
+    border-radius:14px;
+    padding:16px;
+  }
+  .custom-card textarea{
+    width:100%;
+    background:var(--navy-2);
+    border:1px solid var(--line);
+    border-radius:10px;
+    color:var(--white);
+    font-size:15px;
+    font-family:inherit;
+    padding:12px;
+    resize:vertical;
+    min-height:64px;
+    line-height:1.4;
+  }
+  .custom-card textarea::placeholder{color:var(--dim);}
+  .custom-card textarea:focus{outline:none;border-color:var(--blue-2);}
+
+  .preview{
+    margin-top:14px;
+    padding:16px;
+    background:var(--navy-2);
+    border-radius:10px;
+    border:1px solid var(--line);
+    min-height:34px;
+    font-size:22px;
+    font-weight:700;
+    word-break:break-word;
+    line-height:1.3;
+  }
+  .preview.empty{color:var(--dim); font-size:14px; font-weight:500;}
+
+  .copy-full{
+    margin-top:12px;
+    width:100%;
+    background:var(--blue);
+    border:none;
+    color:var(--white);
+    font-size:14px;
+    font-weight:700;
+    letter-spacing:0.03em;
+    padding:13px;
+    border-radius:10px;
+    text-transform:uppercase;
+  }
+  .copy-full:active{background:var(--blue-2);}
+  .copy-full.copied{background:#2a9d5c;}
+
+  footer{
+    text-align:center;
+    color:var(--dim);
+    font-size:11px;
+    padding:20px;
+    font-family:'SF Mono','Roboto Mono',monospace;
+    letter-spacing:0.05em;
+  }
+</style>
+</head>
+<body>
+
+<div class="ticker"><span>TXURI-URDIN · 1909 RSO · GENERADOR DE TEXTO PARA GRÁFICAS · TXURI-URDIN · 1909 RSO · GENERADOR DE TEXTO PARA GRÁFICAS ·&nbsp;</span></div>
+
+<header>
+  <div class="eyebrow">1909 RSO · Herramientas</div>
+  <h1>Generador de texto <em>estilizado</em></h1>
+  <div class="sub">Elige una fuente, toca cualquier línea para copiarla. Los caracteres son símbolos Unicode reales, así que pegan tal cual en cualquier bio, tuit o gráfica.</div>
+</header>
+
+<div class="styles-wrap">
+  <div class="section-label">Fuente</div>
+  <div class="styles" id="styleList"></div>
+</div>
+
+<main>
+  <div class="section-label" style="margin-top:8px;">Preestablecidos · toca para copiar</div>
+  <div id="presetList"></div>
+
+  <div class="section-label" style="margin-top:18px;">Texto personalizado</div>
+  <div class="custom-card">
+    <textarea id="customInput" placeholder="Escribe aquí… cada línea se convierte por separado" rows="3"></textarea>
+    <div class="preview empty" id="customPreview">La vista previa aparecerá aquí</div>
+    <button class="copy-full" id="customCopyBtn">Copiar texto</button>
+  </div>
+</main>
+
+<footer>1909 RSO · PASIÓN TXURI-URDIN</footer>
+
+<script>
+// ---------- Unicode style engine ----------
+const STYLES = [
+  { key:'bold-sans',    name:'Negrita',           upper:0x1D5D4, lower:0x1D5EE, digit:0x1D7EC },
+  { key:'bold-serif',   name:'Negrita serif',     upper:0x1D400, lower:0x1D41A, digit:0x1D7CE },
+  { key:'bold-italic-sans',  name:'Negrita cursiva', upper:0x1D63C, lower:0x1D656 },
+  { key:'bold-italic-serif', name:'Negrita cursiva serif', upper:0x1D468, lower:0x1D482 },
+  { key:'italic-sans',  name:'Cursiva',           upper:0x1D608, lower:0x1D622 },
+  { key:'italic-serif', name:'Cursiva serif', upper:0x1D434, lower:0x1D44E,
+    lowerExceptions:{h:0x210E} },
+  { key:'sans',         name:'Sans',              upper:0x1D5A0, lower:0x1D5BA, digit:0x1D7E2 },
+  { key:'mono',         name:'Monoespaciada',     upper:0x1D670, lower:0x1D68A, digit:0x1D7F6 },
+  { key:'double',       name:'Doble raya',        upper:0x1D538, lower:0x1D552, digit:0x1D7D8,
+    upperExceptions:{C:0x2102,H:0x210D,N:0x2115,P:0x2119,Q:0x211A,R:0x211D,Z:0x2124} },
+  { key:'fraktur',      name:'Gótica',            upper:0x1D504, lower:0x1D51E,
+    upperExceptions:{C:0x212D,H:0x210C,I:0x2111,R:0x211C,Z:0x2128} },
+  { key:'bold-fraktur', name:'Gótica negrita',    upper:0x1D56C, lower:0x1D586 },
+  { key:'script',       name:'Manuscrita',        upper:0x1D49C, lower:0x1D4B6,
+    upperExceptions:{B:0x212C,E:0x2130,F:0x2131,H:0x210B,I:0x2110,L:0x2112,M:0x2133,R:0x211B},
+    lowerExceptions:{e:0x212F,g:0x210A,o:0x2134} },
+  { key:'bold-script',  name:'Manuscrita negrita', upper:0x1D4D0, lower:0x1D4EA },
+];
+
+function convertChar(ch, style){
+  const code = ch.charCodeAt(0);
+  if(ch >= 'A' && ch <= 'Z'){
+    if(style.upperExceptions && style.upperExceptions[ch] !== undefined){
+      return String.fromCodePoint(style.upperExceptions[ch]);
+    }
+    if(style.upper !== undefined){
+      return String.fromCodePoint(style.upper + (code - 65));
+    }
+    return ch;
+  }
+  if(ch >= 'a' && ch <= 'z'){
+    if(style.lowerExceptions && style.lowerExceptions[ch] !== undefined){
+      return String.fromCodePoint(style.lowerExceptions[ch]);
+    }
+    if(style.lower !== undefined){
+      return String.fromCodePoint(style.lower + (code - 97));
+    }
+    return ch;
+  }
+  if(ch >= '0' && ch <= '9'){
+    if(style.digit !== undefined){
+      return String.fromCodePoint(style.digit + (code - 48));
+    }
+    return ch;
+  }
+  return ch;
+}
+
+function convertText(text, styleKey){
+  const style = STYLES.find(s => s.key === styleKey) || STYLES[0];
+  return text.split('').map(ch => convertChar(ch, style)).join('');
+}
+
+// ---------- App state ----------
+const PRESETS = ['HERE WE GO', 'CERRADO', 'OFICIAL', 'RECHAZADO', 'ACUERDO'];
+let currentStyle = STYLES[0].key;
+
+const styleList = document.getElementById('styleList');
+const presetList = document.getElementById('presetList');
+const customInput = document.getElementById('customInput');
+const customPreview = document.getElementById('customPreview');
+const customCopyBtn = document.getElementById('customCopyBtn');
+
+// build style pills
+STYLES.forEach(s => {
+  const pill = document.createElement('button');
+  pill.className = 'style-pill' + (s.key === currentStyle ? ' active' : '');
+  pill.textContent = s.name;
+  pill.dataset.key = s.key;
+  pill.addEventListener('click', () => {
+    currentStyle = s.key;
+    document.querySelectorAll('.style-pill').forEach(p => p.classList.toggle('active', p.dataset.key === currentStyle));
+    renderPresets();
+    renderCustomPreview();
+  });
+  styleList.appendChild(pill);
+});
+
+// build preset cards
+function renderPresets(){
+  presetList.innerHTML = '';
+  PRESETS.forEach(word => {
+    const converted = convertText(word, currentStyle);
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.innerHTML = `
+      <div class="card-bar"></div>
+      <div class="card-inner">
+        <div>
+          <div class="card-text">${converted}</div>
+          <div class="card-label">${word}</div>
+        </div>
+        <div class="copy-btn">Copiar</div>
+      </div>`;
+    card.addEventListener('click', () => copyToClipboard(converted, card));
+    presetList.appendChild(card);
+  });
+}
+
+function renderCustomPreview(){
+  const raw = customInput.value;
+  if(!raw.trim()){
+    customPreview.textContent = 'La vista previa aparecerá aquí';
+    customPreview.classList.add('empty');
+    return;
+  }
+  customPreview.classList.remove('empty');
+  const converted = raw.split('\n').map(line => convertText(line, currentStyle)).join('\n');
+  customPreview.innerHTML = converted.split('\n').map(l => l.length ? l : '&nbsp;').join('<br>');
+}
+
+customInput.addEventListener('input', renderCustomPreview);
+
+customCopyBtn.addEventListener('click', () => {
+  const raw = customInput.value;
+  if(!raw.trim()) return;
+  const converted = raw.split('\n').map(line => convertText(line, currentStyle)).join('\n');
+  copyToClipboard(converted, null, customCopyBtn);
+});
+
+function copyToClipboard(text, card, btn){
+  const done = () => {
+    if(card){
+      card.classList.add('copied');
+      setTimeout(() => card.classList.remove('copied'), 1200);
+    }
+    if(btn){
+      const original = 'Copiar texto';
+      btn.textContent = 'Copiado ✓';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = original; btn.classList.remove('copied'); }, 1200);
+    }
+  };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+
+function fallbackCopy(text, done){
+  const ta = document.createElement('textarea');
+  ta.value = text;
+  ta.style.position = 'fixed';
+  ta.style.opacity = '0';
+  document.body.appendChild(ta);
+  ta.select();
+  try { document.execCommand('copy'); } catch(e) {}
+  document.body.removeChild(ta);
+  if(done) done();
+}
+
+renderPresets();
+renderCustomPreview();
+</script>
+
+</body>
+</html>
