@@ -1,1 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Inspector Web para Móvil</title>
+<style>
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0f0f14;
+    color: #eaeaf0;
+    margin: 0;
+    padding: 24px 20px 60px;
+    line-height: 1.55;
+  }
+  h1 { font-size: 22px; margin-bottom: 4px; }
+  .sub { color: #9a9aa8; font-size: 14px; margin-bottom: 28px; }
+  .step {
+    background: #1a1a24;
+    border: 1px solid #2a2a38;
+    border-radius: 14px;
+    padding: 18px;
+    margin-bottom: 16px;
+  }
+  .step .num {
+    display: inline-block;
+    background: #6c5ce7;
+    color: white;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    text-align: center;
+    font-size: 13px;
+    line-height: 24px;
+    margin-right: 8px;
+  }
+  .bookmarklet-box {
+    background: #23233066;
+    border: 1px dashed #6c5ce7;
+    border-radius: 12px;
+    padding: 16px;
+    text-align: center;
+    margin: 16px 0;
+  }
+  a.bookmarklet {
+    display: inline-block;
+    background: #6c5ce7;
+    color: white;
+    text-decoration: none;
+    padding: 12px 20px;
+    border-radius: 10px;
+    font-weight: 600;
+    font-size: 15px;
+  }
+  .hint {
+    font-size: 13px;
+    color: #9a9aa8;
+    margin-top: 10px;
+  }
+  code {
+    background: #23233d;
+    padding: 2px 6px;
+    border-radius: 6px;
+    font-size: 13px;
+    word-break: break-all;
+  }
+  .alt {
+    margin-top: 32px;
+    padding-top: 20px;
+    border-top: 1px solid #2a2a38;
+  }
+</style>
+</head>
+<body>
+
+<h1>🔍 Inspector Web desde el Móvil</h1>
+<p class="sub">Activa una consola de desarrollador (tipo DevTools) en cualquier página, sin ordenador.</p>
+
+<div class="step">
+  <p><span class="num">0</span><strong>Escribe la URL que quieres inspeccionar</strong></p>
+  <div style="display:flex; gap:8px; margin-top:10px;">
+    <input id="urlInput" type="text" placeholder="https://footballia.eu/matches/..."
+      style="flex:1; padding:12px; border-radius:10px; border:1px solid #2a2a38; background:#0f0f14; color:#eaeaf0; font-size:14px;">
+  </div>
+  <div style="display:flex; gap:8px; margin-top:10px;">
+    <button onclick="cargarUrl()" style="flex:1; background:#6c5ce7; color:white; border:none; border-radius:10px; padding:12px 0; font-weight:600;">🔗 Abrir en pestaña nueva</button>
+  </div>
+  <p class="hint" id="statusMsg">Muchas webs (footballia.eu incluida) bloquean cargarse dentro de un recuadro por seguridad, así que la forma fiable es abrirla directamente y usar el marcador desde ahí.</p>
+</div>
+
+<div class="step">
+  <p><span class="num">1</span><strong>Una vez cargada arriba, activa la consola con este botón</strong></p>
+  <div class="bookmarklet-box">
+    <a class="bookmarklet" href="javascript:(function(){var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/eruda';document.body.appendChild(s);s.onload=function(){eruda.init()}})();">
+      📱 Inspeccionar
+    </a>
+    <p class="hint">En Chrome/Safari móvil: mantén pulsado este botón → "Añadir a marcadores" o "Compartir" → "Añadir a favoritos". Si tu navegador no deja arrastrar/guardar enlaces JS fácilmente, mira la alternativa manual más abajo.</p>
+  </div>
+</div>
+
+<div class="step">
+  <p><span class="num">2</span><strong>Ve a la web que quieres inspeccionar</strong></p>
+  <p class="hint">Por ejemplo, tu <code>clasificacion.html</code> en GitHub Pages.</p>
+</div>
+
+<div class="step">
+  <p><span class="num">3</span><strong>Abre el marcador "📱 Inspeccionar" desde esa misma pestaña</strong></p>
+  <p class="hint">Aparecerá un icono flotante en la esquina. Tócalo para abrir la consola: verás pestañas de Console, Elements, Network, Resources, etc — igual que en escritorio.</p>
+</div>
+
+<div class="alt">
+  <h2 style="font-size:17px;">Si el bookmarklet no se deja guardar</h2>
+  <p class="hint">Algunos navegadores móviles bloquean guardar enlaces <code>javascript:</code> como marcador directamente. Alternativas que funcionan seguro:</p>
+  <ul class="hint">
+    <li><strong>Kiwi Browser (Android):</strong> permite instalar extensiones de Chrome de escritorio, incluidas DevTools completas.</li>
+    <li><strong>Chrome Android + PC:</strong> depuración remota vía <code>chrome://inspect</code> (requiere cable USB una vez).</li>
+    <li><strong>Añadir Eruda manualmente:</strong> si controlas el código de tu web (como tus HTML de 1909 RSO), añade esta línea antes de <code>&lt;/body&gt;</code> temporalmente:<br><code>&lt;script src="https://cdn.jsdelivr.net/npm/eruda"&gt;&lt;/script&gt;&lt;script&gt;eruda.init()&lt;/script&gt;</code></li>
+  </ul>
+</div>
+
+<script>
+function cargarUrl(){
+  var val = document.getElementById('urlInput').value.trim();
+  var status = document.getElementById('statusMsg');
+  if(!val){ status.innerHTML = 'Escribe primero una URL arriba.'; return; }
+  if(!/^https?:\/\//i.test(val)){ val = 'https://' + val; }
+  window.open(val, '_blank');
+  status.innerHTML = 'Se ha abierto en una pestaña nueva. Ahora, desde esa pestaña, toca el marcador "📱 Inspeccionar" (paso 1 más abajo) para activar la consola.';
+}
+</script>
+
+</body>
+</html>
 
