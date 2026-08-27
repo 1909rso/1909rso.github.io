@@ -16,7 +16,7 @@
     --ui-accent:#3b6fed;
     --ui-danger:#e0483f;
   }
-  *{box-sizing:border-box;}
+  *{box-sizing:border-box;-webkit-text-size-adjust:100%;text-size-adjust:100%;}
   html,body{margin:0;padding:0;background:var(--ui-bg);color:var(--ui-text);font-family:system-ui,sans-serif;}
 
   /* ==================================================================
@@ -27,37 +27,37 @@
   @font-face{
     font-family:'EuropaNuovaRegular';
     src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaRegular.woff') format('woff');
-    font-display:block;
+    font-display:swap;
   }
   @font-face{
     font-family:'EuropaNuovaItalic';
     src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaItalic.woff') format('woff');
-    font-display:block;
+    font-display:swap;
   }
   @font-face{
     font-family:'EuropaNuovaBold';
     src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaBold.woff') format('woff');
-    font-display:block;
+    font-display:swap;
   }
   @font-face{
     font-family:'EuropaNuovaBoldItalic';
     src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaBoldItalic.woff') format('woff');
-    font-display:block;
+    font-display:swap;
   }
   @font-face{
     font-family:'EuropaNuovaExtraBold';
     src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaExtraBold.woff') format('woff');
-    font-display:block;
+    font-display:swap;
   }
   @font-face{
     font-family:'EuropaNuovaExtraBoldItalic';
     src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaExtraBoldItalic.woff') format('woff');
-    font-display:block;
+    font-display:swap;
   }
   @font-face{
     font-family:'EuropaTitleBold';
     src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/europatitlebold.woff') format('woff');
-    font-display:block;
+    font-display:swap;
   }
 
   /* ---------------- viewport / chrome ---------------- */
@@ -324,7 +324,7 @@ const TEXT_1 = {
    ------------------------------------------------------------------- */
 const TEXT_2 = {
   content: "BOMBOS",
-  top: 130, left: 0, width: CANVAS_W,
+  top: 175, left: 0, width: CANVAS_W,
   align: "center",
   fontFamily: FONTS.titleBold,
   fontSize: 285,
@@ -418,13 +418,42 @@ function crestUrl(name){
   return CREST_BASE_URL + encodeURIComponent(name) + ".png";
 }
 
+// genera varias URLs posibles para un mismo escudo, por si el archivo real
+// subido a GitHub no coincide exactamente con "NombreEquipo.png": prueba con
+// el nombre recortado (sin espacios de más al principio/final) y con el
+// nombre tal cual, combinando extensión en minúscula y en mayúscula
+// (GitHub distingue mayúsculas/minúsculas en las URLs, a diferencia de
+// Windows). El render probará estas URLs en orden hasta que una cargue.
+function crestUrlCandidates(name){
+  const trimmed = String(name || "").trim();
+  // se prueba PRIMERO el patrón real detectado en los escudos ya subidos
+  // (4 espacios delante + extensión en mayúscula), y como respaldo el resto
+  // de combinaciones, para minimizar peticiones fallidas.
+  const variants = ["    " + trimmed, trimmed];
+  if(trimmed !== name) variants.push(name); // por si el archivo real SÍ tiene otro nº de espacios al principio/final
+  const exts = [".PNG", ".png", ".Png"];
+  const urls = [];
+  variants.forEach(v => {
+    exts.forEach(ext => {
+      const u = CREST_BASE_URL + encodeURIComponent(v) + ext;
+      if(!urls.includes(u)) urls.push(u);
+    });
+  });
+  return urls;
+}
+
 // atajo para una fila de equipo: nombre + escudo. Si no se pasa una URL de
 // escudo explícita, se construye sola a partir del nombre del equipo (ver
 // crestUrl arriba). Si el archivo no existe en esa carpeta, se muestran las
 // iniciales del equipo automáticamente (fallback ya incluido en el render).
 function team(name, crest){
-  return { name, crest: crest !== undefined ? crest : crestUrl(name) };
+  return {
+    name,
+    crest: crest !== undefined ? crest : crestUrl(name),
+    crestCandidates: crest !== undefined ? [crest, ...crestUrlCandidates(name)] : crestUrlCandidates(name)
+  };
 }
+
 
 const BLOCKS = [
   {
@@ -432,9 +461,9 @@ const BLOCKS = [
     titleBg: grad("#cb4900", "#873304"),               // cabecera POT 1 — gradiente propio
     rowsBg: grad("#ff8500", "#ff5200"),                 // gradiente ÚNICO y continuo para todos los equipos del bloque
     rows: [
-      team("Paris Saint-Germain"), team("Real Sociedad"), team("Real Madrid"),
-      team("Liverpool"), team("Inter"), team("Manchester City"),
-      team("Arsenal"), team("FC Barcelona"), team("Atlético Madrid")
+      team("Bayer 04 Leverkusen"), team("Benfica"), team("Juventus"),
+      team("AC Milan"), team("Olympique Lyonnais"), team("AZ Alkmaar"),
+      team("Olympiacos F.C."), team("Real Sociedad"), team("Olympique Marseille")
     ]
   },
   {
@@ -442,9 +471,9 @@ const BLOCKS = [
     titleBg: grad("#cb4900", "#873304"),                // cabecera POT 2 — gradiente propio, distinto
     rowsBg: grad("#ff5200", "#ff8500"),                 // gradiente ÚNICO y continuo para todos los equipos del bloque
     rows: [
-      team("Real Sociedad"), team("AS Roma"), team("Sporting CP"),
-      team("Aston Villa"), team("FC Porto"), team("Manchester United"),
-      team("Club Brugge"), team("Real Betis"), team("PSV")
+      team("Ferencvaros"), team("Viktoria Plzen"), team("Union Saint-Gilloise"),
+      team("Dinamo Zagreb"), team("Red Bull Salzburg"), team("Celtic"),
+      team("Sparta Prague", "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/escudos/Sparta%20Prague.PNG"), team("Stade Rennais"), team("Anderlecht", "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/escudos/Anderlecht.PNG")
     ]
   },
   {
@@ -452,9 +481,9 @@ const BLOCKS = [
     titleBg: grad("#cb4900", "#873304"),                // cabecera POT 3 — gradiente propio, distinto
     rowsBg: grad("#cb6a00", "#ff5200"),                 // gradiente ÚNICO y continuo para todos los equipos del bloque
     rows: [
-      team("Feyenoord"), team("Lille"), team("Fenerbahçe"),
-      team("Bodø/Glimt"), team("Napoli"), team("Leipzig"),
-      team("Villarreal"), team("Shakhtar Donetsk"), team("Galatasaray")
+      team("Sturm Graz", "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/escudos/Sturm%20Graz.PNG"), team("Lech Poznan"), team("Crystal Palace"),
+      team("AFC Bournemouth"), team("Sunderland"), team("Celje"),
+      team("Jagiellonia Bialystok"), team("Omonia"), team("Celta Vigo")
     ]
   },
   {
@@ -462,9 +491,9 @@ const BLOCKS = [
     titleBg: grad("#cb4900", "#873304"),                // cabecera POT 4 — gradiente propio, distinto
     rowsBg: grad("#ff5200", "#cb6a00"),                 // gradiente ÚNICO y continuo para todos los equipos del bloque
     rows: [
-      team("Slavia Praag"), team("Stuttgart"), team("AEK Athene"),
-      team("Slovan Bratislava"), team("LASK"), team("Como"),
-      team("RC Lens"), team("Viking"), team("Sabah")
+      team("TSG Hoffenheim"), team("Besiktas"), team("Torreense"),
+      team("Hapoel Be’er Sheva"), team("NEC Nijmegen"), team("OFI Crete"),
+      team("Lillestrom", "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/escudos/Lillestrom.PNG"), team("Levski Sofia"), team("Ararat-Armenia")
     ]
   }
 ];
@@ -505,10 +534,12 @@ function renderBlocks(){
     html += `<div class="pt-rows" style="top:${bt.height}px;height:${rowsHeight}px;background:${gradientBg(block.rowsBg)};">`;
     block.rows.forEach(row => {
       const initials = escapeHtml((row.name || "?").trim().slice(0,2).toUpperCase());
+      const candidates = (row.crestCandidates && row.crestCandidates.length) ? row.crestCandidates : (row.crest ? [row.crest] : []);
+      const candidatesAttr = escapeAttr(JSON.stringify(candidates));
       html += `<div class="pt-row" style="height:${rl.height}px;padding-left:${rl.paddingLeft}px;">
           <div class="pt-crest" style="width:${rl.crestSize}px;height:${rl.crestSize}px;margin-right:${rl.gap}px;">
-            <img src="${escapeAttr(row.crest)}" crossorigin="anonymous" style="display:${row.crest?'block':'none'};" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
-            <span style="display:${row.crest?'none':'flex'};align-items:center;justify-content:center;width:100%;height:100%;color:${rl.color};font-size:${(rl.crestSize*0.4).toFixed(0)}px;font-weight:700;font-family:'${FONTS.bold}',sans-serif;">${initials}</span>
+            <img src="${escapeAttr(candidates[0] || '')}" data-candidates="${candidatesAttr}" data-idx="0" style="display:${candidates.length?'block':'none'};" onerror="crestFallback(this)">
+            <span style="display:${candidates.length?'none':'flex'};align-items:center;justify-content:center;width:100%;height:100%;color:${rl.color};font-size:${(rl.crestSize*0.4).toFixed(0)}px;font-weight:700;font-family:'${FONTS.bold}',sans-serif;">${initials}</span>
           </div>
           <div class="pt-name" style="font-size:${rl.fontSize}px;font-family:'${rl.fontFamily}',sans-serif;letter-spacing:${rl.letterSpacing||0}px;color:${rl.color};">${escapeHtml(row.name)}</div>
         </div>`;
@@ -524,6 +555,22 @@ function renderBlocks(){
    RENDER — aplica el CONFIG de arriba al DOM. No hace falta tocar nada
    de aquí en adelante salvo que quieras añadir más capas de texto/imagen.
    ====================================================================== */
+// se llama cuando falla la carga del escudo (onerror del <img>): prueba la
+// siguiente URL candidata (mayúscula/minúscula, con/sin espacios); si ya no
+// quedan más, oculta la imagen y muestra las iniciales de respaldo
+function crestFallback(img){
+  let candidates = [];
+  try{ candidates = JSON.parse(img.getAttribute("data-candidates") || "[]"); }catch(e){}
+  const idx = parseInt(img.getAttribute("data-idx") || "0", 10) + 1;
+  if(idx < candidates.length){
+    img.setAttribute("data-idx", String(idx));
+    img.src = candidates[idx];
+  } else {
+    img.style.display = "none";
+    if(img.nextElementSibling) img.nextElementSibling.style.display = "flex";
+  }
+}
+
 const $ = (id) => document.getElementById(id);
 
 
@@ -980,6 +1027,9 @@ function openInNewTab(blob){
    INIT
    ====================================================================== */
 render();
+if(document.fonts && document.fonts.ready){
+  document.fonts.ready.then(() => { render(); fitStageToViewport(); });
+}
 </script>
 </body>
 </html>
