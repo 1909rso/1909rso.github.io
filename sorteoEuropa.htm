@@ -1,0 +1,985 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>1909 RSO · Sorteo</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+  :root{
+    --ui-bg:#0d0f14;
+    --ui-panel:#171a21;
+    --ui-panel2:#1f232c;
+    --ui-border:#2b303a;
+    --ui-text:#f2f3f5;
+    --ui-muted:#9aa1ad;
+    --ui-accent:#3b6fed;
+    --ui-danger:#e0483f;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;background:var(--ui-bg);color:var(--ui-text);font-family:system-ui,sans-serif;}
+
+  /* ==================================================================
+     FUENTES — EuropaNuova / EuropaTitle
+     Todas viven en la misma carpeta de GitHub; para añadir una nueva
+     solo hay que copiar un bloque @font-face más y darle un nombre.
+     ================================================================== */
+  @font-face{
+    font-family:'EuropaNuovaRegular';
+    src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaRegular.woff') format('woff');
+    font-display:block;
+  }
+  @font-face{
+    font-family:'EuropaNuovaItalic';
+    src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaItalic.woff') format('woff');
+    font-display:block;
+  }
+  @font-face{
+    font-family:'EuropaNuovaBold';
+    src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaBold.woff') format('woff');
+    font-display:block;
+  }
+  @font-face{
+    font-family:'EuropaNuovaBoldItalic';
+    src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaBoldItalic.woff') format('woff');
+    font-display:block;
+  }
+  @font-face{
+    font-family:'EuropaNuovaExtraBold';
+    src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaExtraBold.woff') format('woff');
+    font-display:block;
+  }
+  @font-face{
+    font-family:'EuropaNuovaExtraBoldItalic';
+    src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/EuropaNuovaExtraBoldItalic.woff') format('woff');
+    font-display:block;
+  }
+  @font-face{
+    font-family:'EuropaTitleBold';
+    src:url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/fonts/europatitlebold.woff') format('woff');
+    font-display:block;
+  }
+
+  /* ---------------- viewport / chrome ---------------- */
+  .app{display:flex;flex-direction:column;min-height:100vh;}
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;gap:8px;
+    padding:10px 12px;background:var(--ui-panel);
+    border-bottom:1px solid var(--ui-border);
+    overflow-x:auto;
+  }
+  .topbar .title{flex:1;font-size:13px;font-weight:700;color:var(--ui-text);white-space:nowrap;}
+  .icon-btn{
+    flex-shrink:0;width:38px;height:38px;border-radius:10px;border:1px solid var(--ui-border);
+    background:var(--ui-panel2);color:var(--ui-text);font-size:16px;cursor:pointer;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .zoom-controls{display:flex;gap:6px;align-items:center;}
+  .zoom-controls .icon-btn{width:34px;height:34px;font-size:15px;}
+  .zoom-pct{font-size:11px;color:var(--ui-muted);min-width:38px;text-align:center;}
+  .status{padding:4px 12px;font-size:12px;color:var(--ui-muted);}
+  .status.err{color:var(--ui-danger);}
+
+  .stage-wrap{
+    flex:1;display:flex;align-items:flex-start;justify-content:center;
+    padding:16px;overflow:hidden;background:
+      radial-gradient(circle at 50% 0%, #241209 0%, #0d0f14 60%);
+  }
+  #stageOuter{position:relative;flex-shrink:0;overflow:hidden;cursor:grab;touch-action:none;}
+  #stageOuter.dragging{cursor:grabbing;}
+
+  /* ==================================================================
+     EL LIENZO EXPORTABLE — 2000x2500px (proporción 4:5, tipo post IG)
+     Todo lo que hay dentro se posiciona con top/left/right/bottom en
+     píxeles sobre este lienzo. Las capas se rellenan desde el CONFIG
+     que hay al principio del <script> de abajo.
+     ================================================================== */
+  #stage{
+    width:2000px;height:2500px;position:absolute;top:0;left:0;overflow:hidden;
+    background:#0a0c10;
+    transform-origin:top left;
+  }
+  #bgColorLayer{position:absolute;inset:0;z-index:0;}
+  #bgImageLayer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:1;}
+  /* misma imagen de fondo, pero repetida como capa MÁS ARRIBA de todo (por encima de textos, logo y cuadros de equipos), al 50% de opacidad */
+  #bgImageOverlay{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:10;opacity:.5;pointer-events:none;display:none;}
+
+  /* capas de texto: posición/tamaño se aplican por JS (inline) desde el CONFIG */
+  .stage-text{position:absolute;z-index:3;white-space:pre-wrap;margin:0;}
+
+  /* capa de imagen: el <div> marca la caja máxima (maxWidth x maxHeight),
+     la <img> de dentro se ajusta siempre dentro sin deformarse */
+  .img-box{position:absolute;z-index:3;display:flex;}
+  .img-box img{width:100%;height:100%;object-fit:contain;display:block;}
+  .img-box.align-left{justify-content:flex-start;}
+  .img-box.align-center{justify-content:center;}
+  .img-box.align-right{justify-content:flex-end;}
+
+  /* ==================================================================
+     CUADROS DE EQUIPOS (POTS) — bloques con escudo + nombre de equipo.
+     Igual que en potindeling.html, pero usando las fuentes EuropaNuova/
+     EuropaTitle en vez de Inter/Oswald/Anton, y con la posibilidad de
+     poner gradiente tanto en cada fila de equipo como en los dos
+     cuadros inferiores de cada bloque.
+     ================================================================== */
+  #blocksContainer{position:absolute;z-index:3;top:0;left:0;width:100%;height:100%;}
+  .potblock{position:absolute;background:rgba(255,255,255,.055);border:1px solid rgba(255,255,255,.09);}
+  .potblock .pt-title{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;justify-content:center;letter-spacing:2px;}
+  .pt-rows{position:absolute;left:0;right:0;}
+  .pt-row{position:relative;display:flex;align-items:center;}
+  .pt-crest{position:relative;z-index:1;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+  .pt-crest img{max-width:100%;max-height:100%;object-fit:contain;}
+  .pt-name{position:relative;z-index:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+
+  /* fuerza la descarga real de cada fuente para que html2canvas la use */
+  #fontPreload{position:absolute;left:-9999px;top:-9999px;visibility:hidden;}
+
+  /* ==================================================================
+     MODAL — editor de equipos por bombo (IA + interfaz manual)
+     ================================================================== */
+  .modal-overlay{
+    position:fixed;inset:0;z-index:100;background:rgba(0,0,0,.6);
+    display:flex;align-items:flex-end;justify-content:center;
+  }
+  .modal{
+    width:100%;max-width:620px;max-height:88vh;
+    background:var(--ui-panel);border:1px solid var(--ui-border);
+    border-radius:16px 16px 0 0;display:flex;flex-direction:column;overflow:hidden;
+  }
+  @media (min-width:640px){
+    .modal-overlay{align-items:center;}
+    .modal{border-radius:16px;max-height:80vh;}
+  }
+  .modal-header{
+    display:flex;align-items:center;gap:8px;padding:14px 16px;
+    border-bottom:1px solid var(--ui-border);flex-shrink:0;
+  }
+  .modal-title{flex:1;font-size:15px;font-weight:700;}
+  .modal-tabs{display:flex;gap:6px;padding:10px 16px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--ui-border);}
+  .modal-tab{
+    flex-shrink:0;padding:8px 14px;border-radius:20px;border:1px solid var(--ui-border);
+    background:var(--ui-panel2);color:var(--ui-muted);font-size:12px;font-weight:700;
+    cursor:pointer;letter-spacing:.5px;
+  }
+  .modal-tab.active{background:var(--ui-accent);color:#fff;border-color:var(--ui-accent);}
+  .modal-body{padding:14px 16px 18px;overflow-y:auto;flex:1;}
+  .teams-list{display:flex;flex-direction:column;gap:8px;margin-bottom:10px;}
+  .team-row-edit{display:flex;align-items:center;gap:8px;}
+  .team-row-edit .team-name-input{
+    flex:1;padding:9px 10px;border-radius:8px;border:1px solid var(--ui-border);
+    background:var(--ui-panel2);color:var(--ui-text);font-size:13px;
+  }
+  .team-remove-btn{
+    flex-shrink:0;width:32px;height:32px;border-radius:8px;border:1px solid var(--ui-border);
+    background:var(--ui-panel2);color:var(--ui-danger);font-size:15px;cursor:pointer;
+  }
+  .btn-secondary, .btn-primary{
+    display:block;width:100%;padding:10px 12px;border-radius:9px;border:1px solid var(--ui-border);
+    font-size:13px;font-weight:700;cursor:pointer;margin-top:8px;
+  }
+  .btn-secondary{background:var(--ui-panel2);color:var(--ui-text);}
+  .btn-primary{background:var(--ui-accent);color:#fff;border-color:var(--ui-accent);}
+  .modal-sep{border:none;border-top:1px solid var(--ui-border);margin:18px 0;}
+  .ai-section-title{font-size:13px;font-weight:700;margin-bottom:4px;}
+  .ai-hint{font-size:12px;color:var(--ui-muted);line-height:1.4;margin:0 0 8px;}
+  #aiResultInput{
+    width:100%;margin-top:10px;padding:10px;border-radius:9px;border:1px solid var(--ui-border);
+    background:var(--ui-panel2);color:var(--ui-text);font-size:12px;font-family:ui-monospace,monospace;
+    resize:vertical;
+  }
+  .ai-status{font-size:12px;margin-top:6px;color:var(--ui-muted);}
+  .ai-status.err{color:var(--ui-danger);}
+  .ai-status.ok{color:#5fd08a;}
+  .modal-footer{padding:12px 16px;border-top:1px solid var(--ui-border);flex-shrink:0;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="topbar">
+    <div class="title">1909 RSO · Sorteo</div>
+    <div class="zoom-controls">
+      <button class="icon-btn" id="btnZoomOut" title="Alejar">−</button>
+      <span class="zoom-pct" id="zoomPct">100%</span>
+      <button class="icon-btn" id="btnZoomIn" title="Acercar">+</button>
+      <button class="icon-btn" id="btnZoomReset" title="Restablecer vista">⤢</button>
+    </div>
+    <button class="icon-btn" id="btnBgImage" title="Imagen de fondo">🖼️</button>
+    <button class="icon-btn" id="btnBgImageClear" title="Quitar imagen de fondo">🗑️</button>
+    <input type="file" id="bgImageInput" accept="image/*" style="display:none;">
+    <button class="icon-btn" id="btnEditTeams" title="Editar equipos">👥</button>
+    <button class="icon-btn" id="btnExport" title="Exportar imagen">⬇️</button>
+  </div>
+  <div class="status" id="status">Listo</div>
+
+  <div class="stage-wrap">
+    <div id="stageOuter">
+      <div id="stage">
+        <div id="bgColorLayer"></div>
+        <img id="bgImageLayer" src="" alt="">
+
+        <!-- CAPA 1: texto pequeño superior -->
+        <div id="text1" class="stage-text"></div>
+        <!-- CAPA 2: texto grande principal -->
+        <div id="text2" class="stage-text"></div>
+        <!-- CAPA 3: texto inferior alineado a la izquierda -->
+        <div id="text3" class="stage-text"></div>
+        <!-- CAPA 4: imagen (logo) -->
+        <div id="imgBox1" class="img-box"><img src="" alt=""></div>
+
+        <!-- CAPA 5: cuadros de equipos (POT 1-4), con escudos, nombres y gradientes -->
+        <div id="blocksContainer"></div>
+
+        <!-- CAPA SUPERIOR: la misma imagen de fondo, repetida por encima de todo lo demás, al 50% de opacidad -->
+        <img id="bgImageOverlay" src="" alt="">
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- precarga de fuentes: obliga a descargar cada una aunque no se use todavía -->
+<div id="fontPreload">
+  <span style="font-family:'EuropaNuovaRegular';">Aa</span>
+  <span style="font-family:'EuropaNuovaItalic';">Aa</span>
+  <span style="font-family:'EuropaNuovaBold';">Aa</span>
+  <span style="font-family:'EuropaNuovaBoldItalic';">Aa</span>
+  <span style="font-family:'EuropaNuovaExtraBold';">Aa</span>
+  <span style="font-family:'EuropaNuovaExtraBoldItalic';">Aa</span>
+  <span style="font-family:'EuropaTitleBold';">Aa</span>
+</div>
+
+<!-- MODAL — editor de equipos por bombo -->
+<div class="modal-overlay" id="teamsModalOverlay" style="display:none;">
+  <div class="modal">
+    <div class="modal-header">
+      <div class="modal-title">Editar equipos</div>
+      <button class="icon-btn" id="btnCloseTeamsModal">✕</button>
+    </div>
+    <div class="modal-tabs" id="teamsTabs"></div>
+    <div class="modal-body">
+      <div class="teams-list" id="teamsList"></div>
+      <button class="btn-secondary" id="btnAddTeamRow">+ Añadir equipo</button>
+
+      <hr class="modal-sep">
+
+      <div class="ai-section-title">Editar mediante IA</div>
+      <p class="ai-hint">Copia el prompt, pégalo en tu IA (con el resultado del sorteo o los equipos que quieras) y pega aquí su respuesta para aplicarla a los 4 bombos a la vez.</p>
+      <button class="btn-secondary" id="btnCopyPrompt">📋 Copiar prompt para la IA</button>
+      <textarea id="aiResultInput" rows="6" placeholder="Pega aquí el JSON que te devuelva la IA…"></textarea>
+      <button class="btn-primary" id="btnApplyAiResult">Aplicar resultado de la IA</button>
+      <div class="ai-status" id="aiStatus"></div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn-primary" id="btnCloseTeamsModalFooter">Cerrar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ======================================================================
+   CONFIG — todo lo tocable vive aquí. Nada se edita desde la interfaz:
+   para mover, redimensionar o cambiar de fuente cualquier capa, edita
+   estos valores y recarga la página.
+   ====================================================================== */
+
+const CANVAS_W = 2000, CANVAS_H = 2500;
+
+/* Nombres cortos para las fuentes cargadas arriba (@font-face).
+   Para usar una fuente en un texto, pon fontFamily: FONTS.xxx */
+const FONTS = {
+  regular:          "EuropaNuovaRegular",
+  italic:           "EuropaNuovaItalic",
+  bold:             "EuropaNuovaBold",
+  boldItalic:       "EuropaNuovaBoldItalic",
+  extraBold:        "EuropaNuovaExtraBold",
+  extraBoldItalic:  "EuropaNuovaExtraBoldItalic",
+  titleBold:        "EuropaTitleBold"
+};
+
+/* Fondo del cartel — tomado de potindeling.html (degradado radial azul).
+   Se pinta siempre detrás de todo; si se añade una imagen (botón 🖼️ o
+   imageUrl más abajo) esta se superpone POR ENCIMA de este fondo. */
+const BACKGROUND = {
+  color: "radial-gradient(circle at 100% 0%, #d24400 0%, #401b06 100%, #712901 100%)",
+  imageUrl: ""            // opcional: pon aquí una URL de imagen de fondo (deja "" para no usar ninguna); se pinta ENCIMA del color de arriba
+};
+
+/* -------------------------------------------------------------------
+   CAPA 1 — texto pequeño superior (tipo "LEAGUE PHASE · EUROPA LEAGUE")
+   ------------------------------------------------------------------- */
+const TEXT_1 = {
+  content: "FASE LIGA UEFA EUROPA LEAGUE",
+  top: 110, left: 0, width: CANVAS_W,   // caja de texto: top/left/width en px sobre el lienzo 2000x2500
+  align: "center",                        // "left" | "center" | "right"
+  fontFamily: FONTS.italic,
+  fontSize: 34,
+  letterSpacing: 6,                       // separación entre letras, en px
+  lineHeight: 1.2,
+  color: "#ffffff"
+};
+
+/* -------------------------------------------------------------------
+   CAPA 2 — texto grande principal (tipo "SORTEO")
+   ------------------------------------------------------------------- */
+const TEXT_2 = {
+  content: "BOMBOS",
+  top: 130, left: 0, width: CANVAS_W,
+  align: "center",
+  fontFamily: FONTS.titleBold,
+  fontSize: 285,
+  letterSpacing: 0,
+  lineHeight: 0.95,
+  color: "#ffffff"
+};
+
+/* -------------------------------------------------------------------
+   CAPA 3 — texto inferior, alineado a la izquierda (tipo "#UEL")
+   ------------------------------------------------------------------- */
+const TEXT_3 = {
+  content: "#UEL",
+  bottom: 50, left: 80, width: 900,      // usa bottom en vez de top para anclarlo abajo
+  align: "left",
+  fontFamily: FONTS.regular,
+  fontSize: 32,
+  letterSpacing: 1,
+  lineHeight: 1.2,
+  color: "#ffffff"
+};
+
+/* -------------------------------------------------------------------
+   CAPA 4 — imagen (logo), con ancho/alto máximo. La imagen se ajusta
+   siempre dentro de esa caja sin deformarse (mantiene proporción).
+   ------------------------------------------------------------------- */
+const IMAGE_1 = {
+  src: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/logos/Europa_League.png",
+  top: 2357, left: 1870,                    // esquina superior-izquierda de la caja
+  maxWidth: 100, maxHeight: 100,          // tamaño máximo (px sobre el lienzo 2000x2500)
+  align: "center"                         // si la imagen es más estrecha que maxWidth: "left" | "center" | "right"
+};
+
+/* -------------------------------------------------------------------
+   CAPA 5 — cuadros de equipos (POT 1-4): escudo + nombre por fila.
+   Todo lo de POSICIÓN Y TAMAÑO va en BLOCK_LAYOUT (igual que en
+   potindeling.html); todo lo de CONTENIDO (títulos, equipos, escudos
+   y colores/gradientes) va en el array BLOCKS, justo debajo.
+
+   Hay DOS tipos de gradiente, totalmente independientes entre sí:
+   - block.titleBg → el cuadro de la cabecera "POT 1/2/3/4" (uno por bloque, distinto en cada pot)
+   - block.rowsBg  → UN ÚNICO gradiente continuo detrás de TODOS los
+                      equipos del bloque (no se corta línea a línea).
+                      El cuadro de equipos termina justo después del
+                      último equipo (sin espacio sobrante debajo).
+   ------------------------------------------------------------------- */
+const BLOCK_LAYOUT = {
+  // rejilla de los 4 bloques: 2 columnas x 2 filas (la altura de cada bloque se calcula sola: cabecera + nº de equipos, sin hueco sobrante)
+  grid: { top: 480, left: 120, colGap: 60, rowGap: 90, blockW: 850 },
+  // cabecera de cada bloque ("POT 1", "POT 2"...) — fuente EuropaTitleBold. El fondo (gradiente) se define por bloque en BLOCKS.titleBg
+  blockTitle: { height: 120, fontSize: 80, fontFamily: FONTS.titleBold, letterSpacing: 1, color: "#ffffff" },
+  // cada línea de equipo (escudo + nombre) — fuente EuropaNuovaBold. El fondo (gradiente) se define por fila en team().bg
+  row: {
+    height: 84, paddingLeft: 34, crestSize: 60, gap: 24,
+    fontSize: 55, fontFamily: FONTS.regular, letterSpacing: 0, color: "#ffffff"
+  }
+};
+
+// color sólido en formato rgba, aplicando % de opacidad (100 = totalmente opaco)
+function hexToRgba(hex, opacityPct){
+  const o = (opacityPct === undefined || opacityPct === null || opacityPct === "") ? 100 : opacityPct;
+  const a = Math.max(0, Math.min(100, parseFloat(o) || 0)) / 100;
+  const h = String(hex || "").replace('#', '');
+  if(h.length !== 6) return hex;
+  const r = parseInt(h.substring(0,2),16), g = parseInt(h.substring(2,4),16), b = parseInt(h.substring(4,6),16);
+  return `rgba(${r},${g},${b},${a})`;
+}
+// fondo sólido o degradado, según el cfg {color, color2, gradient, angle, opacity}
+function gradientBg(cfg){
+  if(!cfg) return "transparent";
+  const c1 = hexToRgba(cfg.color, cfg.opacity);
+  if(cfg.gradient && cfg.color2){
+    const c2 = hexToRgba(cfg.color2, cfg.opacity);
+    return `linear-gradient(${cfg.angle !== undefined ? cfg.angle : 135}deg, ${c1}, ${c2})`;
+  }
+  return c1;
+}
+function escapeHtml(s){ return String(s ?? "").replace(/[&<>"']/g, m => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m])); }
+function escapeAttr(s){ return String(s ?? "").replace(/"/g,'&quot;'); }
+
+// atajo para crear un gradiente/color: color(hex), color2(hex), angle(º), opacity(%). Pon gradient:false para color sólido.
+function grad(color = "#3B6FED", color2 = "#173a91", angle = 135, opacity = 100, gradient = true){
+  return { color, color2, gradient, angle, opacity };
+}
+// atajo para una fila de equipo: solo nombre + escudo (URL, opcional). El fondo ya no es por fila: es un único gradiente continuo por bloque, ver BLOCKS[].rowsBg
+// URL base donde viven los escudos en GitHub. La URL final de cada escudo se
+// construye como CREST_BASE_URL + "NombreDelEquipo.png" (los espacios se
+// codifican como %20, tal cual el enlace de ejemplo: .../escudos/Real%20Sociedad.png)
+const CREST_BASE_URL = "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/sorteoEuropa/escudos/";
+function crestUrl(name){
+  return CREST_BASE_URL + encodeURIComponent(name) + ".png";
+}
+
+// atajo para una fila de equipo: nombre + escudo. Si no se pasa una URL de
+// escudo explícita, se construye sola a partir del nombre del equipo (ver
+// crestUrl arriba). Si el archivo no existe en esa carpeta, se muestran las
+// iniciales del equipo automáticamente (fallback ya incluido en el render).
+function team(name, crest){
+  return { name, crest: crest !== undefined ? crest : crestUrl(name) };
+}
+
+const BLOCKS = [
+  {
+    title: "BOMBO 1",
+    titleBg: grad("#cb4900", "#873304"),               // cabecera POT 1 — gradiente propio
+    rowsBg: grad("#ff8500", "#ff5200"),                 // gradiente ÚNICO y continuo para todos los equipos del bloque
+    rows: [
+      team("Paris Saint-Germain"), team("Real Sociedad"), team("Real Madrid"),
+      team("Liverpool"), team("Inter"), team("Manchester City"),
+      team("Arsenal"), team("FC Barcelona"), team("Atlético Madrid")
+    ]
+  },
+  {
+    title: "BOMBO 2",
+    titleBg: grad("#cb4900", "#873304"),                // cabecera POT 2 — gradiente propio, distinto
+    rowsBg: grad("#ff5200", "#ff8500"),                 // gradiente ÚNICO y continuo para todos los equipos del bloque
+    rows: [
+      team("Real Sociedad"), team("AS Roma"), team("Sporting CP"),
+      team("Aston Villa"), team("FC Porto"), team("Manchester United"),
+      team("Club Brugge"), team("Real Betis"), team("PSV")
+    ]
+  },
+  {
+    title: "BOMBO 3",
+    titleBg: grad("#cb4900", "#873304"),                // cabecera POT 3 — gradiente propio, distinto
+    rowsBg: grad("#cb6a00", "#ff5200"),                 // gradiente ÚNICO y continuo para todos los equipos del bloque
+    rows: [
+      team("Feyenoord"), team("Lille"), team("Fenerbahçe"),
+      team("Bodø/Glimt"), team("Napoli"), team("Leipzig"),
+      team("Villarreal"), team("Shakhtar Donetsk"), team("Galatasaray")
+    ]
+  },
+  {
+    title: "BOMBO 4",
+    titleBg: grad("#cb4900", "#873304"),                // cabecera POT 4 — gradiente propio, distinto
+    rowsBg: grad("#ff5200", "#cb6a00"),                 // gradiente ÚNICO y continuo para todos los equipos del bloque
+    rows: [
+      team("Slavia Praag"), team("Stuttgart"), team("AEK Athene"),
+      team("Slovan Bratislava"), team("LASK"), team("Como"),
+      team("RC Lens"), team("Viking"), team("Sabah")
+    ]
+  }
+];
+
+function renderBlocks(){
+  const container = $("blocksContainer");
+  container.innerHTML = "";
+  const g = BLOCK_LAYOUT.grid;
+  const positions = [ {r:0,c:0}, {r:0,c:1}, {r:1,c:0}, {r:1,c:1} ]; // 2 líneas de 2 bloques
+  const bt = BLOCK_LAYOUT.blockTitle;
+  const rl = BLOCK_LAYOUT.row;
+
+  // altura real de cada bloque = cabecera + (nº de equipos × alto de fila); así el
+  // cuadro termina justo después del último equipo, sin hueco sobrante debajo.
+  const blockHeights = BLOCKS.map(b => bt.height + rl.height * b.rows.length);
+  // para que los bloques de la fila de abajo (r:1) empiecen debajo de los de la fila de arriba (r:0)
+  // usamos la altura máxima de esa fila superior, columna a columna.
+  const rowMaxHeight = Math.max(blockHeights[0] || 0, blockHeights[1] || 0);
+
+  BLOCKS.forEach((block, idx) => {
+    const pos = positions[idx] || {r:0,c:0};
+    const left = g.left + pos.c * (g.blockW + g.colGap);
+    const top  = g.top  + pos.r * (rowMaxHeight + g.rowGap);
+    const rowsHeight = rl.height * block.rows.length;
+    const blockHeight = bt.height + rowsHeight;
+
+    const el = document.createElement("div");
+    el.className = "potblock";
+    el.style.left = left + "px";
+    el.style.top = top + "px";
+    el.style.width = g.blockW + "px";
+    el.style.height = blockHeight + "px";
+
+    let html = `<div class="pt-title" style="height:${bt.height}px;font-size:${bt.fontSize}px;font-family:'${bt.fontFamily}',sans-serif;letter-spacing:${bt.letterSpacing||0}px;color:${bt.color};background:${gradientBg(block.titleBg)};">${escapeHtml(block.title)}</div>`;
+
+    // contenedor de las filas: UN ÚNICO gradiente continuo detrás de todos los equipos,
+    // con la altura exacta del nº de equipos (no se corta línea a línea ni sobra espacio)
+    html += `<div class="pt-rows" style="top:${bt.height}px;height:${rowsHeight}px;background:${gradientBg(block.rowsBg)};">`;
+    block.rows.forEach(row => {
+      const initials = escapeHtml((row.name || "?").trim().slice(0,2).toUpperCase());
+      html += `<div class="pt-row" style="height:${rl.height}px;padding-left:${rl.paddingLeft}px;">
+          <div class="pt-crest" style="width:${rl.crestSize}px;height:${rl.crestSize}px;margin-right:${rl.gap}px;">
+            <img src="${escapeAttr(row.crest)}" crossorigin="anonymous" style="display:${row.crest?'block':'none'};" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+            <span style="display:${row.crest?'none':'flex'};align-items:center;justify-content:center;width:100%;height:100%;color:${rl.color};font-size:${(rl.crestSize*0.4).toFixed(0)}px;font-weight:700;font-family:'${FONTS.bold}',sans-serif;">${initials}</span>
+          </div>
+          <div class="pt-name" style="font-size:${rl.fontSize}px;font-family:'${rl.fontFamily}',sans-serif;letter-spacing:${rl.letterSpacing||0}px;color:${rl.color};">${escapeHtml(row.name)}</div>
+        </div>`;
+    });
+    html += `</div>`;
+
+    el.innerHTML = html;
+    container.appendChild(el);
+  });
+}
+
+/* ======================================================================
+   RENDER — aplica el CONFIG de arriba al DOM. No hace falta tocar nada
+   de aquí en adelante salvo que quieras añadir más capas de texto/imagen.
+   ====================================================================== */
+const $ = (id) => document.getElementById(id);
+
+
+// aplica top/bottom/left/right/width/height (en px) a un elemento; lo que
+// no esté definido en cfg se deja sin aplicar (auto)
+function applyBox(el, cfg){
+  el.style.top = cfg.top !== undefined ? cfg.top + "px" : "";
+  el.style.bottom = cfg.bottom !== undefined ? cfg.bottom + "px" : "";
+  el.style.left = cfg.left !== undefined ? cfg.left + "px" : "";
+  el.style.right = cfg.right !== undefined ? cfg.right + "px" : "";
+  if(cfg.width !== undefined) el.style.width = cfg.width + "px";
+  if(cfg.height !== undefined) el.style.height = cfg.height + "px";
+}
+
+function renderText(id, cfg){
+  const el = $(id);
+  applyBox(el, cfg);
+  el.style.fontFamily = `'${cfg.fontFamily}', sans-serif`;
+  el.style.fontSize = cfg.fontSize + "px";
+  el.style.letterSpacing = (cfg.letterSpacing || 0) + "px";
+  el.style.lineHeight = cfg.lineHeight || 1.1;
+  el.style.color = cfg.color || "#ffffff";
+  el.style.textAlign = cfg.align || "left";
+  el.textContent = cfg.content;
+}
+
+function renderImage(id, cfg){
+  const box = $(id);
+  applyBox(box, { top: cfg.top, bottom: cfg.bottom, left: cfg.left, right: cfg.right,
+                   width: cfg.maxWidth, height: cfg.maxHeight });
+  box.className = "img-box align-" + (cfg.align || "center");
+  const img = box.querySelector('img');
+  img.src = cfg.src;
+}
+
+function render(){
+  // fondo
+  $("bgColorLayer").style.background = BACKGROUND.color || "transparent";
+  $("bgImageLayer").src = BACKGROUND.imageUrl || "";
+  $("bgImageLayer").style.display = BACKGROUND.imageUrl ? "" : "none";
+  // misma imagen, repetida como capa superior (por encima de todo) al 50% de opacidad
+  $("bgImageOverlay").src = BACKGROUND.imageUrl || "";
+  $("bgImageOverlay").style.display = BACKGROUND.imageUrl ? "" : "none";
+
+  // capas de texto
+  renderText("text1", TEXT_1);
+  renderText("text2", TEXT_2);
+  renderText("text3", TEXT_3);
+
+  // capa de imagen
+  renderImage("imgBox1", IMAGE_1);
+
+  // cuadros de equipos (POT 1-4)
+  renderBlocks();
+
+  fitStageToViewport();
+}
+
+/* ======================================================================
+   ZOOM / PAN de la previsualización (no afecta a la imagen exportada,
+   que siempre se genera a 2000x2500 reales)
+   ====================================================================== */
+let fitScale = 1, userZoom = 1, panX = 0, panY = 0;
+
+function fitStageToViewport(){
+  const wrap = document.querySelector('.stage-wrap');
+  const maxW = wrap.clientWidth - 32;
+  const maxH = window.innerHeight - 130;
+  fitScale = Math.min(maxW / CANVAS_W, maxH / CANVAS_H, 1);
+  $("stageOuter").style.width = (CANVAS_W * fitScale) + "px";
+  $("stageOuter").style.height = (CANVAS_H * fitScale) + "px";
+  applyStageTransform();
+}
+window.addEventListener('resize', fitStageToViewport);
+
+function applyStageTransform(){
+  const stage = $("stage");
+  stage.style.transform = `translate(${panX}px,${panY}px) scale(${fitScale * userZoom})`;
+  $("zoomPct").textContent = Math.round(userZoom * 100) + "%";
+}
+function setZoom(z){
+  userZoom = Math.max(0.4, Math.min(6, z));
+  applyStageTransform();
+}
+function resetView(){
+  userZoom = 1; panX = 0; panY = 0;
+  applyStageTransform();
+}
+$("btnZoomIn").addEventListener('click', () => setZoom(userZoom * 1.25));
+$("btnZoomOut").addEventListener('click', () => setZoom(userZoom / 1.25));
+$("btnZoomReset").addEventListener('click', resetView);
+
+/* ======================================================================
+   IMAGEN DE FONDO — permite al usuario elegir una imagen desde el
+   dispositivo (se convierte a data URL para que html2canvas pueda
+   exportarla sin problemas de CORS) o quitarla para volver al color
+   sólido de BACKGROUND.color.
+   ====================================================================== */
+$("btnBgImage").addEventListener('click', () => $("bgImageInput").click());
+
+// Recorta/escala una imagen a exactamente CANVAS_W x CANVAS_H (comportamiento
+// tipo "cover": la escala para cubrir el lienzo y recorta el sobrante
+// centrado). Se hace aquí, en un <canvas> auxiliar, en vez de confiar en el
+// object-fit:cover del CSS, porque html2canvas no siempre lo respeta al
+// exportar y podría deformar o desplazar la imagen en el PNG final.
+function fitImageToCanvas(img, targetW, targetH){
+  const canvas = document.createElement('canvas');
+  canvas.width = targetW;
+  canvas.height = targetH;
+  const ctx = canvas.getContext('2d');
+
+  const srcRatio = img.naturalWidth / img.naturalHeight;
+  const dstRatio = targetW / targetH;
+
+  let sx, sy, sw, sh;
+  if(srcRatio > dstRatio){
+    // la imagen es más "ancha" que el lienzo: recorta los lados
+    sh = img.naturalHeight;
+    sw = sh * dstRatio;
+    sx = (img.naturalWidth - sw) / 2;
+    sy = 0;
+  } else {
+    // la imagen es más "alta" que el lienzo: recorta arriba/abajo
+    sw = img.naturalWidth;
+    sh = sw / dstRatio;
+    sx = 0;
+    sy = (img.naturalHeight - sh) / 2;
+  }
+
+  ctx.drawImage(img, sx, sy, sw, sh, 0, 0, targetW, targetH);
+  return canvas.toDataURL('image/png');
+}
+
+$("bgImageInput").addEventListener('change', (e) => {
+  const file = e.target.files && e.target.files[0];
+  if(!file) return;
+  setStatus("Procesando imagen…");
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => {
+      try{
+        BACKGROUND.imageUrl = fitImageToCanvas(img, CANVAS_W, CANVAS_H);
+        render();
+        setStatus("Imagen de fondo aplicada (" + CANVAS_W + "×" + CANVAS_H + ")");
+      }catch(err){
+        console.error(err);
+        setStatus("Error al procesar la imagen: " + err.message, true);
+      }
+    };
+    img.onerror = () => setStatus("No se pudo cargar la imagen", true);
+    img.src = ev.target.result;
+  };
+  reader.onerror = () => setStatus("No se pudo leer la imagen", true);
+  reader.readAsDataURL(file);
+  e.target.value = "";
+});
+
+$("btnBgImageClear").addEventListener('click', () => {
+  BACKGROUND.imageUrl = "";
+  render();
+  setStatus("Imagen de fondo eliminada");
+});
+
+(function setupPan(){
+  const outer = $("stageOuter");
+  let dragging = false, startX = 0, startY = 0, startPanX = 0, startPanY = 0;
+  outer.addEventListener('pointerdown', (e) => {
+    dragging = true;
+    outer.classList.add('dragging');
+    startX = e.clientX; startY = e.clientY;
+    startPanX = panX; startPanY = panY;
+    outer.setPointerCapture(e.pointerId);
+  });
+  outer.addEventListener('pointermove', (e) => {
+    if(!dragging) return;
+    panX = startPanX + (e.clientX - startX);
+    panY = startPanY + (e.clientY - startY);
+    applyStageTransform();
+  });
+  function endDrag(){ dragging = false; outer.classList.remove('dragging'); }
+  outer.addEventListener('pointerup', endDrag);
+  outer.addEventListener('pointercancel', endDrag);
+  outer.addEventListener('pointerleave', endDrag);
+  outer.addEventListener('wheel', (e) => {
+    e.preventDefault();
+    setZoom(userZoom * (e.deltaY > 0 ? 0.9 : 1.1));
+  }, { passive: false });
+})();
+
+/* ======================================================================
+   EDITOR DE EQUIPOS — modal con dos formas de cambiar los equipos de
+   cada bombo:
+   1) Interfaz manual: añadir/quitar/renombrar equipos por bombo.
+   2) IA: botón que copia un prompt con el estado actual de los 4 bombos
+      para pegarlo en una IA (ChatGPT, Claude…), y un textarea donde
+      pegar la respuesta (JSON) para aplicarla a los 4 bombos a la vez.
+   Todo actúa directamente sobre BLOCKS[i].rows y llama a render().
+   ====================================================================== */
+let currentTeamsTab = 0;
+
+function openTeamsModal(){
+  currentTeamsTab = 0;
+  renderTeamsTabs();
+  renderTeamsList();
+  $("aiStatus").textContent = "";
+  $("aiStatus").className = "ai-status";
+  $("teamsModalOverlay").style.display = "flex";
+}
+function closeTeamsModal(){
+  $("teamsModalOverlay").style.display = "none";
+}
+
+function renderTeamsTabs(){
+  const tabs = $("teamsTabs");
+  tabs.innerHTML = "";
+  BLOCKS.forEach((block, i) => {
+    const btn = document.createElement("button");
+    btn.className = "modal-tab" + (i === currentTeamsTab ? " active" : "");
+    btn.textContent = block.title || ("BOMBO " + (i + 1));
+    btn.addEventListener("click", () => {
+      currentTeamsTab = i;
+      renderTeamsTabs();
+      renderTeamsList();
+    });
+    tabs.appendChild(btn);
+  });
+}
+
+function renderTeamsList(){
+  const list = $("teamsList");
+  list.innerHTML = "";
+  const rows = BLOCKS[currentTeamsTab].rows;
+  rows.forEach((row, idx) => {
+    const wrap = document.createElement("div");
+    wrap.className = "team-row-edit";
+
+    const input = document.createElement("input");
+    input.type = "text";
+    input.className = "team-name-input";
+    input.value = row.name;
+    input.placeholder = "Nombre del equipo";
+    input.addEventListener("input", () => {
+      row.name = input.value;
+      row.crest = crestUrl(input.value); // el escudo se recalcula solo a partir del nombre
+      render();
+    });
+
+    const removeBtn = document.createElement("button");
+    removeBtn.className = "team-remove-btn";
+    removeBtn.textContent = "✕";
+    removeBtn.title = "Quitar equipo";
+    removeBtn.addEventListener("click", () => {
+      rows.splice(idx, 1);
+      renderTeamsList();
+      render();
+    });
+
+    wrap.appendChild(input);
+    wrap.appendChild(removeBtn);
+    list.appendChild(wrap);
+  });
+}
+
+$("btnEditTeams").addEventListener("click", openTeamsModal);
+$("btnCloseTeamsModal").addEventListener("click", closeTeamsModal);
+$("btnCloseTeamsModalFooter").addEventListener("click", closeTeamsModal);
+$("teamsModalOverlay").addEventListener("click", (e) => {
+  if(e.target === $("teamsModalOverlay")) closeTeamsModal();
+});
+
+$("btnAddTeamRow").addEventListener("click", () => {
+  BLOCKS[currentTeamsTab].rows.push(team(""));
+  renderTeamsList();
+  render();
+  // enfoca el último input añadido para escribir el nombre directamente
+  const inputs = document.querySelectorAll("#teamsList .team-name-input");
+  if(inputs.length) inputs[inputs.length - 1].focus();
+});
+
+// ---- Prompt para IA ----------------------------------------------------
+function buildAiPrompt(){
+  let txt = "Eres un asistente que ayuda a organizar los bombos de un sorteo de fútbol.\n";
+  txt += "Ahora mismo tengo estos equipos repartidos en 4 bombos:\n\n";
+  BLOCKS.forEach((block, i) => {
+    txt += `BOMBO ${i + 1} (${block.rows.length} equipos):\n`;
+    block.rows.forEach(r => { txt += `- ${r.name || "(sin nombre)"}\n`; });
+    txt += "\n";
+  });
+  txt += "Actualiza estos equipos según lo que te indique a continuación (por ejemplo, el resultado real de un sorteo, una nueva clasificación, u otros equipos que te proponga).\n\n";
+  txt += "IMPORTANTE — responde ÚNICAMENTE con un JSON válido, sin texto adicional ni explicaciones, con esta forma exacta:\n";
+  txt += '{\n  "bombo1": ["Equipo 1", "Equipo 2", ...],\n  "bombo2": ["Equipo 1", "Equipo 2", ...],\n  "bombo3": ["Equipo 1", "Equipo 2", ...],\n  "bombo4": ["Equipo 1", "Equipo 2", ...]\n}\n\n';
+  txt += "Usa el nombre oficial y habitual de cada equipo (el que usarías para buscar su escudo), manteniendo un equipo por elemento de la lista.";
+  return txt;
+}
+
+async function copyTextToClipboard(text){
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    try{ await navigator.clipboard.writeText(text); return true; }catch(e){ /* sigue al fallback */ }
+  }
+  const ta = document.createElement("textarea");
+  ta.value = text;
+  ta.style.position = "fixed";
+  ta.style.left = "-9999px";
+  document.body.appendChild(ta);
+  ta.select();
+  let ok = false;
+  try{ ok = document.execCommand("copy"); }catch(e){ ok = false; }
+  document.body.removeChild(ta);
+  return ok;
+}
+
+$("btnCopyPrompt").addEventListener("click", async () => {
+  const ok = await copyTextToClipboard(buildAiPrompt());
+  const status = $("aiStatus");
+  if(ok){
+    status.textContent = "Prompt copiado. Pégalo en tu IA y luego pega aquí su respuesta.";
+    status.className = "ai-status ok";
+  } else {
+    status.textContent = "No se pudo copiar automáticamente. Copia el texto manualmente.";
+    status.className = "ai-status err";
+  }
+});
+
+// admite tanto ["Equipo", ...] como [{name, crest}, ...] por bombo
+function parseAiTeamsResult(rawText){
+  let text = rawText.trim();
+  const fenced = text.match(/```(?:json)?\s*([\s\S]*?)```/i);
+  if(fenced) text = fenced[1].trim();
+  const firstBrace = text.indexOf("{");
+  const lastBrace = text.lastIndexOf("}");
+  if(firstBrace !== -1 && lastBrace !== -1) text = text.slice(firstBrace, lastBrace + 1);
+
+  const data = JSON.parse(text);
+  const keys = ["bombo1", "bombo2", "bombo3", "bombo4"];
+  return keys.map(k => {
+    const arr = data[k];
+    if(!Array.isArray(arr)) throw new Error(`Falta la lista "${k}" en el JSON`);
+    return arr.map(item => {
+      if(typeof item === "string") return team(item);
+      if(item && typeof item === "object" && item.name) return team(item.name, item.crest);
+      throw new Error(`Equipo inválido dentro de "${k}"`);
+    });
+  });
+}
+
+$("btnApplyAiResult").addEventListener("click", () => {
+  const status = $("aiStatus");
+  try{
+    const newRows = parseAiTeamsResult($("aiResultInput").value);
+    newRows.forEach((rows, i) => { if(BLOCKS[i]) BLOCKS[i].rows = rows; });
+    renderTeamsTabs();
+    renderTeamsList();
+    render();
+    status.textContent = "Equipos actualizados en los 4 bombos.";
+    status.className = "ai-status ok";
+  }catch(err){
+    console.error(err);
+    status.textContent = "No se pudo interpretar la respuesta: " + err.message;
+    status.className = "ai-status err";
+  }
+});
+
+/* ======================================================================
+   EXPORTAR IMAGEN (html2canvas + fallback Web Share en iOS Safari)
+   ====================================================================== */
+function setStatus(msg, isErr){
+  const el = $("status");
+  el.textContent = msg;
+  el.classList.toggle('err', !!isErr);
+}
+
+async function waitForFonts(){
+  const specs = Object.values(FONTS).map(f => `700 40px '${f}'`);
+  try{
+    await Promise.all(specs.map(s => document.fonts.load(s)));
+    await document.fonts.ready;
+  }catch(e){ /* seguimos igualmente */ }
+}
+
+// Captura el stage a canvas. html2canvas normalmente clona el documento en un
+// <iframe> oculto; si la página se abre con file:// (o dentro de un entorno
+// con origen "null", p.ej. un iframe/sandbox) el navegador bloquea el acceso
+// a ese iframe y salta el error "Blocked a frame with origin 'null'...".
+// En ese caso reintentamos con foreignObjectRendering:true, que renderiza
+// usando SVG <foreignObject> en vez de ese iframe, evitando el problema.
+async function captureStage(stage){
+  const baseOpts = {
+    width: CANVAS_W, height: CANVAS_H,
+    useCORS: true, allowTaint: true, backgroundColor: "#1f0d02", scale: 1
+  };
+  try{
+    return await html2canvas(stage, baseOpts);
+  }catch(err){
+    console.warn("html2canvas fallo en modo normal, reintentando con foreignObjectRendering:", err);
+    return await html2canvas(stage, { ...baseOpts, foreignObjectRendering: true });
+  }
+}
+
+$("btnExport").addEventListener('click', async () => {
+  const btn = $("btnExport");
+  const original = btn.textContent;
+  btn.textContent = "…";
+  btn.disabled = true;
+  setStatus("Preparando exportación…");
+  try{
+    await waitForFonts();
+    const stage = $("stage");
+    const prevTransform = stage.style.transform;
+    stage.style.transform = "none"; // capturar a resolución real 2000x2500
+    const canvas = await captureStage(stage);
+    stage.style.transform = prevTransform;
+
+    const filename = "1909rso_sorteo.png";
+    canvas.toBlob(async (blob) => {
+      if(!blob){ btn.textContent = original; btn.disabled = false; return; }
+      const file = new File([blob], filename, { type: "image/png" });
+      if(navigator.canShare && navigator.canShare({ files: [file] })){
+        try{
+          await navigator.share({ files: [file], title: filename });
+        }catch(shareErr){
+          openInNewTab(blob);
+        }
+      } else {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url; a.download = filename;
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(() => URL.revokeObjectURL(url), 4000);
+      }
+      setStatus("Listo");
+      btn.textContent = original;
+      btn.disabled = false;
+    }, "image/png", 1.0);
+  }catch(err){
+    console.error(err);
+    const isFrameOriginError = /Blocked a frame with origin/i.test(err.message || "");
+    const msg = isFrameOriginError
+      ? "Error al exportar: el navegador bloqueó la captura por seguridad (origen \"null\"). Abre este archivo desde un servidor (http/https), no con doble clic desde el disco."
+      : "Error al exportar: " + err.message;
+    setStatus(msg, true);
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+});
+
+function openInNewTab(blob){
+  const url = URL.createObjectURL(blob);
+  window.open(url, "_blank");
+  setTimeout(() => URL.revokeObjectURL(url), 15000);
+}
+
+/* ======================================================================
+   INIT
+   ====================================================================== */
+render();
+</script>
+</body>
+</html>
