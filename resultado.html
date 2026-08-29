@@ -77,9 +77,27 @@
   .btn:disabled { opacity:.4; cursor:not-allowed; }
   .canvas-area { flex:1; width:100%; display:flex; align-items:flex-start; justify-content:center; overflow:auto; padding:36px 20px 80px; }
   .canvas-wrap { transform-origin:top center; position:relative; }
-  #card { width:2000px; height:2500px; position:relative; overflow:hidden; background:#00b140; transform-origin:top left; }
-  #card-bg { position:absolute; top:0; left:0; width:2000px; height:2500px; object-fit:fill; display:none; z-index:0; }
+  #card { width:2000px; height:2500px; position:relative; overflow:visible; background:#00b140; transform-origin:top left; }
+  #card-bg-clip { position:absolute; top:0; left:0; width:2000px; height:2500px; overflow:hidden; z-index:0; background:#00b140; }
+  #card-bg { position:absolute; top:0; left:0; display:none; z-index:0; }
   .card-layer { position:absolute; line-height:1; }
+  #bgDragOverlay { position:absolute; top:0; left:0; width:2000px; height:2500px; z-index:2000; display:none; cursor:grab; touch-action:none; -webkit-user-select:none; user-select:none; background:rgba(0,0,0,0.001); }
+  #bgDragOverlay.active { display:block; }
+  #bgDragOverlay.dragging { cursor:grabbing; }
+  #bgSelectionBox { position:absolute; top:0; left:0; width:2000px; height:2500px; box-sizing:border-box; border:3px solid #3d8bfd; pointer-events:none; display:none; z-index:2001; }
+  #bgSelectionBox.active { display:block; }
+  #bgSelectionBox .bg-handle { position:absolute; width:26px; height:26px; margin:-13px 0 0 -13px; background:#fff; border:3px solid #3d8bfd; border-radius:50%; box-sizing:border-box; pointer-events:auto; touch-action:none; -webkit-user-select:none; user-select:none; }
+  #bgSelectionBox .bg-handle.h-tl { top:0; left:0; cursor:nwse-resize; }
+  #bgSelectionBox .bg-handle.h-tc { top:0; left:50%; cursor:ns-resize; }
+  #bgSelectionBox .bg-handle.h-tr { top:0; left:100%; cursor:nesw-resize; }
+  #bgSelectionBox .bg-handle.h-ml { top:50%; left:0; cursor:ew-resize; }
+  #bgSelectionBox .bg-handle.h-mr { top:50%; left:100%; cursor:ew-resize; }
+  #bgSelectionBox .bg-handle.h-bl { top:100%; left:0; cursor:nesw-resize; }
+  #bgSelectionBox .bg-handle.h-bc { top:100%; left:50%; cursor:ns-resize; }
+  #bgSelectionBox .bg-handle.h-br { top:100%; left:100%; cursor:nwse-resize; }
+  .btn-move { background:#3a4a63; color:#fff; }
+  .btn-move:hover { background:#4a5c7a; }
+  .btn-move.active { background:var(--gold); color:var(--navy); }
   .zoom-bar { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); display:flex; align-items:center; gap:10px; background:var(--surface); border:1px solid var(--border); border-radius:30px; padding:7px 18px; font-size:12px; z-index:200; box-shadow:0 4px 20px #0007; }
   .zoom-bar button { background:none; border:none; color:var(--text); font-size:17px; cursor:pointer; line-height:1; padding:0 4px; transition:color .15s; }
   .zoom-bar button:hover { color:var(--gold); }
@@ -129,7 +147,7 @@
     .match-switch select { flex:1; max-width:none; font-size:16px; min-height:40px; }
     .updated { display:none; } /* ahorra espacio en pantallas pequeñas */
 
-    .toolbar { padding:8px 12px; gap:8px; overflow-x:auto; -webkit-overflow-scrolling:touch; }
+    .toolbar { padding:8px 12px; gap:8px; flex-wrap:wrap; }
     .toolbar .btn { flex:0 0 auto; padding:10px 14px; font-size:13px; white-space:nowrap; }
 
     .canvas-area { padding:16px 8px 90px; }
@@ -246,6 +264,8 @@
 <div class="toolbar">
   <button class="btn btn-outline" onclick="document.getElementById('bgInput').click()">🖼 Cargar fondo</button>
   <input type="file" id="bgInput" accept="image/*" style="display:none" onchange="loadBackground(this)">
+  <button class="btn btn-outline" id="fitBgBtn" onclick="ajustarFondoAlLienzo()">📐 Ajustar al lienzo</button>
+  <button class="btn btn-move" id="moveBgBtn" onclick="toggleBgMove()">✋ Mover fondo</button>
   <button class="btn btn-edit" id="editBtn" onclick="openEditModal()">✏️ Editar datos</button>
   <button class="btn btn-outline" id="liveBtn" onclick="exitManualMode()" style="display:none;">▶ Volver a datos en vivo</button>
   <div style="flex:1"></div>
@@ -255,7 +275,20 @@
 <div class="canvas-area">
   <div class="canvas-wrap" id="canvasWrap">
     <div id="card">
-      <img id="card-bg" alt="">
+      <div id="card-bg-clip">
+        <img id="card-bg" alt="">
+      </div>
+      <div id="bgDragOverlay"></div>
+      <div id="bgSelectionBox">
+        <div class="bg-handle h-tl"></div>
+        <div class="bg-handle h-tc"></div>
+        <div class="bg-handle h-tr"></div>
+        <div class="bg-handle h-ml"></div>
+        <div class="bg-handle h-mr"></div>
+        <div class="bg-handle h-bl"></div>
+        <div class="bg-handle h-bc"></div>
+        <div class="bg-handle h-br"></div>
+      </div>
 
       <!-- z1: Luzysombra estática -->
       <img id="layer-luzysombra" class="card-layer" src="https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/resultaue/est/Luzysombra.PNG" alt="" crossorigin="anonymous" style="top:0;left:0;width:2000px;height:2500px;z-index:1;object-fit:fill;">
@@ -482,6 +515,7 @@ function applyScale() {
   wrap.style.width  = Math.round(2000*scale)+'px';
   wrap.style.height = Math.round(2500*scale)+'px';
   document.getElementById('zoomVal').textContent = Math.round(scale*100)+'%';
+  updateHandleSizes();
 }
 function zoom(delta) { scale = Math.max(0.05,Math.min(1.5,scale+delta)); applyScale(); }
 function zoomFit() {
@@ -490,12 +524,19 @@ function zoomFit() {
   scale = parseFloat((available/2000).toFixed(2));
   applyScale();
 }
-applyScale();
 
 // ═══════════════════════════════════════════════════
 // BACKGROUND
 // ═══════════════════════════════════════════════════
 let bgDataUrl = null;
+let bgPosX = 0, bgPosY = 0; // desplazamiento del fondo, en el espacio 2000x2500 del card
+let bgScale = 1; // tamaño del fondo (1 = tamaño original de la imagen)
+let bgNaturalW = 0, bgNaturalH = 0; // dimensiones originales en píxeles de la imagen cargada
+function applyBgTransform() {
+  const t = `translate(${bgPosX}px, ${bgPosY}px) scale(${bgScale})`;
+  document.getElementById('card-bg').style.transform = t;
+  document.getElementById('bgSelectionBox').style.transform = t;
+}
 function loadBackground(input) {
   const file = input.files[0];
   if (!file) return;
@@ -503,12 +544,219 @@ function loadBackground(input) {
   reader.onload = function(e) {
     bgDataUrl = e.target.result;
     const bg = document.getElementById('card-bg');
+    const box = document.getElementById('bgSelectionBox');
+    bg.onload = function(){
+      // Se coloca en su tamaño original de píxeles (sin estirar al lienzo)
+      bgNaturalW = bg.naturalWidth;
+      bgNaturalH = bg.naturalHeight;
+      bg.style.width = bgNaturalW + 'px';
+      bg.style.height = bgNaturalH + 'px';
+      box.style.width = bgNaturalW + 'px';
+      box.style.height = bgNaturalH + 'px';
+      bgScale = 1;
+      bgPosX = (2000 - bgNaturalW) / 2;
+      bgPosY = (2500 - bgNaturalH) / 2;
+      applyBgTransform();
+    };
     bg.src = bgDataUrl;
     bg.style.display = 'block';
   };
   reader.readAsDataURL(file);
   input.value = '';
 }
+
+// Botón "Ajustar al lienzo": escala la imagen para que cubra los 2000x2500
+// del card (manteniendo su proporción, sin deformarla), centrada.
+function ajustarFondoAlLienzo() {
+  if (!bgDataUrl || !bgNaturalW || !bgNaturalH) return;
+  const W = 2000, H = 2500;
+  bgScale = Math.max(W / bgNaturalW, H / bgNaturalH);
+  bgPosX = (W - bgNaturalW) / 2;
+  bgPosY = (H - bgNaturalH) / 2;
+  applyBgTransform();
+}
+
+// ═══════════════════════════════════════════════════
+// MOVER FONDO (solo posición, como en Canva/Photoshop)
+// ═══════════════════════════════════════════════════
+let bgMoveActive = false;
+let bgDragging = false;
+let bgDragStartX = 0, bgDragStartY = 0;
+let bgStartPosX = 0, bgStartPosY = 0;
+let bgActivePointerId = null;
+
+// Los manejadores (handles) y el borde de la caja de selección se dibujan
+// en el espacio "de card" (2000x2500), así que su tamaño en px debe
+// recalcularse cada vez que cambia el zoom para que se vean siempre
+// del mismo tamaño en pantalla, igual que en Photopea/Photoshop.
+function updateHandleSizes(){
+  const box = document.getElementById('bgSelectionBox');
+  if (!box) return;
+  const borderPx = Math.max(1, 3/scale);
+  const handlePx = Math.max(1, 24/scale);
+  box.style.borderWidth = borderPx+'px';
+  box.querySelectorAll('.bg-handle').forEach(h=>{
+    h.style.width = handlePx+'px';
+    h.style.height = handlePx+'px';
+    h.style.marginTop = (-handlePx/2)+'px';
+    h.style.marginLeft = (-handlePx/2)+'px';
+    h.style.borderWidth = borderPx+'px';
+  });
+}
+
+function toggleBgMove() {
+  bgMoveActive = !bgMoveActive;
+  const overlay = document.getElementById('bgDragOverlay');
+  const box = document.getElementById('bgSelectionBox');
+  const btn = document.getElementById('moveBgBtn');
+  overlay.classList.toggle('active', bgMoveActive);
+  box.classList.toggle('active', bgMoveActive);
+  btn.classList.toggle('active', bgMoveActive);
+  if (bgMoveActive) updateHandleSizes();
+}
+
+(function initBgDrag(){
+  const overlay = document.getElementById('bgDragOverlay');
+
+  function startDrag(clientX, clientY){
+    bgDragging = true;
+    overlay.classList.add('dragging');
+    bgDragStartX = clientX;
+    bgDragStartY = clientY;
+    bgStartPosX = bgPosX;
+    bgStartPosY = bgPosY;
+  }
+  function moveDrag(clientX, clientY){
+    if (!bgDragging) return;
+    // Se divide entre "scale" (zoom del lienzo) para que el movimiento
+    // coincida con el desplazamiento real del ratón/dedo en pantalla.
+    const dx = (clientX - bgDragStartX) / scale;
+    const dy = (clientY - bgDragStartY) / scale;
+    bgPosX = bgStartPosX + dx;
+    bgPosY = bgStartPosY + dy;
+    applyBgTransform();
+  }
+  function stopDrag(){
+    bgDragging = false;
+    overlay.classList.remove('dragging');
+    bgActivePointerId = null;
+  }
+
+  // Pointer Events (ratón, trackpad, la mayoría de navegadores modernos)
+  overlay.addEventListener('pointerdown', function(e){
+    if (!bgMoveActive) return;
+    e.preventDefault();
+    bgActivePointerId = e.pointerId;
+    try { overlay.setPointerCapture(e.pointerId); } catch(err) {}
+    startDrag(e.clientX, e.clientY);
+  });
+  overlay.addEventListener('pointermove', function(e){
+    if (!bgDragging || e.pointerId !== bgActivePointerId) return;
+    moveDrag(e.clientX, e.clientY);
+  });
+  overlay.addEventListener('pointerup', function(e){
+    if (e.pointerId !== bgActivePointerId) return;
+    try { overlay.releasePointerCapture(e.pointerId); } catch(err) {}
+    stopDrag();
+  });
+  overlay.addEventListener('pointercancel', stopDrag);
+
+  // Touch Events como respaldo (algunas versiones de Safari iOS tienen
+  // soporte incompleto de Pointer Events / setPointerCapture).
+  overlay.addEventListener('touchstart', function(e){
+    if (!bgMoveActive || !e.touches.length) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    startDrag(t.clientX, t.clientY);
+  }, {passive:false});
+  overlay.addEventListener('touchmove', function(e){
+    if (!bgDragging || !e.touches.length) return;
+    e.preventDefault();
+    const t = e.touches[0];
+    moveDrag(t.clientX, t.clientY);
+  }, {passive:false});
+  overlay.addEventListener('touchend', stopDrag);
+  overlay.addEventListener('touchcancel', stopDrag);
+})();
+
+// ═══════════════════════════════════════════════════
+// REDIMENSIONAR FONDO (arrastrando los "handles" de las esquinas/bordes)
+// ═══════════════════════════════════════════════════
+(function initBgResize(){
+  const box = document.getElementById('bgSelectionBox');
+  if (!box) return;
+  let resizing = false;
+  let resizePointerId = null;
+  let centerX = 0, centerY = 0, startDist = 1, startScale = 1;
+  const MIN_SCALE = 0.05, MAX_SCALE = 10;
+
+  function beginResize(clientX, clientY){
+    const rect = box.getBoundingClientRect();
+    centerX = rect.left + rect.width/2;
+    centerY = rect.top + rect.height/2;
+    startDist = Math.max(1, Math.hypot(clientX - centerX, clientY - centerY));
+    startScale = bgScale;
+    resizing = true;
+  }
+  function updateResize(clientX, clientY){
+    if (!resizing) return;
+    const dist = Math.hypot(clientX - centerX, clientY - centerY);
+    let newScale = startScale * (dist / startDist);
+    newScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, newScale));
+    bgScale = newScale;
+    applyBgTransform();
+  }
+  function endResize(){
+    resizing = false;
+    resizePointerId = null;
+  }
+
+  box.querySelectorAll('.bg-handle').forEach(function(handle){
+    handle.addEventListener('pointerdown', function(e){
+      if (!bgMoveActive) return;
+      e.preventDefault();
+      e.stopPropagation();
+      resizePointerId = e.pointerId;
+      try { handle.setPointerCapture(e.pointerId); } catch(err) {}
+      beginResize(e.clientX, e.clientY);
+    });
+    handle.addEventListener('pointermove', function(e){
+      if (!resizing || e.pointerId !== resizePointerId) return;
+      e.stopPropagation();
+      updateResize(e.clientX, e.clientY);
+    });
+    handle.addEventListener('pointerup', function(e){
+      if (e.pointerId !== resizePointerId) return;
+      e.stopPropagation();
+      try { handle.releasePointerCapture(e.pointerId); } catch(err) {}
+      endResize();
+    });
+    handle.addEventListener('pointercancel', function(e){
+      e.stopPropagation();
+      endResize();
+    });
+
+    // Respaldo táctil (Safari iOS con soporte incompleto de Pointer Events)
+    handle.addEventListener('touchstart', function(e){
+      if (!bgMoveActive || !e.touches.length) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const t = e.touches[0];
+      beginResize(t.clientX, t.clientY);
+    }, {passive:false});
+    handle.addEventListener('touchmove', function(e){
+      if (!resizing || !e.touches.length) return;
+      e.preventDefault();
+      e.stopPropagation();
+      const t = e.touches[0];
+      updateResize(t.clientX, t.clientY);
+    }, {passive:false});
+    handle.addEventListener('touchend', function(e){ e.stopPropagation(); endResize(); });
+    handle.addEventListener('touchcancel', function(e){ e.stopPropagation(); endResize(); });
+  });
+})();
+
+applyScale();
 
 // ═══════════════════════════════════════════════════
 // DATA
@@ -882,16 +1130,24 @@ async function exportCard() {
     canvas.width=W; canvas.height=H;
     const ctx = canvas.getContext('2d');
 
-    function draw(img, blend) {
+    function draw(img, blend, dx, dy, dw, dh) {
       if (!img) return;
       ctx.globalCompositeOperation = blend||'source-over';
-      ctx.drawImage(img, 0, 0, W, H);
+      ctx.drawImage(img, dx||0, dy||0, dw||W, dh||H);
     }
 
     ctx.fillStyle='#00b140';
     ctx.fillRect(0,0,W,H);
 
-    if (bgDataUrl) draw(await loadImg(bgDataUrl));
+    if (bgDataUrl && bgNaturalW && bgNaturalH) {
+      const dw = bgNaturalW * bgScale, dh = bgNaturalH * bgScale;
+      // El fondo se escala desde su propio centro (igual que en pantalla);
+      // la traslación (bgPosX/bgPosY) no cambia con la escala, así que
+      // el punto de dibujo se recalcula a partir del tamaño natural.
+      const dx = bgPosX + bgNaturalW * (1 - bgScale) / 2;
+      const dy = bgPosY + bgNaturalH * (1 - bgScale) / 2;
+      draw(await loadImg(bgDataUrl), null, dx, dy, dw, dh);
+    }
     draw(await loadImg(document.getElementById('layer-luzysombra').src));
 
     var estEl = document.getElementById('layer-est');
