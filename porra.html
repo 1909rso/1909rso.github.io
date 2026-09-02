@@ -1,1 +1,414 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Generador Porra 1909RSO</title>
+<style>
+  :root{
+    --bg:#0d0f12; --panel:#16191d; --panel2:#1e2228; --border:#2b3038;
+    --accent:#4f8cff; --text:#e8eaed; --muted:#9aa2ad;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0; font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+    background:var(--bg); color:var(--text); display:flex; flex-wrap:wrap; gap:24px; padding:24px;
+  }
+  h1{font-size:18px; margin:0 0 4px;}
+  p.hint{color:var(--muted); font-size:13px; margin:0 0 16px;}
+  #canvasWrap{
+    flex:0 0 auto; background:#000; border:1px solid var(--border); border-radius:8px;
+    display:flex; align-items:center; justify-content:center; padding:12px;
+  }
+  #view{ width:400px; height:500px; display:block; cursor:grab; touch-action:none; background:repeating-conic-gradient(#222 0% 25%, #1a1a1a 0% 50%) 0 0/20px 20px;}
+  #view.dragging{cursor:grabbing;}
+  #panel{ flex:1 1 320px; max-width:420px; display:flex; flex-direction:column; gap:18px;}
+  fieldset{
+    border:1px solid var(--border); border-radius:8px; padding:14px; background:var(--panel);
+  }
+  legend{padding:0 6px; font-weight:600; font-size:14px;}
+  label{display:block; font-size:12px; color:var(--muted); margin-top:10px; margin-bottom:4px;}
+  select, input[type=file], input[type=text], input[type=number], input[type=range]{
+    width:100%; background:var(--panel2); border:1px solid var(--border); color:var(--text);
+    border-radius:6px; padding:6px 8px; font-size:13px;
+  }
+  .row{display:flex; gap:10px;}
+  .row > div{flex:1;}
+  button{
+    background:var(--accent); color:#fff; border:none; border-radius:6px; padding:10px 14px;
+    font-size:14px; font-weight:600; cursor:pointer; width:100%;
+  }
+  button.secondary{background:var(--panel2); border:1px solid var(--border);}
+  .layerLabel{font-size:13px; font-weight:600; margin-top:2px;}
+  .rangeVal{font-size:11px; color:var(--muted); text-align:right;}
+  #status{font-size:12px; color:var(--muted); min-height:16px;}
+</style>
+</head>
+<body>
 
+<div id="canvasWrap">
+  <canvas id="view" width="400" height="500"></canvas>
+</div>
+
+<div id="panel">
+  <div>
+    <h1>Generador de imagen 2000×2500</h1>
+    <p class="hint">Haz clic sobre una capa en el lienzo para seleccionarla y arrástrala para moverla. El tamaño máximo de cada capa se define en el código (ver constantes CONFIG al inicio del &lt;script&gt;) y se puede reducir con el deslizador de cada capa.</p>
+  </div>
+
+  <fieldset>
+    <legend>Capa 2 — Imagen semitransparente (25%)</legend>
+    <label>Subir imagen</label>
+    <input type="file" id="userImgInput" accept="image/*">
+    <p class="hint" style="margin:0;">Esta capa se estira siempre a 2000×2500 px exactos, cubriendo todo el lienzo. No es movible ni redimensionable.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Capa 3 — Imagen PORRA (fija, desde GitHub)</legend>
+    <p class="hint" style="margin:0;">Esta capa se estira siempre a 2000×2500 px exactos, cubriendo todo el lienzo. No es movible ni redimensionable.</p>
+  </fieldset>
+
+  <fieldset>
+    <legend>Capa 4 — Escudo izquierdo</legend>
+    <label>Selecciona equipo</label>
+    <select id="badge1Select"></select>
+    <label id="badge1CustomLabel" style="display:none;">URL personalizada</label>
+    <input type="text" id="badge1Custom" style="display:none;" placeholder="https://.../escudo.png">
+    <label>Tamaño — <span id="badge1ScaleVal" class="rangeVal"></span></label>
+    <input type="range" id="badge1Scale" min="0.1" max="1" step="0.01" value="1">
+  </fieldset>
+
+  <fieldset>
+    <legend>Capa 5 — Escudo derecho</legend>
+    <label>Selecciona equipo</label>
+    <select id="badge2Select"></select>
+    <label id="badge2CustomLabel" style="display:none;">URL personalizada</label>
+    <input type="text" id="badge2Custom" style="display:none;" placeholder="https://.../escudo.png">
+    <label>Tamaño — <span id="badge2ScaleVal" class="rangeVal"></span></label>
+    <input type="range" id="badge2Scale" min="0.1" max="1" step="0.01" value="1">
+  </fieldset>
+
+  <button id="exportBtn">Descargar PNG (2000×2500)</button>
+  <button id="resetBtn" class="secondary">Restablecer posiciones</button>
+  <div id="status"></div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG — Edita aquí posiciones iniciales y tamaños máximos.
+   x,y = centro de la imagen, en píxeles del lienzo (2000x2500).
+   maxW,maxH = caja máxima en la que se ajusta la imagen
+               (se respeta el aspect ratio original, "contain").
+   ============================================================ */
+const CANVAS_W = 2000;
+const CANVAS_H = 2500;
+
+const PORRA_URL = "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/porra/PORRA%20MATCHDAY%20PASIO%CC%81N%201909RSO.png";
+const ESCUDOS_BASE = "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/escudos/BN/";
+
+// Lista de equipos para los menús de escudos.
+// El nombre debe coincidir EXACTAMENTE con el archivo .png en la carpeta escudos/BN.
+// Si un escudo no aparece, revisa/edita el nombre aquí o usa "Personalizado (URL)".
+const TEAMS = [
+  "Real Sociedad",
+  "Real Madrid",
+  "Barcelona",
+  "Atletico de Madrid",
+  "Athletic Club",
+  "Sevilla",
+  "Real Betis",
+  "Villarreal",
+  "Valencia",
+  "Girona",
+  "Osasuna",
+  "Celta de Vigo",
+  "Rayo Vallecano",
+  "Getafe",
+  "Mallorca",
+  "Las Palmas",
+  "Alaves",
+  "Espanyol",
+  "Leganes",
+  "Valladolid"
+];
+
+const CONFIG = {
+  bg: { color: "#000000" },
+  userImg: { x: 1000, y: 1250, maxW: 2000, maxH: 2500, opacity: 0.25 },
+  porra:   { x: 1000, y: 1250, maxW: 2000, maxH: 2500, opacity: 1 },
+  badge1:  { x: 550,  y: 350,  maxW: 450,  maxH: 450,  opacity: 1 },
+  badge2:  { x: 1450, y: 350,  maxW: 450,  maxH: 450,  opacity: 1 },
+};
+/* ============================================================ */
+
+const layers = {
+  // userImg: capa fija, siempre estirada a exactamente CANVAS_W x CANVAS_H, no arrastrable
+  userImg: { ...CONFIG.userImg, img: null, scale: 1, visible: false, locked: true, stretchToCanvas: true },
+  // porra: capa fija, siempre estirada a exactamente CANVAS_W x CANVAS_H, no arrastrable
+  porra:   { ...CONFIG.porra,   img: null, scale: 1, visible: true, locked: true, stretchToCanvas: true },
+  badge1:  { ...CONFIG.badge1,  img: null, scale: 1, visible: true, locked: false, src: ESCUDOS_BASE + "Real%20Sociedad.png" },
+  badge2:  { ...CONFIG.badge2,  img: null, scale: 1, visible: true, locked: false, src: ESCUDOS_BASE + "Real%20Sociedad.png" },
+};
+const layerOrder = ["userImg", "porra", "badge1", "badge2"]; // orden de dibujo (de abajo a arriba, tras el fondo negro)
+
+const view = document.getElementById("view");
+const vctx = view.getContext("2d");
+const status = document.getElementById("status");
+
+function setStatus(msg){ status.textContent = msg; }
+
+function loadImage(src, crossOrigin){
+  return new Promise((resolve) => {
+    const img = new Image();
+    if (crossOrigin) img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = () => { setStatus("No se pudo cargar: " + src); resolve(null); };
+    img.src = src;
+  });
+}
+
+async function setLayerSrc(key, src, crossOrigin){
+  const l = layers[key];
+  l.src = src;
+  l.img = await loadImage(src, crossOrigin);
+  l.visible = !!l.img;
+  render();
+}
+
+// Ajusta (contain) un tamaño natural dentro de una caja maxW x maxH, aplicando además "scale" (0-1)
+function fitSize(natW, natH, maxW, maxH, scale){
+  const ratio = Math.min(maxW / natW, maxH / natH, 1);
+  const w = natW * ratio * scale;
+  const h = natH * ratio * scale;
+  return { w, h };
+}
+
+function drawLayer(ctx, l){
+  if (!l.visible || !l.img) return null;
+  if (!l.img.naturalWidth || !l.img.naturalHeight) return null; // imagen rota/0px: evita errores de dibujo
+
+  let w, h, dx, dy;
+  if (l.stretchToCanvas){
+    // Se estira exactamente al lienzo completo, sin mantener el aspect ratio original.
+    w = CANVAS_W; h = CANVAS_H; dx = 0; dy = 0;
+  } else {
+    const fit = fitSize(l.img.naturalWidth, l.img.naturalHeight, l.maxW, l.maxH, l.scale);
+    w = fit.w; h = fit.h;
+    dx = l.x - w / 2;
+    dy = l.y - h / 2;
+  }
+
+  ctx.save();
+  ctx.globalAlpha = l.opacity;
+  ctx.drawImage(l.img, dx, dy, w, h);
+  ctx.restore();
+  return { x: dx, y: dy, w, h };
+}
+
+let selectedKey = null;
+let lastBounds = {}; // bounds de cada capa en la última pasada, en coords de lienzo real (2000x2500)
+
+function render(){
+  // Lienzo offscreen a resolución real, se reutiliza para preview y export
+  vctx.clearRect(0, 0, view.width, view.height);
+
+  const off = document.createElement("canvas");
+  off.width = CANVAS_W; off.height = CANVAS_H;
+  const octx = off.getContext("2d");
+
+  // Capa 1: fondo negro
+  octx.fillStyle = CONFIG.bg.color;
+  octx.fillRect(0, 0, CANVAS_W, CANVAS_H);
+
+  lastBounds = {};
+  for (const key of layerOrder){
+    const b = drawLayer(octx, layers[key]);
+    if (b) lastBounds[key] = b;
+  }
+
+  // Dibuja el offscreen escalado en el canvas de vista previa
+  vctx.drawImage(off, 0, 0, CANVAS_W, CANVAS_H, 0, 0, view.width, view.height);
+
+  // Marco de selección (solo en preview, no se exporta)
+  if (selectedKey && lastBounds[selectedKey]){
+    const b = lastBounds[selectedKey];
+    const sx = view.width / CANVAS_W, sy = view.height / CANVAS_H;
+    vctx.save();
+    vctx.strokeStyle = "#4f8cff";
+    vctx.lineWidth = 2;
+    vctx.setLineDash([6, 4]);
+    vctx.strokeRect(b.x * sx, b.y * sy, b.w * sx, b.h * sy);
+    vctx.restore();
+  }
+
+  window._lastOffscreen = off;
+}
+
+// ---- Interacción: seleccionar y arrastrar capas sobre el lienzo ----
+let dragging = false;
+let dragOffset = { x: 0, y: 0 };
+
+function canvasCoordsFromEvent(evt){
+  const rect = view.getBoundingClientRect();
+  const clientX = evt.touches ? evt.touches[0].clientX : evt.clientX;
+  const clientY = evt.touches ? evt.touches[0].clientY : evt.clientY;
+  const px = (clientX - rect.left) / rect.width * CANVAS_W;
+  const py = (clientY - rect.top) / rect.height * CANVAS_H;
+  return { x: px, y: py };
+}
+
+function hitTest(px, py){
+  // de arriba a abajo
+  for (let i = layerOrder.length - 1; i >= 0; i--){
+    const key = layerOrder[i];
+    if (layers[key].locked) continue; // las capas fijas (estiradas al lienzo) no se seleccionan ni arrastran
+    const b = lastBounds[key];
+    if (!b) continue;
+    if (px >= b.x && px <= b.x + b.w && py >= b.y && py <= b.y + b.h){
+      return key;
+    }
+  }
+  return null;
+}
+
+function pointerDown(evt){
+  const { x, y } = canvasCoordsFromEvent(evt);
+  const hit = hitTest(x, y);
+  selectedKey = hit;
+  if (hit){
+    dragging = true;
+    dragOffset.x = x - layers[hit].x;
+    dragOffset.y = y - layers[hit].y;
+    view.classList.add("dragging");
+  }
+  render();
+}
+function pointerMove(evt){
+  if (!dragging || !selectedKey) return;
+  evt.preventDefault();
+  const { x, y } = canvasCoordsFromEvent(evt);
+  layers[selectedKey].x = Math.round(x - dragOffset.x);
+  layers[selectedKey].y = Math.round(y - dragOffset.y);
+  render();
+}
+function pointerUp(){
+  dragging = false;
+  view.classList.remove("dragging");
+}
+
+view.addEventListener("mousedown", pointerDown);
+window.addEventListener("mousemove", pointerMove);
+window.addEventListener("mouseup", pointerUp);
+view.addEventListener("touchstart", pointerDown, { passive: true });
+window.addEventListener("touchmove", pointerMove, { passive: false });
+window.addEventListener("touchend", pointerUp);
+
+// ---- Controles del panel ----
+
+// Capa usuario (25%)
+document.getElementById("userImgInput").addEventListener("change", (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const url = URL.createObjectURL(file);
+  setLayerSrc("userImg", url, false);
+});
+// Escudos: construir selects
+function buildTeamSelect(selectEl, customLabelEl, customInputEl, layerKey){
+  selectEl.innerHTML = "";
+  TEAMS.forEach(name => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    selectEl.appendChild(opt);
+  });
+  const customOpt = document.createElement("option");
+  customOpt.value = "__custom__";
+  customOpt.textContent = "Personalizado (URL)";
+  selectEl.appendChild(customOpt);
+  selectEl.value = "Real Sociedad";
+
+  selectEl.addEventListener("change", () => {
+    if (selectEl.value === "__custom__"){
+      customLabelEl.style.display = "block";
+      customInputEl.style.display = "block";
+      if (customInputEl.value) setLayerSrc(layerKey, customInputEl.value, true);
+    } else {
+      customLabelEl.style.display = "none";
+      customInputEl.style.display = "none";
+      const url = ESCUDOS_BASE + encodeURIComponent(selectEl.value) + ".png";
+      setLayerSrc(layerKey, url, true);
+      setStatus("");
+    }
+  });
+  customInputEl.addEventListener("change", () => {
+    if (customInputEl.value) setLayerSrc(layerKey, customInputEl.value, true);
+  });
+}
+
+buildTeamSelect(
+  document.getElementById("badge1Select"),
+  document.getElementById("badge1CustomLabel"),
+  document.getElementById("badge1Custom"),
+  "badge1"
+);
+buildTeamSelect(
+  document.getElementById("badge2Select"),
+  document.getElementById("badge2CustomLabel"),
+  document.getElementById("badge2Custom"),
+  "badge2"
+);
+
+const badge1Scale = document.getElementById("badge1Scale");
+badge1Scale.addEventListener("input", () => {
+  layers.badge1.scale = parseFloat(badge1Scale.value);
+  document.getElementById("badge1ScaleVal").textContent = Math.round(layers.badge1.scale * 100) + "%";
+  render();
+});
+const badge2Scale = document.getElementById("badge2Scale");
+badge2Scale.addEventListener("input", () => {
+  layers.badge2.scale = parseFloat(badge2Scale.value);
+  document.getElementById("badge2ScaleVal").textContent = Math.round(layers.badge2.scale * 100) + "%";
+  render();
+});
+
+// Reset
+document.getElementById("resetBtn").addEventListener("click", () => {
+  layers.userImg.x = CONFIG.userImg.x; layers.userImg.y = CONFIG.userImg.y; layers.userImg.scale = 1;
+  layers.porra.x = CONFIG.porra.x; layers.porra.y = CONFIG.porra.y; layers.porra.scale = 1;
+  layers.badge1.x = CONFIG.badge1.x; layers.badge1.y = CONFIG.badge1.y; layers.badge1.scale = 1;
+  layers.badge2.x = CONFIG.badge2.x; layers.badge2.y = CONFIG.badge2.y; layers.badge2.scale = 1;
+  badge1Scale.value = 1; document.getElementById("badge1ScaleVal").textContent = "100%";
+  badge2Scale.value = 1; document.getElementById("badge2ScaleVal").textContent = "100%";
+  render();
+});
+
+// Export
+document.getElementById("exportBtn").addEventListener("click", () => {
+  render(); // asegura offscreen actualizado y sin selección dibujada dentro (la selección es solo en 'view')
+  const off = window._lastOffscreen;
+  off.toBlob((blob) => {
+    if (!blob){ setStatus("Error al exportar la imagen."); return; }
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "porra_1909rso.png";
+    a.click();
+    URL.revokeObjectURL(url);
+  }, "image/png");
+});
+
+// Carga inicial
+(async function init(){
+  document.getElementById("badge1ScaleVal").textContent = "100%";
+  document.getElementById("badge2ScaleVal").textContent = "100%";
+
+  await Promise.all([
+    setLayerSrc("porra", PORRA_URL, true),
+    setLayerSrc("badge1", layers.badge1.src, true),
+    setLayerSrc("badge2", layers.badge2.src, true),
+  ]);
+  render();
+})();
+</script>
+</body>
+</html>
