@@ -51,6 +51,22 @@
     background: #003580;
   }
 
+  #btnSubirCapa, #btnQuitarCapa {
+    font-family: 'LaLiga', Arial, sans-serif;
+    font-size: 16px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    background: #444;
+    color: #fff;
+    display: inline-block;
+  }
+
+  #btnSubirCapa:hover, #btnQuitarCapa:hover {
+    background: #666;
+  }
+
   #contenedorCanvas {
     max-width: 1728px;
     margin: 0 auto;
@@ -162,6 +178,9 @@
     <label for="formacionSelector">Formación:</label>
     <select id="formacionSelector"></select>
     <button id="btnDescargar">Descargar imagen</button>
+    <label id="btnSubirCapa" for="inputCapa">Añadir capa</label>
+    <input type="file" id="inputCapa" accept="image/*" style="display:none;">
+    <button id="btnQuitarCapa" style="display:none;">Quitar capa</button>
   </div>
 
   <div id="contenedorCanvas">
@@ -188,10 +207,67 @@
   const ESCUDO_URL = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/escudos/color/Real%20Sociedad.png';
   const COLOR_ESCUDO = '#0a2a6b'; // azul marino que sustituye al color original del escudo
 
+  // Posición y tamaño de los textos sobre cada ficha.
+  // dx/dy son desplazamientos en píxeles respecto a la esquina superior
+  // izquierda del escudo (para número y texto) o respecto al centro,
+  // debajo del escudo (para el nombre). Cambia estos valores para mover
+  // o agrandar/achicar cada texto.
+  const TEXTO_CONFIG = {
+    numero:  { dx: 15, dy: 120, tamano: 50 },
+    texto:   { dx: 15, dy: 170, tamano: 16 },   // el texto pequeño (DEF/MED/DEL) bajo el número
+    nombre:  { dx: 0,  dy: -70, tamano: 34 }    // debajo del escudo, centrado
+  };
+
+  // Tamaño y borde de TODOS los escudos a la vez.
+  // escala: 1 = tamaño normal, 1.2 = un 20% más grandes, 0.8 = un 20% más pequeños.
+  // grosor: ancho en píxeles del contorno blanco alrededor del escudo.
+  // Ambos afectan a las 11 fichas por igual.
+  const ESCUDO_CONFIG = {
+    escala: 1.35,
+    grosor: 5
+  };
+
+  // Posición y tamaño de la FOTO dentro de cada escudo (aplica a las 11 fichas).
+  // escala: 1 = ajustada al escudo, >1 la agranda (se recorta igualmente a la
+  // forma del escudo), <1 la reduce. dx/dy la desplazan dentro del escudo.
+  const FOTO_CONFIG = {
+    escala: 1.1,
+    dx: -10,
+    dy: 50
+  };
+
+  // Capa superior opcional (imagen subida desde el móvil), por encima de todo lo demás
+  const CAPA_SUPERIOR_CONFIG = {
+    opacidad: 0.3
+  };
+
+  // Degradado de color sobre cada escudo, entre la foto y los textos.
+  // Tiene la misma forma que el escudo (no se sale de esa silueta).
+  // Va en dos tramos, empezando desde abajo del escudo hacia arriba:
+  //   1) "solido": se mantiene al 100% del color durante esta proporción
+  //      de la altura del escudo (0 a 1). Ej: 0.3 = el 30% inferior sólido.
+  //   2) "desvanecido": justo después del tramo sólido, baja del 100% al
+  //      0% (transparente) a lo largo de esta otra proporción de la altura.
+  // Si "desvanecido" es 0, el degradado corta en seco sin transición.
+  // Si "solido" es 0, empieza a desvanecerse ya desde abajo del todo.
+  const DEGRADADO_CONFIG = {
+    color: '#000000',
+    solido: 0.15,
+    desvanecido: 0.3
+  };
+
+  function colorConAlpha(hex, alpha) {
+    const limpio = hex.replace('#', '');
+    const r = parseInt(limpio.substring(0, 2), 16);
+    const g = parseInt(limpio.substring(2, 4), 16);
+    const b = parseInt(limpio.substring(4, 6), 16);
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+  }
+
   // Plantilla completa del equipo (todos los jugadores disponibles para elegir)
   const PLANTILLA = [
     { numero: 1,  nombre: "REMIRO",   texto: "POR", imagen: "https://via.placeholder.com/400x500?text=REMIRO" },
-    { numero: 13, nombre: "MARRERO",  texto: "POR", imagen: "https://via.placeholder.com/400x500?text=MARRERO" },
+    { numero: 13, nombre: "MARÍN",  texto: "POR", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/alineacion/jugadored/Marin.PNG" },
     { numero: 24, nombre: "AIHEN",    texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=AIHEN" },
     { numero: 5,  nombre: "ZUBELDIA", texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=ZUBELDIA" },
     { numero: 4,  nombre: "ARETXABALETA", texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=ARETXABALETA" },
@@ -214,7 +290,7 @@
   // Once inicial: el primer jugador es siempre el portero.
   // Se puede cambiar cada jugador haciendo clic sobre su ficha.
   let ALINEACION = [
-    PLANTILLA[0],  // POR
+    PLANTILLA[1],  // POR — Marín
     PLANTILLA[2], PLANTILLA[3], PLANTILLA[4], PLANTILLA[5], // DEF
     PLANTILLA[8], PLANTILLA[9], PLANTILLA[10], // MED
     PLANTILLA[14], PLANTILLA[15], PLANTILLA[16] // DEL
@@ -237,6 +313,41 @@
     "4-5-1":     [4, 5, 1]
   };
 
+  // Ajustes manuales de posición, por formación. Sirven para mover a mano
+  // cualquiera de los 11 jugadores respecto a la posición que se calcula
+  // automáticamente, sin tener que tocar el resto del código.
+  //
+  // El índice 0 es siempre el portero; los índices 1-10 son el resto de
+  // jugadores en el mismo orden en que se reparten por formación (de
+  // defensa a ataque, izquierda a derecha en cada línea).
+  //
+  // dx/dy son píxeles de desplazamiento (positivo = derecha/abajo,
+  // negativo = izquierda/arriba). Si una formación no aparece aquí, o le
+  // faltan jugadores, esos usan 0,0 (posición normal, sin ajustar).
+  //
+  // Ejemplo para mover al portero 20px a la derecha y 15px arriba en el 4-3-3:
+  //   "4-3-3": [ { dx: 20, dy: -15 } ]
+  const AJUSTES_POSICION = {
+    "4-3-3":     [],
+    "4-4-2":     [],
+    "4-2-3-1":   [],
+    "4-1-4-1":   [],
+    "4-3-1-2":   [],
+    "4-1-2-1-2": [],
+    "3-5-2":     [],
+    "3-4-3":     [],
+    "3-4-1-2":   [],
+    "5-3-2":     [],
+    "5-4-1":     [],
+    "4-5-1":     []
+  };
+
+  function obtenerAjuste(formacionKey, indice) {
+    const lista = AJUSTES_POSICION[formacionKey];
+    if (!lista || !lista[indice]) return { dx: 0, dy: 0 };
+    return { dx: lista[indice].dx || 0, dy: lista[indice].dy || 0 };
+  }
+
   // ============================
   // MOTOR DE DIBUJO (no editar)
   // ============================
@@ -245,12 +356,15 @@
   const CANVAS_W = canvas.width;
   const CANVAS_H = canvas.height;
   const HEADER_H = 380; // espacio reservado arriba para título/rival
-  const FICHA_W = 240;
+  const FICHA_W_BASE = 240;
+  let FICHA_W = FICHA_W_BASE;
   let FICHA_H = 300; // se recalcula tras cargar el escudo, para no deformar su forma
 
   let fondoImg = null;
   let escudoImg = null;
   let escudoSilueta = null; // canvas con el escudo recoloreado en azul marino (sirve de molde)
+  let escudoContorno = null; // canvas con el escudo recoloreado en blanco (sirve de borde)
+  let capaSuperiorImg = null; // imagen subida por el usuario, se pinta al final por encima de todo
   let hitboxes = []; // posiciones clicables de la última pintada: {x,y,w,h,slot}
   const cacheImagenes = {};
   let renderToken = 0; // evita que un dibujo antiguo se pinte encima de uno nuevo
@@ -288,42 +402,85 @@
   }
 
   function dibujarJugador(jugador, cx, cy, ancho, alto, img) {
-    const x = cx - ancho / 2;
-    const y = cy - alto / 2;
+    const g = ESCUDO_CONFIG.grosor;
+    const tempW = ancho + g * 2;
+    const tempH = alto + g * 2;
+    const x = cx - tempW / 2;
+    const y = cy - tempH / 2;
 
-    // Se compone en un lienzo aparte para no afectar al resto del canvas principal
     const temp = document.createElement('canvas');
-    temp.width = ancho;
-    temp.height = alto;
+    temp.width = tempW;
+    temp.height = tempH;
     const tctx = temp.getContext('2d');
 
-    // 1) Fondo: silueta del escudo en azul marino (sustituye al rectángulo de antes)
-    if (escudoSilueta) tctx.drawImage(escudoSilueta, 0, 0, ancho, alto);
-
-    // 2) La foto del jugador se recorta exactamente a la forma del escudo
-    if (img) {
-      tctx.globalCompositeOperation = 'source-atop';
-      tctx.drawImage(img, 0, 0, ancho, alto);
-      tctx.globalCompositeOperation = 'source-over';
+    // 1) Contorno: la misma silueta (sin escalar) dibujada muchas veces desplazada
+    //    en círculo alrededor del centro. Esto crea un borde uniforme de "g" px,
+    //    en vez de estirar el escudo (que lo deformaba).
+    if (escudoContorno) {
+      const pasos = 24;
+      for (let i = 0; i < pasos; i++) {
+        const ang = (i / pasos) * Math.PI * 2;
+        const dx = Math.cos(ang) * g;
+        const dy = Math.sin(ang) * g;
+        tctx.drawImage(escudoContorno, g + dx, g + dy, ancho, alto);
+      }
     }
+
+    // 2) Capa aparte: escudo azul marino con la foto ya recortada dentro, a tamaño normal
+    const capa = document.createElement('canvas');
+    capa.width = ancho;
+    capa.height = alto;
+    const cctx = capa.getContext('2d');
+    if (escudoSilueta) cctx.drawImage(escudoSilueta, 0, 0, ancho, alto);
+    if (img) {
+      cctx.globalCompositeOperation = 'source-atop';
+      const fw = ancho * FOTO_CONFIG.escala;
+      const fh = alto * FOTO_CONFIG.escala;
+      const fx = (ancho - fw) / 2 + FOTO_CONFIG.dx;
+      const fy = (alto - fh) / 2 + FOTO_CONFIG.dy;
+      cctx.drawImage(img, fx, fy, fw, fh);
+      cctx.globalCompositeOperation = 'source-over';
+    }
+
+    // 2b) Degradado de color con la misma forma del escudo, entre la foto y los textos.
+    //     Tramo sólido al 100% desde abajo, y luego se desvanece hasta 0%.
+    const totalFraccion = Math.min(DEGRADADO_CONFIG.solido + DEGRADADO_CONFIG.desvanecido, 1);
+    if (totalFraccion > 0) {
+      const yInicio = alto; // abajo del escudo
+      const yFin = alto - alto * totalFraccion; // hasta aquí llega el degradado
+      const puntoFinSolido = totalFraccion > 0 ? DEGRADADO_CONFIG.solido / totalFraccion : 0;
+      const gradiente = cctx.createLinearGradient(0, yInicio, 0, yFin);
+      gradiente.addColorStop(0, colorConAlpha(DEGRADADO_CONFIG.color, 1));
+      gradiente.addColorStop(Math.min(puntoFinSolido, 1), colorConAlpha(DEGRADADO_CONFIG.color, 1));
+      gradiente.addColorStop(1, colorConAlpha(DEGRADADO_CONFIG.color, 0));
+      cctx.globalCompositeOperation = 'source-atop';
+      cctx.fillStyle = gradiente;
+      cctx.fillRect(0, 0, ancho, alto);
+      cctx.globalCompositeOperation = 'source-over';
+    }
+
+    // 3) Se superpone centrada sobre el contorno, dejando visible el borde blanco alrededor
+    tctx.drawImage(capa, g, g);
 
     ctx.drawImage(temp, x, y);
 
-    // Número (esquina superior izquierda)
+    // Número (posición configurable en TEXTO_CONFIG.numero)
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle = '#ffffff';
-    ctx.font = '700 40px LaLiga, Arial, sans-serif';
-    ctx.fillText(jugador.numero, x + 10, y + 10);
-    ctx.font = '400 16px LaLiga, Arial, sans-serif';
-    ctx.fillText(jugador.texto, x + 10, y + 52);
+    ctx.font = `700 ${TEXTO_CONFIG.numero.tamano}px LaLiga, Arial, sans-serif`;
+    ctx.fillText(jugador.numero, x + g + TEXTO_CONFIG.numero.dx, y + g + TEXTO_CONFIG.numero.dy);
 
-    // Nombre (debajo del escudo)
+    // Texto pequeño bajo el número, ej. "DEF" (posición configurable en TEXTO_CONFIG.texto)
+    ctx.font = `400 ${TEXTO_CONFIG.texto.tamano}px LaLiga, Arial, sans-serif`;
+    ctx.fillText(jugador.texto, x + g + TEXTO_CONFIG.texto.dx, y + g + TEXTO_CONFIG.texto.dy);
+
+    // Nombre, debajo del escudo (posición configurable en TEXTO_CONFIG.nombre)
     ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.font = '700 34px LaLiga, Arial, sans-serif';
+    ctx.font = `700 ${TEXTO_CONFIG.nombre.tamano}px LaLiga, Arial, sans-serif`;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(jugador.nombre.toUpperCase(), cx, y + alto + 10);
+    ctx.fillText(jugador.nombre.toUpperCase(), cx + TEXTO_CONFIG.nombre.dx, y + tempH + TEXTO_CONFIG.nombre.dy);
   }
 
   function calcularPosiciones(lineas) {
@@ -336,7 +493,9 @@
     posiciones.push({ x: CANVAS_W / 2, y: yPortero });
 
     lineas.forEach((cantidad, idxLinea) => {
-      const filaDesdeAbajo = lineas.length - idxLinea;
+      // idxLinea=0 es la línea más defensiva (va justo encima del portero, abajo);
+      // la última línea del array (delantera) queda arriba, cerca del título.
+      const filaDesdeAbajo = idxLinea + 1;
       const y = HEADER_H + altoDisponible - altoFila * (filaDesdeAbajo + 0.5);
       const margen = 160;
       const anchoUtil = CANVAS_W - margen * 2;
@@ -356,7 +515,10 @@
     escudoImg = await cargarImagen(ESCUDO_URL);
     if (escudoImg) {
       escudoSilueta = crearSilueta(escudoImg, COLOR_ESCUDO);
-      // Ajustamos el alto de la ficha a la proporción real del escudo, para no deformarlo
+      escudoContorno = crearSilueta(escudoImg, '#ffffff');
+      // Ajustamos el ancho según ESCUDO_CONFIG.escala y el alto según la
+      // proporción real del escudo, para no deformarlo.
+      FICHA_W = Math.round(FICHA_W_BASE * ESCUDO_CONFIG.escala);
       FICHA_H = Math.round(FICHA_W * (escudoImg.naturalHeight / escudoImg.naturalWidth));
     }
     await Promise.all(PLANTILLA.map(j => cargarImagen(j.imagen)));
@@ -384,14 +546,25 @@
     const nuevasHitboxes = [];
     posiciones.forEach((pos, i) => {
       if (ALINEACION[i]) {
-        dibujarJugador(ALINEACION[i], pos.x, pos.y, FICHA_W, FICHA_H, imagenes[i]);
+        const ajuste = obtenerAjuste(formacionKey, i);
+        const px = pos.x + ajuste.dx;
+        const py = pos.y + ajuste.dy;
+        dibujarJugador(ALINEACION[i], px, py, FICHA_W, FICHA_H, imagenes[i]);
         nuevasHitboxes.push({
-          x: pos.x - FICHA_W / 2, y: pos.y - FICHA_H / 2,
+          x: px - FICHA_W / 2, y: py - FICHA_H / 2,
           w: FICHA_W, h: FICHA_H, slot: i
         });
       }
     });
     hitboxes = nuevasHitboxes; // se sustituye entera solo si este dibujo es el vigente
+
+    // Capa superior: imagen subida por el usuario, por encima de todo, con opacidad reducida
+    if (capaSuperiorImg) {
+      ctx.save();
+      ctx.globalAlpha = CAPA_SUPERIOR_CONFIG.opacidad;
+      ctx.drawImage(capaSuperiorImg, 0, 0, CANVAS_W, CANVAS_H);
+      ctx.restore();
+    }
   }
 
   // ============================
@@ -461,15 +634,67 @@
   selector.disabled = true;
   selector.addEventListener('change', () => dibujarAlineacion(selector.value));
 
+  function esIOS() {
+    return /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  }
+
   document.getElementById('btnDescargar').addEventListener('click', () => {
-    canvas.toBlob((blob) => {
+    canvas.toBlob(async (blob) => {
+      if (!blob) return;
+      const nombreArchivo = `alineacion_${selector.value}.png`;
+
+      if (esIOS()) {
+        // Safari en iPhone no soporta la descarga directa de blobs (el atributo
+        // "download" no funciona). Usamos el menú nativo de compartir, que
+        // permite guardar la imagen en Fotos; si no está disponible, la
+        // abrimos en una pestaña nueva para guardarla manteniendo pulsado.
+        const file = new File([blob], nombreArchivo, { type: 'image/png' });
+        if (navigator.canShare && navigator.canShare({ files: [file] })) {
+          try {
+            await navigator.share({ files: [file], title: 'Alineación' });
+            return;
+          } catch (err) {
+            // El usuario canceló el share o falló: seguimos con el fallback
+          }
+        }
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+        return;
+      }
+
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url;
-      a.download = `alineacion_${selector.value}.png`;
+      a.download = nombreArchivo;
       a.click();
       URL.revokeObjectURL(url);
     }, 'image/png');
+  });
+
+  // ============================
+  // CAPA SUPERIOR (imagen subida desde el móvil, opacidad al 30%)
+  // ============================
+  const inputCapa = document.getElementById('inputCapa');
+  const btnQuitarCapa = document.getElementById('btnQuitarCapa');
+
+  inputCapa.addEventListener('change', () => {
+    const archivo = inputCapa.files[0];
+    if (!archivo) return;
+    const url = URL.createObjectURL(archivo);
+    const img = new Image();
+    img.onload = () => {
+      capaSuperiorImg = img;
+      btnQuitarCapa.style.display = 'inline-block';
+      dibujarAlineacion(selector.value);
+    };
+    img.src = url;
+  });
+
+  btnQuitarCapa.addEventListener('click', () => {
+    capaSuperiorImg = null;
+    inputCapa.value = '';
+    btnQuitarCapa.style.display = 'none';
+    dibujarAlineacion(selector.value);
   });
 
   (async () => {
