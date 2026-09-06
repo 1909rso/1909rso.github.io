@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Generador de Alineación</title>
+<style>
+  @font-face {
+    font-family: 'LaLiga';
+    src: url('https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/alineacion/escudo/LaLiga.woff2') format('woff2');
+    font-weight: normal;
+    font-style: normal;
+  }
+
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #1b1b1b;
+    font-family: 'LaLiga', Arial, sans-serif;
+    color: #fff;
+  }
+
+  #panel {
+    max-width: 1728px;
+    margin: 0 auto;
+    padding: 20px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    flex-wrap: wrap;
+  }
+
+  #panel label {
+    font-size: 16px;
+  }
+
+  #formacionSelector, #btnDescargar {
+    font-family: 'LaLiga', Arial, sans-serif;
+    font-size: 16px;
+    padding: 8px 14px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+  }
+
+  #btnDescargar {
+    background: #0047ab;
+    color: #fff;
+  }
+
+  #btnDescargar:hover {
+    background: #003580;
+  }
+
+  #contenedorCanvas {
+    max-width: 1728px;
+    margin: 0 auto;
+  }
+
+  canvas {
+    display: block;
+    width: 100%;
+    height: auto;
+    cursor: pointer;
+  }
+
+  /* Modal selector de jugador */
+  #overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    align-items: center;
+    justify-content: center;
+    z-index: 100;
+  }
+
+  #overlay.activo {
+    display: flex;
+  }
+
+  #modal {
+    background: #14213d;
+    border-radius: 10px;
+    width: 420px;
+    max-width: 90vw;
+    max-height: 80vh;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    border: 2px solid #ffffff33;
+  }
+
+  #modalHeader {
+    padding: 16px;
+    border-bottom: 1px solid #ffffff33;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #modalHeader h3 {
+    margin: 0;
+    font-size: 18px;
+  }
+
+  #cerrarModal {
+    background: none;
+    border: none;
+    color: #fff;
+    font-size: 22px;
+    cursor: pointer;
+    line-height: 1;
+  }
+
+  #buscador {
+    margin: 12px 16px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    border: none;
+    font-size: 16px;
+    font-family: 'LaLiga', Arial, sans-serif;
+  }
+
+  #listaJugadores {
+    overflow-y: auto;
+    padding: 0 8px 12px 8px;
+  }
+
+  .item-jugador {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 8px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+
+  .item-jugador:hover {
+    background: #ffffff22;
+  }
+
+  .item-jugador .num {
+    width: 30px;
+    text-align: center;
+    font-weight: 700;
+    opacity: 0.8;
+  }
+
+  .item-jugador .nom {
+    flex: 1;
+  }
+
+  .item-jugador .rol {
+    font-size: 12px;
+    opacity: 0.6;
+  }
+</style>
+</head>
+<body>
+
+  <div id="panel">
+    <label for="formacionSelector">Formación:</label>
+    <select id="formacionSelector"></select>
+    <button id="btnDescargar">Descargar imagen</button>
+  </div>
+
+  <div id="contenedorCanvas">
+    <canvas id="canvas" width="1728" height="2160"></canvas>
+    <p id="cargando" style="text-align:center;">Cargando imágenes...</p>
+  </div>
+
+  <div id="overlay">
+    <div id="modal">
+      <div id="modalHeader">
+        <h3>Elegir jugador</h3>
+        <button id="cerrarModal">&times;</button>
+      </div>
+      <input type="text" id="buscador" placeholder="Buscar jugador...">
+      <div id="listaJugadores"></div>
+    </div>
+  </div>
+
+<script>
+  // ============================
+  // DATOS FIJOS (editar solo una vez al año)
+  // ============================
+  const FONDO_URL = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/alineacion/escudo/fondo.png';
+  const ESCUDO_URL = 'https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/escudos/color/Real%20Sociedad.png';
+  const COLOR_ESCUDO = '#0a2a6b'; // azul marino que sustituye al color original del escudo
+
+  // Plantilla completa del equipo (todos los jugadores disponibles para elegir)
+  const PLANTILLA = [
+    { numero: 1,  nombre: "REMIRO",   texto: "POR", imagen: "https://via.placeholder.com/400x500?text=REMIRO" },
+    { numero: 13, nombre: "MARRERO",  texto: "POR", imagen: "https://via.placeholder.com/400x500?text=MARRERO" },
+    { numero: 24, nombre: "AIHEN",    texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=AIHEN" },
+    { numero: 5,  nombre: "ZUBELDIA", texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=ZUBELDIA" },
+    { numero: 4,  nombre: "ARETXABALETA", texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=ARETXABALETA" },
+    { numero: 20, nombre: "PACHECO",  texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=PACHECO" },
+    { numero: 3,  nombre: "GOROSABEL", texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=GOROSABEL" },
+    { numero: 15, nombre: "MUNOZ",    texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=MUNOZ" },
+    { numero: 8,  nombre: "ZUBIMENDI", texto: "MED", imagen: "https://via.placeholder.com/400x500?text=ZUBIMENDI" },
+    { numero: 6,  nombre: "MERINO",   texto: "MED", imagen: "https://via.placeholder.com/400x500?text=MERINO" },
+    { numero: 10, nombre: "OYARZABAL", texto: "MED", imagen: "https://via.placeholder.com/400x500?text=OYARZABAL" },
+    { numero: 21, nombre: "SUCIC",    texto: "MED", imagen: "https://via.placeholder.com/400x500?text=SUCIC" },
+    { numero: 14, nombre: "TURRIENTES", texto: "MED", imagen: "https://via.placeholder.com/400x500?text=TURRIENTES" },
+    { numero: 18, nombre: "GUEVARA",  texto: "MED", imagen: "https://via.placeholder.com/400x500?text=GUEVARA" },
+    { numero: 7,  nombre: "KUBO",     texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=KUBO" },
+    { numero: 9,  nombre: "SADIQ",    texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=SADIQ" },
+    { numero: 11, nombre: "SORLOTH",  texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=SORLOTH" },
+    { numero: 17, nombre: "BECKER",   texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=BECKER" },
+    { numero: 19, nombre: "OSKARSSON", texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=OSKARSSON" }
+  ];
+
+  // Once inicial: el primer jugador es siempre el portero.
+  // Se puede cambiar cada jugador haciendo clic sobre su ficha.
+  let ALINEACION = [
+    PLANTILLA[0],  // POR
+    PLANTILLA[2], PLANTILLA[3], PLANTILLA[4], PLANTILLA[5], // DEF
+    PLANTILLA[8], PLANTILLA[9], PLANTILLA[10], // MED
+    PLANTILLA[14], PLANTILLA[15], PLANTILLA[16] // DEL
+  ];
+
+  // Formaciones más usadas (estilo FIFA / EA FC), de defensa a ataque.
+  // Cada array suma siempre 10 (los 10 jugadores de campo, sin contar portero).
+  const FORMACIONES = {
+    "4-3-3":     [4, 3, 3],
+    "4-4-2":     [4, 4, 2],
+    "4-2-3-1":   [4, 2, 3, 1],
+    "4-1-4-1":   [4, 1, 4, 1],
+    "4-3-1-2":   [4, 3, 1, 2],
+    "4-1-2-1-2": [4, 1, 2, 1, 2],
+    "3-5-2":     [3, 5, 2],
+    "3-4-3":     [3, 4, 3],
+    "3-4-1-2":   [3, 4, 1, 2],
+    "5-3-2":     [5, 3, 2],
+    "5-4-1":     [5, 4, 1],
+    "4-5-1":     [4, 5, 1]
+  };
+
+  // ============================
+  // MOTOR DE DIBUJO (no editar)
+  // ============================
+  const canvas = document.getElementById('canvas');
+  const ctx = canvas.getContext('2d');
+  const CANVAS_W = canvas.width;
+  const CANVAS_H = canvas.height;
+  const HEADER_H = 380; // espacio reservado arriba para título/rival
+  const FICHA_W = 240;
+  let FICHA_H = 300; // se recalcula tras cargar el escudo, para no deformar su forma
+
+  let fondoImg = null;
+  let escudoImg = null;
+  let escudoSilueta = null; // canvas con el escudo recoloreado en azul marino (sirve de molde)
+  let hitboxes = []; // posiciones clicables de la última pintada: {x,y,w,h,slot}
+  const cacheImagenes = {};
+  let renderToken = 0; // evita que un dibujo antiguo se pinte encima de uno nuevo
+
+  function crearSilueta(img, colorHex) {
+    // Toma la forma (canal alfa) de la imagen y la rellena entera de un color sólido
+    const c = document.createElement('canvas');
+    c.width = img.naturalWidth;
+    c.height = img.naturalHeight;
+    const cctx = c.getContext('2d');
+    cctx.drawImage(img, 0, 0);
+    cctx.globalCompositeOperation = 'source-in';
+    cctx.fillStyle = colorHex;
+    cctx.fillRect(0, 0, c.width, c.height);
+    return c;
+  }
+
+  function cargarImagen(src, timeoutMs = 6000) {
+    return new Promise((resolve) => {
+      if (cacheImagenes[src]) return resolve(cacheImagenes[src]);
+      const img = new Image();
+      img.crossOrigin = 'anonymous';
+      let resuelto = false;
+      const terminar = (valor) => {
+        if (resuelto) return;
+        resuelto = true;
+        if (valor) cacheImagenes[src] = valor;
+        resolve(valor);
+      };
+      img.onload = () => terminar(img);
+      img.onerror = () => terminar(null);
+      setTimeout(() => terminar(null), timeoutMs); // si no responde a tiempo, seguimos sin ella
+      img.src = src;
+    });
+  }
+
+  function dibujarJugador(jugador, cx, cy, ancho, alto, img) {
+    const x = cx - ancho / 2;
+    const y = cy - alto / 2;
+
+    // Se compone en un lienzo aparte para no afectar al resto del canvas principal
+    const temp = document.createElement('canvas');
+    temp.width = ancho;
+    temp.height = alto;
+    const tctx = temp.getContext('2d');
+
+    // 1) Fondo: silueta del escudo en azul marino (sustituye al rectángulo de antes)
+    if (escudoSilueta) tctx.drawImage(escudoSilueta, 0, 0, ancho, alto);
+
+    // 2) La foto del jugador se recorta exactamente a la forma del escudo
+    if (img) {
+      tctx.globalCompositeOperation = 'source-atop';
+      tctx.drawImage(img, 0, 0, ancho, alto);
+      tctx.globalCompositeOperation = 'source-over';
+    }
+
+    ctx.drawImage(temp, x, y);
+
+    // Número (esquina superior izquierda)
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 40px LaLiga, Arial, sans-serif';
+    ctx.fillText(jugador.numero, x + 10, y + 10);
+    ctx.font = '400 16px LaLiga, Arial, sans-serif';
+    ctx.fillText(jugador.texto, x + 10, y + 52);
+
+    // Nombre (debajo del escudo)
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.font = '700 34px LaLiga, Arial, sans-serif';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(jugador.nombre.toUpperCase(), cx, y + alto + 10);
+  }
+
+  function calcularPosiciones(lineas) {
+    const totalFilas = lineas.length + 1;
+    const altoDisponible = CANVAS_H - HEADER_H - 60;
+    const altoFila = altoDisponible / totalFilas;
+
+    const posiciones = [];
+    const yPortero = HEADER_H + altoDisponible - altoFila / 2;
+    posiciones.push({ x: CANVAS_W / 2, y: yPortero });
+
+    lineas.forEach((cantidad, idxLinea) => {
+      const filaDesdeAbajo = lineas.length - idxLinea;
+      const y = HEADER_H + altoDisponible - altoFila * (filaDesdeAbajo + 0.5);
+      const margen = 160;
+      const anchoUtil = CANVAS_W - margen * 2;
+      for (let i = 0; i < cantidad; i++) {
+        const x = margen + (anchoUtil / (cantidad + 1)) * (i + 1);
+        posiciones.push({ x, y });
+      }
+    });
+
+    return posiciones;
+  }
+
+  async function precargarTodo() {
+    // Carga el fondo, el escudo y todas las fotos de la plantilla una sola vez,
+    // antes de dibujar nada. Así cambiar de formación o de jugador es instantáneo.
+    fondoImg = await cargarImagen(FONDO_URL);
+    escudoImg = await cargarImagen(ESCUDO_URL);
+    if (escudoImg) {
+      escudoSilueta = crearSilueta(escudoImg, COLOR_ESCUDO);
+      // Ajustamos el alto de la ficha a la proporción real del escudo, para no deformarlo
+      FICHA_H = Math.round(FICHA_W * (escudoImg.naturalHeight / escudoImg.naturalWidth));
+    }
+    await Promise.all(PLANTILLA.map(j => cargarImagen(j.imagen)));
+  }
+
+  async function dibujarAlineacion(formacionKey) {
+    const miToken = ++renderToken; // identifica esta llamada
+    const lineas = FORMACIONES[formacionKey];
+    const posiciones = calcularPosiciones(lineas);
+
+    // Como las imágenes ya están precargadas, esto es prácticamente instantáneo,
+    // pero por seguridad seguimos comprobando el token tras cada await.
+    const imagenes = await Promise.all(ALINEACION.map(j => cargarImagen(j.imagen)));
+    if (miToken !== renderToken) return; // otra llamada más nueva ya está en curso: no pintar
+
+    ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
+    if (fondoImg) ctx.drawImage(fondoImg, 0, 0, CANVAS_W, CANVAS_H);
+
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = '#ffffff';
+    ctx.font = '700 90px LaLiga, Arial, sans-serif';
+    ctx.fillText('11 POSIBLE', 60, 60);
+
+    const nuevasHitboxes = [];
+    posiciones.forEach((pos, i) => {
+      if (ALINEACION[i]) {
+        dibujarJugador(ALINEACION[i], pos.x, pos.y, FICHA_W, FICHA_H, imagenes[i]);
+        nuevasHitboxes.push({
+          x: pos.x - FICHA_W / 2, y: pos.y - FICHA_H / 2,
+          w: FICHA_W, h: FICHA_H, slot: i
+        });
+      }
+    });
+    hitboxes = nuevasHitboxes; // se sustituye entera solo si este dibujo es el vigente
+  }
+
+  // ============================
+  // CLIC SOBRE UNA FICHA -> ABRIR SELECTOR
+  // ============================
+  let slotActivo = null;
+
+  canvas.addEventListener('click', (e) => {
+    const rect = canvas.getBoundingClientRect();
+    const escala = CANVAS_W / rect.width;
+    const x = (e.clientX - rect.left) * escala;
+    const y = (e.clientY - rect.top) * escala;
+
+    const hit = hitboxes.find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
+    if (hit) abrirSelector(hit.slot);
+  });
+
+  const overlay = document.getElementById('overlay');
+  const buscador = document.getElementById('buscador');
+  const listaJugadores = document.getElementById('listaJugadores');
+
+  function abrirSelector(slot) {
+    slotActivo = slot;
+    buscador.value = '';
+    renderLista('');
+    overlay.classList.add('activo');
+    buscador.focus();
+  }
+
+  function cerrarSelector() {
+    overlay.classList.remove('activo');
+    slotActivo = null;
+  }
+
+  function renderLista(filtro) {
+    const texto = filtro.trim().toLowerCase();
+    const filtrados = PLANTILLA.filter(j => j.nombre.toLowerCase().includes(texto));
+    listaJugadores.innerHTML = '';
+    filtrados.forEach(j => {
+      const div = document.createElement('div');
+      div.className = 'item-jugador';
+      div.innerHTML = `<span class="num">${j.numero}</span><span class="nom">${j.nombre}</span><span class="rol">${j.texto}</span>`;
+      div.addEventListener('click', () => {
+        ALINEACION[slotActivo] = j;
+        cerrarSelector();
+        dibujarAlineacion(selector.value);
+      });
+      listaJugadores.appendChild(div);
+    });
+  }
+
+  buscador.addEventListener('input', () => renderLista(buscador.value));
+  document.getElementById('cerrarModal').addEventListener('click', cerrarSelector);
+  overlay.addEventListener('click', (e) => { if (e.target === overlay) cerrarSelector(); });
+
+  // ============================
+  // INTERFAZ
+  // ============================
+  const selector = document.getElementById('formacionSelector');
+  Object.keys(FORMACIONES).forEach(nombre => {
+    const opt = document.createElement('option');
+    opt.value = nombre;
+    opt.textContent = nombre;
+    selector.appendChild(opt);
+  });
+  selector.value = '4-3-3';
+  selector.disabled = true;
+  selector.addEventListener('change', () => dibujarAlineacion(selector.value));
+
+  document.getElementById('btnDescargar').addEventListener('click', () => {
+    canvas.toBlob((blob) => {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `alineacion_${selector.value}.png`;
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+  });
+
+  (async () => {
+    await precargarTodo();
+    document.getElementById('cargando').style.display = 'none';
+    selector.disabled = false;
+    dibujarAlineacion(selector.value);
+  })();
+</script>
+
+</body>
+</html>
