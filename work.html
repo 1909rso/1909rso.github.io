@@ -16,13 +16,15 @@
     --level1:#0f3159;
     --level2:#155a94;
     --level3:#1c8ad6;
-    --level4:#4fd2ff;
+    --level4:#e0b94d; /* nivel máximo: dorado, no azul */
     --dot:#f4f8ff;
     --text:#e9f1fb;
     --muted:#6e84a3;
     --accent:#2b8fe0;
     --accent-soft:#12233d;
     --danger:#e0512b;
+    --danger-soft:#3a1610;
+    --today-ring:#f4f8ff;
     --cell:11px;
     --gap:3px;
   }
@@ -87,6 +89,16 @@
     color:#03101f;
     border-color:transparent;
   }
+  button.danger{
+    background:var(--danger-soft);
+    color:#ffb199;
+    border-color:#5c2318;
+  }
+  button.danger.active{
+    background:var(--danger);
+    color:#1a0603;
+    border-color:transparent;
+  }
   button:hover{filter:brightness(1.15);}
   input[type=file]{display:none;}
 
@@ -108,6 +120,7 @@
     justify-content:space-between;
     align-items:baseline;
     margin-bottom:14px;
+    gap:10px;
   }
   .year-head h2{
     margin:0;
@@ -118,6 +131,22 @@
     color:var(--muted);
     font-size:13px;
     font-weight:600;
+    margin-right:auto;
+    margin-left:10px;
+  }
+  .year-del{
+    background:transparent;
+    border:1px solid var(--panel-border);
+    color:var(--muted);
+    padding:4px 9px;
+    border-radius:7px;
+    font-size:11px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  .year-del:hover{
+    color:#ffb199;
+    border-color:#5c2318;
   }
 
   .cal-scroll{
@@ -172,6 +201,9 @@
   .cell.l2{background:var(--level2);}
   .cell.l3{background:var(--level3);}
   .cell.l4{background:var(--level4);}
+  .cell.is-today{
+    box-shadow:0 0 0 1px var(--today-ring);
+  }
   .cell .dot{
     position:absolute;
     top:50%;left:50%;
@@ -182,6 +214,7 @@
     box-shadow:0 0 2px rgba(255,255,255,.8);
   }
   .cell:hover{outline:1px solid var(--accent);}
+  body.delete-mode .cell:hover{outline:1px solid var(--danger);}
 
   .legend{
     display:flex;
@@ -239,16 +272,20 @@
 
 <header>
   <h1><span class="brand">Historial</span> de Entrenamientos</h1>
-  <p>Toca un día para marcarlo. Modo punto para señalar días especiales.</p>
+  <p>Toca un día para marcarlo. Modo punto para señalar días especiales. Modo borrar para limpiar un día directamente.</p>
 </header>
 
 <div class="toolbar">
   <button id="btnAdd" class="primary">＋ Añadir entrada</button>
   <button id="btnDotMode">● Modo punto: OFF</button>
+  <button id="btnDeleteMode" class="danger">🗑 Modo borrar: OFF</button>
+  <button id="btnToday">📅 Hoy</button>
   <button id="btnAddYear">＋ Añadir año</button>
   <label class="file-btn" for="importFile">Importar datos</label>
   <input type="file" id="importFile" accept="application/json">
   <button id="btnExport">Exportar datos</button>
+  <button id="btnExportImg">🖼 Exportar imagen</button>
+  <button id="btnClearAll" class="danger">🗑 Borrar todo</button>
 </div>
 
 <main id="main"></main>
@@ -285,8 +322,8 @@
    ============================================================ */
 const CONFIG = {
   storageKeyData: 'workoutHistoryData',   // { 'YYYY-MM-DD': {level:0-4, dot:bool, note:''} }
-  storageKeyYears: 'workoutHistoryYears', // [2022,2023,...]
-  defaultYears: (()=>{ const y=new Date().getFullYear(); return [y-3,y-2,y-1,y]; })(),
+  storageKeyYears: 'workoutHistoryYears', // años extra añadidos manualmente
+  startYear: 2026, // el historial arranca aquí; los años siguientes se generan solos según la fecha real
   weekStartsMonday: true,
   dayLabels: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
   visibleDayLabels: [0,2,4,6], // Lun, Mié, Vie, Dom
@@ -299,6 +336,7 @@ const CONFIG = {
 let data = loadData();
 let years = loadYears();
 let dotMode = false;
+let deleteMode = false;
 
 function loadData(){
   try{ return JSON.parse(localStorage.getItem(CONFIG.storageKeyData)) || {}; }
@@ -308,11 +346,18 @@ function saveData(){
   localStorage.setItem(CONFIG.storageKeyData, JSON.stringify(data));
 }
 function loadYears(){
-  try{
-    const stored = JSON.parse(localStorage.getItem(CONFIG.storageKeyYears));
-    if(stored && stored.length) return stored.sort((a,b)=>b-a);
-  }catch(e){}
-  return [...CONFIG.defaultYears].sort((a,b)=>b-a);
+  // Rango automático: desde CONFIG.startYear hasta el año actual real.
+  // Al cambiar de año (ej. 1 de enero de 2027) este rango se recalcula solo
+  // y aparece el nuevo año sin tener que tocar nada.
+  const currentYear = new Date().getFullYear();
+  const autoRange = [];
+  for(let y=CONFIG.startYear; y<=currentYear; y++) autoRange.push(y);
+
+  let stored = [];
+  try{ stored = JSON.parse(localStorage.getItem(CONFIG.storageKeyYears)) || []; }catch(e){}
+
+  const merged = new Set([...autoRange, ...stored]);
+  return Array.from(merged).sort((a,b)=>b-a);
 }
 function saveYears(){
   localStorage.setItem(CONFIG.storageKeyYears, JSON.stringify(years));
@@ -372,6 +417,7 @@ function monthLabelsFor(cols, year){
 function render(){
   const main = document.getElementById('main');
   main.innerHTML = '';
+  const todayKey = iso(new Date());
 
   years.sort((a,b)=>b-a).forEach(year=>{
     const cols = buildYearGrid(year);
@@ -384,13 +430,15 @@ function render(){
 
     const block = document.createElement('div');
     block.className='year-block';
+    block.dataset.year = year;
 
     block.innerHTML = `
       <div class="year-head">
         <h2>${year}</h2>
         <span class="count">${count} entrenamientos</span>
+        <button class="year-del" data-year="${year}">Borrar año</button>
       </div>
-      <div class="cal-scroll">
+      <div class="cal-scroll" id="scroll-${year}">
         <div class="cal-wrap">
           <div class="day-labels" id="dl-${year}"></div>
           <div class="grid-area" id="ga-${year}" style="grid-template-columns:repeat(${cols.length},var(--cell));"></div>
@@ -407,6 +455,17 @@ function render(){
       </div>
     `;
     main.appendChild(block);
+
+    // borrar año completo
+    block.querySelector('.year-del').addEventListener('click', ()=>{
+      const ok = confirm(`¿Borrar todas las entradas de ${year}? Esta acción no se puede deshacer.`);
+      if(!ok) return;
+      Object.keys(data).forEach(k=>{
+        if(k.startsWith(year+'-')) delete data[k];
+      });
+      saveData();
+      render();
+    });
 
     // day labels
     const dl = block.querySelector(`#dl-${year}`);
@@ -438,7 +497,7 @@ function render(){
           const key = iso(d);
           const entry = data[key];
           const level = entry ? entry.level : 0;
-          cell.className = 'cell'+(level>0?' l'+level:'');
+          cell.className = 'cell'+(level>0?' l'+level:'')+(key===todayKey?' is-today':'');
           cell.dataset.date = key;
           cell.title = key + (entry && entry.note ? (' — '+entry.note) : '');
           if(entry && entry.dot){
@@ -455,6 +514,15 @@ function render(){
 }
 
 function onCellClick(key){
+  if(deleteMode){
+    if(data[key]){
+      delete data[key];
+      saveData();
+      render();
+    }
+    return; // en modo borrar nunca se cicla color, solo se limpia
+  }
+
   const entry = data[key] || {level:0, dot:false, note:''};
   if(dotMode){
     entry.dot = !entry.dot;
@@ -475,8 +543,49 @@ function onCellClick(key){
    ============================================================ */
 document.getElementById('btnDotMode').addEventListener('click', (e)=>{
   dotMode = !dotMode;
+  if(dotMode && deleteMode){
+    deleteMode = false;
+    updateDeleteModeBtn();
+  }
   e.target.textContent = '● Modo punto: '+(dotMode?'ON':'OFF');
   e.target.classList.toggle('active', dotMode);
+});
+
+function updateDeleteModeBtn(){
+  const btn = document.getElementById('btnDeleteMode');
+  btn.textContent = '🗑 Modo borrar: '+(deleteMode?'ON':'OFF');
+  btn.classList.toggle('active', deleteMode);
+  document.body.classList.toggle('delete-mode', deleteMode);
+}
+document.getElementById('btnDeleteMode').addEventListener('click', ()=>{
+  deleteMode = !deleteMode;
+  if(deleteMode && dotMode){
+    dotMode = false;
+    const dotBtn = document.getElementById('btnDotMode');
+    dotBtn.textContent = '● Modo punto: OFF';
+    dotBtn.classList.remove('active');
+  }
+  updateDeleteModeBtn();
+});
+
+document.getElementById('btnToday').addEventListener('click', ()=>{
+  const year = new Date().getFullYear();
+  const todayKey = iso(new Date());
+  const block = document.querySelector(`.year-block[data-year="${year}"]`);
+  if(!block){ alert('El año actual no está en el historial todavía.'); return; }
+  block.scrollIntoView({behavior:'smooth', block:'start'});
+  const cell = block.querySelector(`.cell[data-date="${todayKey}"]`);
+  if(cell){
+    cell.scrollIntoView({behavior:'smooth', inline:'center', block:'nearest'});
+  }
+});
+
+document.getElementById('btnClearAll').addEventListener('click', ()=>{
+  const ok = confirm('¿Borrar TODO el historial de entrenamientos? Esta acción no se puede deshacer.');
+  if(!ok) return;
+  data = {};
+  saveData();
+  render();
 });
 
 document.getElementById('btnAddYear').addEventListener('click', ()=>{
@@ -554,10 +663,220 @@ document.getElementById('mSave').addEventListener('click', ()=>{
 });
 
 /* ============================================================
+   EXPORTAR COMO IMAGEN (alta calidad, todos los años apilados)
+   ============================================================ */
+const EXPORT_COLORS = {
+  bgFrom:'#0a1830', bgTo:'#050810',
+  panel:'#0a1120', panelBorder:'#152037',
+  empty:'#101a2c', l1:'#0f3159', l2:'#155a94', l3:'#1c8ad6', l4:'#e0b94d',
+  text:'#e9f1fb', muted:'#6e84a3', accent:'#2b8fe0', dot:'#f4f8ff', today:'#f4f8ff'
+};
+
+function buildExportYearBlock(year, cellPx, gapPx){
+  const cols = buildYearGrid(year);
+  const monthLabels = monthLabelsFor(cols, year);
+  const todayKey = iso(new Date());
+
+  let count = 0;
+  Object.keys(data).forEach(k=>{
+    if(k.startsWith(year+'-') && data[k].level>0) count++;
+  });
+
+  const block = document.createElement('div');
+  block.style.background = EXPORT_COLORS.panel;
+  block.style.border = '1px solid '+EXPORT_COLORS.panelBorder;
+  block.style.borderRadius = '14px';
+  block.style.padding = '22px 22px 18px';
+  block.style.margin = '18px 0';
+
+  const head = document.createElement('div');
+  head.style.display='flex';
+  head.style.justifyContent='space-between';
+  head.style.alignItems='baseline';
+  head.style.marginBottom='16px';
+  head.innerHTML = `
+    <span style="font-size:22px;font-weight:800;color:${EXPORT_COLORS.text};">${year}</span>
+    <span style="font-size:14px;font-weight:600;color:${EXPORT_COLORS.muted};">${count} entrenamientos</span>
+  `;
+  block.appendChild(head);
+
+  const row = document.createElement('div');
+  row.style.display='flex';
+  row.style.gap='9px';
+
+  // etiquetas de día
+  const dl = document.createElement('div');
+  dl.style.display='grid';
+  dl.style.gridTemplateRows = `18px repeat(7, ${cellPx}px)`;
+  dl.style.rowGap = gapPx+'px';
+  dl.style.fontSize='10px';
+  dl.style.color = EXPORT_COLORS.muted;
+  dl.appendChild(document.createElement('span'));
+  CONFIG.dayLabels.forEach((lab,i)=>{
+    const s = document.createElement('span');
+    s.style.height = cellPx+'px';
+    s.style.lineHeight = cellPx+'px';
+    s.textContent = CONFIG.visibleDayLabels.includes(i) ? lab : '';
+    dl.appendChild(s);
+  });
+  row.appendChild(dl);
+
+  // rejilla
+  const ga = document.createElement('div');
+  ga.style.display='grid';
+  ga.style.gridAutoFlow='column';
+  ga.style.gridTemplateRows = `18px repeat(7, ${cellPx}px)`;
+  ga.style.rowGap = gapPx+'px';
+  ga.style.columnGap = gapPx+'px';
+  ga.style.gridTemplateColumns = `repeat(${cols.length}, ${cellPx}px)`;
+
+  cols.forEach((col,ci)=>{
+    const ml = monthLabels.find(m=>m.col===ci);
+    const label = document.createElement('div');
+    label.style.gridColumn = ci+1;
+    label.style.gridRow = 1;
+    label.style.fontSize='11px';
+    label.style.color = EXPORT_COLORS.muted;
+    label.style.alignSelf='end';
+    label.style.whiteSpace='nowrap';
+    label.textContent = ml ? ml.text : '';
+    ga.appendChild(label);
+
+    col.forEach((d,ri)=>{
+      const cell = document.createElement('div');
+      cell.style.gridColumn = ci+1;
+      cell.style.gridRow = ri+2;
+      cell.style.width = cellPx+'px';
+      cell.style.height = cellPx+'px';
+      cell.style.borderRadius='3px';
+      cell.style.position='relative';
+      const inYear = d.getFullYear()===year;
+      if(!inYear){
+        cell.style.background='transparent';
+      } else {
+        const key = iso(d);
+        const entry = data[key];
+        const level = entry ? entry.level : 0;
+        const colorMap = [EXPORT_COLORS.empty, EXPORT_COLORS.l1, EXPORT_COLORS.l2, EXPORT_COLORS.l3, EXPORT_COLORS.l4];
+        cell.style.background = colorMap[level];
+        if(key === todayKey){
+          cell.style.boxShadow = 'inset 0 0 0 1px '+EXPORT_COLORS.today;
+        }
+        if(entry && entry.dot){
+          const dot = document.createElement('div');
+          dot.style.position='absolute';
+          dot.style.top='50%';
+          dot.style.left='50%';
+          dot.style.width='4px';
+          dot.style.height='4px';
+          dot.style.borderRadius='50%';
+          dot.style.background = EXPORT_COLORS.dot;
+          dot.style.transform='translate(-50%,-50%)';
+          cell.appendChild(dot);
+        }
+      }
+      ga.appendChild(cell);
+    });
+  });
+  row.appendChild(ga);
+  block.appendChild(row);
+
+  // leyenda
+  const legend = document.createElement('div');
+  legend.style.display='flex';
+  legend.style.alignItems='center';
+  legend.style.gap='6px';
+  legend.style.fontSize='11px';
+  legend.style.color = EXPORT_COLORS.muted;
+  legend.style.marginTop='14px';
+  legend.style.justifyContent='flex-end';
+  const sw = (c)=>`<span style="width:10px;height:10px;border-radius:2px;background:${c};display:inline-block;"></span>`;
+  legend.innerHTML = `<span>Menos</span>${sw(EXPORT_COLORS.empty)}${sw(EXPORT_COLORS.l1)}${sw(EXPORT_COLORS.l2)}${sw(EXPORT_COLORS.l3)}${sw(EXPORT_COLORS.l4)}<span>Más</span>`;
+  block.appendChild(legend);
+
+  return block;
+}
+
+function loadHtml2Canvas(){
+  return new Promise((resolve,reject)=>{
+    if(window.html2canvas){ resolve(); return; }
+    const s = document.createElement('script');
+    s.src = 'https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js';
+    s.onload = ()=>resolve();
+    s.onerror = ()=>reject(new Error('No se pudo cargar la librería de exportación.'));
+    document.head.appendChild(s);
+  });
+}
+
+async function exportAsImage(){
+  const btn = document.getElementById('btnExportImg');
+  const originalText = btn.textContent;
+  btn.textContent = 'Generando...';
+  btn.disabled = true;
+  try{
+    await loadHtml2Canvas();
+
+    const cellPx = 13;
+    const gapPx = 4;
+
+    const wrap = document.createElement('div');
+    wrap.style.position='fixed';
+    wrap.style.left='-99999px';
+    wrap.style.top='0';
+    wrap.style.width='fit-content';
+    wrap.style.background = `linear-gradient(180deg, ${EXPORT_COLORS.bgFrom} 0%, ${EXPORT_COLORS.bgTo} 55%)`;
+    wrap.style.padding='44px 34px';
+    wrap.style.fontFamily = getComputedStyle(document.body).fontFamily;
+
+    const title = document.createElement('div');
+    title.style.textAlign='center';
+    title.style.marginBottom='26px';
+    title.innerHTML = `<div style="font-size:28px;font-weight:800;letter-spacing:-0.02em;color:${EXPORT_COLORS.text};">Historial de <span style="color:${EXPORT_COLORS.accent};font-weight:900;">Entrenamientos</span></div>`;
+    wrap.appendChild(title);
+
+    // todos los años desde CONFIG.startYear hasta el año actual real, más los añadidos manualmente
+    const currentYear = new Date().getFullYear();
+    const fullYears = new Set(years);
+    for(let y=CONFIG.startYear; y<=currentYear; y++) fullYears.add(y);
+    const orderedYears = Array.from(fullYears).sort((a,b)=>b-a);
+
+    orderedYears.forEach(year=>{
+      wrap.appendChild(buildExportYearBlock(year, cellPx, gapPx));
+    });
+
+    document.body.appendChild(wrap);
+
+    const canvas = await html2canvas(wrap, {
+      scale: 3,
+      backgroundColor: EXPORT_COLORS.bgTo,
+      useCORS: true
+    });
+
+    document.body.removeChild(wrap);
+
+    canvas.toBlob((blob)=>{
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'historial-entrenamientos.png';
+      a.click();
+      URL.revokeObjectURL(url);
+    }, 'image/png');
+
+  }catch(err){
+    alert('No se pudo generar la imagen: '+err.message);
+  }finally{
+    btn.textContent = originalText;
+    btn.disabled = false;
+  }
+}
+
+document.getElementById('btnExportImg').addEventListener('click', exportAsImage);
+
+/* ============================================================
    INIT
    ============================================================ */
 render();
 </script>
 </body>
 </html>
-
