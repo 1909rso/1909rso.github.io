@@ -1,1 +1,563 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Historial de Entrenamientos</title>
+<style>
+  /* ============================================================
+     CONFIG (edita aquí colores, años, textos)
+     ============================================================ */
+  :root{
+    --bg:#050810;
+    --panel:#0a1120;
+    --panel-border:#152037;
+    --grid-empty:#101a2c;
+    --level1:#0f3159;
+    --level2:#155a94;
+    --level3:#1c8ad6;
+    --level4:#4fd2ff;
+    --dot:#f4f8ff;
+    --text:#e9f1fb;
+    --muted:#6e84a3;
+    --accent:#2b8fe0;
+    --accent-soft:#12233d;
+    --danger:#e0512b;
+    --cell:11px;
+    --gap:3px;
+  }
+
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:radial-gradient(120% 140% at 10% -10%, #0a1830 0%, var(--bg) 55%);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    min-height:100vh;
+    padding-bottom:80px;
+  }
+
+  header{
+    padding:34px 20px 22px;
+    border-bottom:1px solid var(--panel-border);
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+  }
+  header h1{
+    margin:0;
+    font-size:26px;
+    font-weight:800;
+    letter-spacing:-0.02em;
+  }
+  header .brand{
+    color:var(--accent);
+    font-weight:900;
+  }
+  header p{
+    margin:0;
+    color:var(--muted);
+    font-size:14px;
+  }
+
+  .toolbar{
+    display:flex;
+    flex-wrap:wrap;
+    gap:10px;
+    padding:16px 20px;
+    border-bottom:1px solid var(--panel-border);
+  }
+  button, .file-btn{
+    background:var(--accent-soft);
+    color:var(--text);
+    border:1px solid var(--panel-border);
+    padding:9px 14px;
+    border-radius:8px;
+    font-size:13px;
+    cursor:pointer;
+    font-weight:600;
+  }
+  button.primary{
+    background:var(--accent);
+    color:#03101f;
+    border-color:transparent;
+  }
+  button.active{
+    background:var(--level4);
+    color:#03101f;
+    border-color:transparent;
+  }
+  button:hover{filter:brightness(1.15);}
+  input[type=file]{display:none;}
+
+  main{
+    padding:10px 20px 40px;
+    max-width:1000px;
+    margin:0 auto;
+  }
+
+  .year-block{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:14px;
+    padding:20px 18px 16px;
+    margin:22px 0;
+  }
+  .year-head{
+    display:flex;
+    justify-content:space-between;
+    align-items:baseline;
+    margin-bottom:14px;
+  }
+  .year-head h2{
+    margin:0;
+    font-size:20px;
+    font-weight:800;
+  }
+  .year-head .count{
+    color:var(--muted);
+    font-size:13px;
+    font-weight:600;
+  }
+
+  .cal-scroll{
+    overflow-x:auto;
+    padding-bottom:4px;
+  }
+  .cal-wrap{
+    display:flex;
+    gap:8px;
+    width:max-content;
+  }
+  .day-labels{
+    display:grid;
+    grid-template-rows:16px repeat(7,var(--cell));
+    row-gap:var(--gap);
+    font-size:9px;
+    color:var(--muted);
+    padding-top:0;
+  }
+  .day-labels span{
+    height:var(--cell);
+    line-height:var(--cell);
+  }
+
+  .grid-area{
+    display:grid;
+    grid-auto-flow:column;
+    grid-template-rows:16px repeat(7,var(--cell));
+    row-gap:var(--gap);
+    column-gap:var(--gap);
+  }
+  .month-label{
+    grid-row:1;
+    font-size:10px;
+    color:var(--muted);
+    align-self:end;
+    white-space:nowrap;
+  }
+  .cell{
+    width:var(--cell);
+    height:var(--cell);
+    border-radius:3px;
+    background:var(--grid-empty);
+    position:relative;
+    cursor:pointer;
+  }
+  .cell.pad{
+    background:transparent;
+    cursor:default;
+  }
+  .cell.l1{background:var(--level1);}
+  .cell.l2{background:var(--level2);}
+  .cell.l3{background:var(--level3);}
+  .cell.l4{background:var(--level4);}
+  .cell .dot{
+    position:absolute;
+    top:50%;left:50%;
+    width:4px;height:4px;
+    border-radius:50%;
+    background:var(--dot);
+    transform:translate(-50%,-50%);
+    box-shadow:0 0 2px rgba(255,255,255,.8);
+  }
+  .cell:hover{outline:1px solid var(--accent);}
+
+  .legend{
+    display:flex;
+    align-items:center;
+    gap:6px;
+    font-size:11px;
+    color:var(--muted);
+    margin-top:12px;
+    justify-content:flex-end;
+  }
+  .legend .sw{width:10px;height:10px;border-radius:2px;}
+
+  .modal-bg{
+    display:none;
+    position:fixed;inset:0;
+    background:rgba(2,6,14,.72);
+    align-items:center;justify-content:center;
+    z-index:50;
+    padding:20px;
+  }
+  .modal-bg.open{display:flex;}
+  .modal{
+    background:var(--panel);
+    border:1px solid var(--panel-border);
+    border-radius:14px;
+    padding:22px;
+    width:100%;
+    max-width:360px;
+  }
+  .modal h3{margin:0 0 14px;font-size:16px;}
+  .modal label{
+    display:block;
+    font-size:12px;
+    color:var(--muted);
+    margin:12px 0 5px;
+  }
+  .modal input[type=date],
+  .modal input[type=number],
+  .modal textarea,
+  .modal select{
+    width:100%;
+    background:#050b16;
+    border:1px solid var(--panel-border);
+    color:var(--text);
+    padding:9px 10px;
+    border-radius:8px;
+    font-size:14px;
+  }
+  .modal .row{display:flex;align-items:center;gap:8px;margin-top:14px;}
+  .modal .actions{display:flex;justify-content:space-between;margin-top:20px;gap:10px;}
+  .modal .actions button{flex:1;}
+</style>
+</head>
+<body>
+
+<header>
+  <h1><span class="brand">Historial</span> de Entrenamientos</h1>
+  <p>Toca un día para marcarlo. Modo punto para señalar días especiales.</p>
+</header>
+
+<div class="toolbar">
+  <button id="btnAdd" class="primary">＋ Añadir entrada</button>
+  <button id="btnDotMode">● Modo punto: OFF</button>
+  <button id="btnAddYear">＋ Añadir año</button>
+  <label class="file-btn" for="importFile">Importar datos</label>
+  <input type="file" id="importFile" accept="application/json">
+  <button id="btnExport">Exportar datos</button>
+</div>
+
+<main id="main"></main>
+
+<div class="modal-bg" id="modalBg">
+  <div class="modal">
+    <h3>Añadir / editar entrada</h3>
+    <label>Fecha</label>
+    <input type="date" id="mDate">
+    <label>Nivel de entrenamiento</label>
+    <select id="mLevel">
+      <option value="0">0 — Sin entrenar</option>
+      <option value="1">1 — Suave</option>
+      <option value="2">2 — Normal</option>
+      <option value="3">3 — Intenso</option>
+      <option value="4">4 — Máximo</option>
+    </select>
+    <div class="row">
+      <input type="checkbox" id="mDot" style="width:16px;height:16px;">
+      <label style="margin:0;">Marcar punto blanco</label>
+    </div>
+    <label>Nota (opcional)</label>
+    <textarea id="mNote" rows="2"></textarea>
+    <div class="actions">
+      <button id="mCancel">Cancelar</button>
+      <button id="mSave" class="primary">Guardar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONFIG
+   ============================================================ */
+const CONFIG = {
+  storageKeyData: 'workoutHistoryData',   // { 'YYYY-MM-DD': {level:0-4, dot:bool, note:''} }
+  storageKeyYears: 'workoutHistoryYears', // [2022,2023,...]
+  defaultYears: (()=>{ const y=new Date().getFullYear(); return [y-3,y-2,y-1,y]; })(),
+  weekStartsMonday: true,
+  dayLabels: ['Lun','Mar','Mié','Jue','Vie','Sáb','Dom'],
+  visibleDayLabels: [0,2,4,6], // Lun, Mié, Vie, Dom
+  monthNames: ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
+};
+
+/* ============================================================
+   STATE
+   ============================================================ */
+let data = loadData();
+let years = loadYears();
+let dotMode = false;
+
+function loadData(){
+  try{ return JSON.parse(localStorage.getItem(CONFIG.storageKeyData)) || {}; }
+  catch(e){ return {}; }
+}
+function saveData(){
+  localStorage.setItem(CONFIG.storageKeyData, JSON.stringify(data));
+}
+function loadYears(){
+  try{
+    const stored = JSON.parse(localStorage.getItem(CONFIG.storageKeyYears));
+    if(stored && stored.length) return stored.sort((a,b)=>b-a);
+  }catch(e){}
+  return [...CONFIG.defaultYears].sort((a,b)=>b-a);
+}
+function saveYears(){
+  localStorage.setItem(CONFIG.storageKeyYears, JSON.stringify(years));
+}
+
+function iso(d){
+  return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0');
+}
+
+/* ============================================================
+   CALENDAR GRID BUILD (estilo GitHub, semana Lun-Dom)
+   ============================================================ */
+function buildYearGrid(year){
+  const jan1 = new Date(year,0,1);
+  const dec31 = new Date(year,11,31);
+
+  const startOffset = (jan1.getDay()+6)%7; // 0=Lun
+  const gridStart = new Date(jan1);
+  gridStart.setDate(jan1.getDate()-startOffset);
+
+  const endOffset = (dec31.getDay()+6)%7;
+  const gridEnd = new Date(dec31);
+  gridEnd.setDate(dec31.getDate()+(6-endOffset));
+
+  const totalDays = Math.round((gridEnd-gridStart)/86400000)+1;
+  const totalCols = totalDays/7;
+
+  const cols = [];
+  for(let c=0;c<totalCols;c++){
+    const col = [];
+    for(let r=0;r<7;r++){
+      const d = new Date(gridStart);
+      d.setDate(gridStart.getDate()+c*7+r);
+      col.push(d);
+    }
+    cols.push(col);
+  }
+  return cols;
+}
+
+function monthLabelsFor(cols, year){
+  const labels = [];
+  let lastMonth = -1;
+  cols.forEach((col,ci)=>{
+    const d = col[0]; // lunes de esa semana
+    if(d.getFullYear()===year && d.getDate()<=7 && d.getMonth()!==lastMonth){
+      labels.push({col:ci, text:CONFIG.monthNames[d.getMonth()]});
+      lastMonth = d.getMonth();
+    }
+  });
+  return labels;
+}
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+function render(){
+  const main = document.getElementById('main');
+  main.innerHTML = '';
+
+  years.sort((a,b)=>b-a).forEach(year=>{
+    const cols = buildYearGrid(year);
+    const monthLabels = monthLabelsFor(cols, year);
+
+    let count = 0;
+    Object.keys(data).forEach(k=>{
+      if(k.startsWith(year+'-') && data[k].level>0) count++;
+    });
+
+    const block = document.createElement('div');
+    block.className='year-block';
+
+    block.innerHTML = `
+      <div class="year-head">
+        <h2>${year}</h2>
+        <span class="count">${count} entrenamientos</span>
+      </div>
+      <div class="cal-scroll">
+        <div class="cal-wrap">
+          <div class="day-labels" id="dl-${year}"></div>
+          <div class="grid-area" id="ga-${year}" style="grid-template-columns:repeat(${cols.length},var(--cell));"></div>
+        </div>
+      </div>
+      <div class="legend">
+        <span>Menos</span>
+        <span class="sw" style="background:var(--grid-empty)"></span>
+        <span class="sw" style="background:var(--level1)"></span>
+        <span class="sw" style="background:var(--level2)"></span>
+        <span class="sw" style="background:var(--level3)"></span>
+        <span class="sw" style="background:var(--level4)"></span>
+        <span>Más</span>
+      </div>
+    `;
+    main.appendChild(block);
+
+    // day labels
+    const dl = block.querySelector(`#dl-${year}`);
+    dl.innerHTML += `<span></span>`; // spacer for month row
+    CONFIG.dayLabels.forEach((lab,i)=>{
+      const s = document.createElement('span');
+      s.textContent = CONFIG.visibleDayLabels.includes(i) ? lab : '';
+      dl.appendChild(s);
+    });
+
+    // grid
+    const ga = block.querySelector(`#ga-${year}`);
+    cols.forEach((col,ci)=>{
+      const ml = monthLabels.find(m=>m.col===ci);
+      const label = document.createElement('div');
+      label.className='month-label';
+      label.style.gridColumn = ci+1;
+      label.textContent = ml ? ml.text : '';
+      ga.appendChild(label);
+
+      col.forEach((d,ri)=>{
+        const cell = document.createElement('div');
+        const inYear = d.getFullYear()===year;
+        cell.style.gridColumn = ci+1;
+        cell.style.gridRow = ri+2;
+        if(!inYear){
+          cell.className='cell pad';
+        } else {
+          const key = iso(d);
+          const entry = data[key];
+          const level = entry ? entry.level : 0;
+          cell.className = 'cell'+(level>0?' l'+level:'');
+          cell.dataset.date = key;
+          cell.title = key + (entry && entry.note ? (' — '+entry.note) : '');
+          if(entry && entry.dot){
+            const dot = document.createElement('span');
+            dot.className='dot';
+            cell.appendChild(dot);
+          }
+          cell.addEventListener('click', ()=>onCellClick(key));
+        }
+        ga.appendChild(cell);
+      });
+    });
+  });
+}
+
+function onCellClick(key){
+  const entry = data[key] || {level:0, dot:false, note:''};
+  if(dotMode){
+    entry.dot = !entry.dot;
+  } else {
+    entry.level = (entry.level+1) % 5;
+  }
+  if(entry.level===0 && !entry.dot && !entry.note){
+    delete data[key];
+  } else {
+    data[key] = entry;
+  }
+  saveData();
+  render();
+}
+
+/* ============================================================
+   TOOLBAR
+   ============================================================ */
+document.getElementById('btnDotMode').addEventListener('click', (e)=>{
+  dotMode = !dotMode;
+  e.target.textContent = '● Modo punto: '+(dotMode?'ON':'OFF');
+  e.target.classList.toggle('active', dotMode);
+});
+
+document.getElementById('btnAddYear').addEventListener('click', ()=>{
+  const y = prompt('Año a añadir (ej. 2027):');
+  const n = parseInt(y,10);
+  if(n && !years.includes(n)){
+    years.push(n);
+    saveYears();
+    render();
+  }
+});
+
+document.getElementById('btnExport').addEventListener('click', ()=>{
+  const blob = new Blob([JSON.stringify({data, years}, null, 2)], {type:'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'workout-history-backup.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+document.getElementById('importFile').addEventListener('change', (e)=>{
+  const file = e.target.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev)=>{
+    try{
+      const parsed = JSON.parse(ev.target.result);
+      if(parsed.data){
+        data = Object.assign({}, data, parsed.data);
+        saveData();
+      }
+      if(parsed.years){
+        parsed.years.forEach(y=>{ if(!years.includes(y)) years.push(y); });
+        saveYears();
+      }
+      render();
+    }catch(err){
+      alert('Archivo no válido.');
+    }
+  };
+  reader.readAsText(file);
+  e.target.value = '';
+});
+
+/* ============================================================
+   MODAL (añadir/editar entrada manual)
+   ============================================================ */
+const modalBg = document.getElementById('modalBg');
+document.getElementById('btnAdd').addEventListener('click', ()=>{
+  document.getElementById('mDate').value = iso(new Date());
+  document.getElementById('mLevel').value = '2';
+  document.getElementById('mDot').checked = false;
+  document.getElementById('mNote').value = '';
+  modalBg.classList.add('open');
+});
+document.getElementById('mCancel').addEventListener('click', ()=>modalBg.classList.remove('open'));
+document.getElementById('mSave').addEventListener('click', ()=>{
+  const dateVal = document.getElementById('mDate').value;
+  if(!dateVal) return;
+  const level = parseInt(document.getElementById('mLevel').value,10);
+  const dot = document.getElementById('mDot').checked;
+  const note = document.getElementById('mNote').value.trim();
+  const year = parseInt(dateVal.slice(0,4),10);
+  if(!years.includes(year)){ years.push(year); saveYears(); }
+  if(level===0 && !dot && !note){
+    delete data[dateVal];
+  } else {
+    data[dateVal] = {level, dot, note};
+  }
+  saveData();
+  modalBg.classList.remove('open');
+  render();
+});
+
+/* ============================================================
+   INIT
+   ============================================================ */
+render();
+</script>
+</body>
+</html>
 
