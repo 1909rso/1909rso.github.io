@@ -6,30 +6,44 @@
 <title>Editor de Convocatoria</title>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
-/* ============================================================
-   ZONA DE CONFIGURACIÓN "SOLO DESDE CÓDIGO"
-   Todo lo que el usuario pidió que NO fuera editable desde el
-   editor (posición/tamaño de escudos, títulos de línea, etc.)
-   vive aquí arriba, en variables CSS y consts JS, para que sea
-   fácil de tocar sin usar el menú.
-   ============================================================ */
+@font-face{
+  font-family:"Gulams Condensed";
+  src:url("https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/fonts/Gulams-Condensed-BF69599692a9bc1.otf") format("opentype");
+  font-weight:normal;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:"Pelinka Expanded Bold";
+  src:url("https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/fonts/Pelinka-ExpandedBold.otf") format("opentype");
+  font-weight:bold;
+  font-style:normal;
+  font-display:swap;
+}
+@font-face{
+  font-family:"Steelfish Eb";
+  src:url("https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/fonts/Steelfish%20Eb.otf") format("opentype");
+  font-weight:normal;
+  font-style:normal;
+  font-display:swap;
+}
 :root{
-  /* --- Escudos (arriba a la derecha) --- */
   --crest-top: 44px;
   --crest-right: 48px;
-  --crest-size: 128px;      /* tamaño de cada escudo */
-  --crest-max-size: 180px;  /* tamaño máximo permitido si se reescala por código */
-  --crest-gap: 20px;       /* separación entre los dos escudos */
+  --crest-size: 128px;
+  --crest-max-size: 180px;
+  --crest-gap: 20px;
 
-  /* --- Título "CONVOCATORIA" --- */
-  --title-top: 56px;
-  --title-size: 84px;
-  --title-color: #ffffff;
-  --title-letter-spacing: 12px;
+  --title-top: 60px;
+  --title-size: 230px;
+  --title-color: #e0b570;
+  --title-letter-spacing: 0px;
 
-  /* --- Tarjetas de jugador (valores por defecto; ancho/alto/borde
-         SÍ son editables desde el menú con los sliders) --- */
   --card-radius: 8px;
+  --line-title-size: 30px;
+  --line-title-spacing: 4px;
+  --pname-size: 70px;
+  --card-gap: 20px;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
 html,body{overflow-x:hidden;}
@@ -43,7 +57,6 @@ body{
   min-height:100dvh;
 }
 
-/* ---------------- Panel editor ---------------- */
 #panel{
   width:360px;
   min-width:300px;
@@ -67,20 +80,22 @@ body{
 #panel h2{font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#8fb8ff;margin:22px 0 10px;}
 #panel h2:first-child{margin-top:0;}
 #panel label{display:block;font-size:12px;color:#aab2bd;margin:10px 0 4px;}
-#panel select, #panel input[type=text]{
+#panel select, #panel input[type=text], #panel input[type=number]{
   width:100%;padding:6px 8px;border-radius:6px;border:1px solid #333a44;
   background:#0f1216;color:#eee;font-size:13px;
 }
-#panel input[type=range]{width:100%;}
-.row{display:flex;gap:8px;align-items:center;}
-.row > *{flex:1;}
+#panel input[type=color]{
+  width:100%;height:30px;padding:2px;border-radius:6px;border:1px solid #333a44;
+  background:#0f1216;
+}
+.settings-group{color:#ffd479;font-size:12px;font-weight:700;text-transform:uppercase;margin:16px 0 4px;letter-spacing:.5px;}
+.settings-row{display:flex;gap:8px;}
+.settings-row > div{flex:1;}
 .small{font-size:11px;color:#7a828d;}
 button{
   cursor:pointer;border:none;border-radius:6px;padding:7px 10px;
   background:#2f6fed;color:#fff;font-size:12px;font-weight:600;
 }
-button.secondary{background:#333a44;}
-button.danger{background:#7a2b2b;}
 .player-row{
   display:flex;align-items:center;gap:6px;padding:5px 0;
   border-bottom:1px solid #23272e;font-size:12.5px;
@@ -89,11 +104,7 @@ button.danger{background:#7a2b2b;}
 .player-row select{width:120px;flex:none;padding:3px 4px;font-size:11px;}
 .line-block{margin-bottom:8px;}
 .line-block h3{font-size:12px;color:#ffd479;margin:12px 0 4px;text-transform:uppercase;}
-.swatch{width:28px;height:28px;padding:0;border:1px solid #444;border-radius:6px;}
-.add-form{background:#0f1216;padding:10px;border-radius:8px;margin-top:8px;}
-.add-form input, .add-form select{margin-bottom:6px;}
 
-/* ---------------- Escenario / póster ---------------- */
 #stage-wrap{
   flex:1;
   display:flex;
@@ -102,9 +113,6 @@ button.danger{background:#7a2b2b;}
   padding:30px;
   overflow:auto;
 }
-/* #posterScale se reescala con transform para que el póster (que
-   internamente siempre mide 2000x2500, así las posiciones en px
-   funcionan igual) quepa en pantallas de móvil */
 #posterFrame{
   overflow:hidden;
   flex-shrink:0;
@@ -124,7 +132,6 @@ button.danger{background:#7a2b2b;}
   box-shadow:0 10px 40px rgba(0,0,0,.6);
 }
 
-/* ---------------- Móvil ---------------- */
 @media (max-width:900px){
   body{flex-direction:column;}
   #panel{
@@ -150,9 +157,17 @@ button.danger{background:#7a2b2b;}
   }
 }
 #poster::after{
-  /* leve viñeta para legibilidad, puramente decorativa */
   content:"";position:absolute;inset:0;pointer-events:none;
   background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,0) 20%);
+}
+
+#tempOverlay{
+  position:absolute;
+  inset:0;
+  z-index:20;
+  pointer-events:none;
+  background-size:cover;
+  background-position:center;
 }
 
 #titleText{
@@ -160,6 +175,7 @@ button.danger{background:#7a2b2b;}
   top:var(--title-top);
   left:0;right:0;
   text-align:center;
+  font-family:"Gulams Condensed",-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   font-size:var(--title-size);
   font-weight:800;
   letter-spacing:var(--title-letter-spacing);
@@ -198,29 +214,32 @@ button.danger{background:#7a2b2b;}
 }
 .line-title{
   color:#fff;
+  font-family:"Pelinka Expanded Bold",-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   font-weight:700;
-  font-size:30px;
-  letter-spacing:4px;
+  font-size:var(--line-title-size, 30px);
+  letter-spacing:var(--line-title-spacing, 4px);
   text-transform:uppercase;
   margin-bottom:8px;
   text-shadow:0 1px 4px rgba(0,0,0,.6);
+  text-align:center;
 }
 .line-divider{
-  height:4px;
+  height:var(--divider-thickness, 4px);
+  width:var(--divider-width, 100%);
+  margin:0 auto 20px;
   background:rgba(255,255,255,.55);
-  margin-bottom:20px;
 }
 .cards{
   display:flex;
   flex-wrap:wrap;
-  gap:20px;
+  justify-content:center;
+  gap:var(--card-gap, 20px);
 }
 .card{
   position:relative;
   overflow:hidden;
   background:#000;
   flex-shrink:0;
-  /* width/height/border se fijan desde JS con variables --card-w/--card-h/--card-border */
   width:var(--card-w,180px);
   height:var(--card-h,220px);
   border-radius:var(--card-radius);
@@ -230,8 +249,11 @@ button.danger{background:#7a2b2b;}
   position:absolute;inset:0;
   width:100%;height:100%;object-fit:cover;
   z-index:1;
+  transform:translate(var(--photo-x, 0px), var(--photo-y, 0px)) scale(var(--photo-scale, 1));
+  transform-origin:center;
 }
 .card img.photo.bw{filter:grayscale(1);}
+.card{cursor:pointer;}
 .card .gradient{
   position:absolute;inset:0;
   z-index:2;
@@ -243,7 +265,8 @@ button.danger{background:#7a2b2b;}
   z-index:3;
   text-align:center;
   color:#fff;
-  font-size:21px;
+  font-family:"Steelfish Eb",-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  font-size:var(--pname-size, 21px);
   font-weight:700;
   line-height:1.1;
   padding:0 4px;
@@ -263,63 +286,97 @@ button.danger{background:#7a2b2b;}
   <label>Equipo local</label>
   <input type="text" id="crestNameLocal" value="Real Sociedad">
   <label>Equipo visitante</label>
-  <input type="text" id="crestNameVisitante" value="">
+  <input type="text" id="crestNameVisitante" value="Real Sociedad">
   <p class="small">Tamaño, posición y máximo se ajustan solo en el CSS (:root, sección Escudos).</p>
-
-  <h2>Aspecto de las tarjetas</h2>
-  <div class="row">
-    <div>
-      <label>Ancho (px)</label>
-      <input type="range" id="cardW" min="120" max="320" value="180">
-    </div>
-    <div>
-      <label>Alto (px)</label>
-      <input type="range" id="cardH" min="140" max="400" value="220">
-    </div>
-  </div>
-  <div class="row">
-    <div>
-      <label>Grosor borde (px)</label>
-      <input type="range" id="borderW" min="0" max="16" value="4">
-    </div>
-    <div>
-      <label>Color borde</label>
-      <input type="color" class="swatch" id="borderC" value="#ffffff">
-    </div>
-  </div>
-
-  <h2>Degradado (sobre la foto)</h2>
-  <div class="row">
-    <div>
-      <label>Color</label>
-      <input type="color" class="swatch" id="gradColor" value="#000000">
-    </div>
-    <div>
-      <label>Opacidad (%)</label>
-      <input type="range" id="gradOpacity" min="0" max="100" value="75">
-    </div>
-  </div>
-  <div class="row">
-    <div>
-      <label>Inicio (% desde abajo)</label>
-      <input type="range" id="gradStart" min="0" max="100" value="0">
-    </div>
-    <div>
-      <label>Fin (% desde abajo)</label>
-      <input type="range" id="gradEnd" min="0" max="100" value="60">
-    </div>
-  </div>
-  <p class="small">El degradado es siempre vertical (de abajo hacia arriba).</p>
 
   <h2>Jugadores</h2>
   <div id="playersList"></div>
 
-  <div class="add-form">
-    <label>Añadir jugador extra</label>
-    <input type="text" id="newName" placeholder="Nombre del jugador">
-    <select id="newLine"></select>
-    <button id="addPlayerBtn" style="width:100%">Añadir</button>
+  <h2>Ajustes avanzados (temporal)</h2>
+  <p class="small">Estos controles son temporales para probar valores; luego se quitarán del menú.</p>
+
+  <div class="settings-group">Tarjeta</div>
+  <div class="settings-row">
+    <div><label>Ancho</label><input type="number" id="cardWidth" value="190"></div>
+    <div><label>Alto</label><input type="number" id="cardHeight" value="410"></div>
   </div>
+  <div class="settings-row">
+    <div><label>Grosor borde</label><input type="number" id="cardBorderWidth" value="2"></div>
+    <div><label>Radio borde</label><input type="number" id="cardRadius" value="2"></div>
+  </div>
+  <label>Color borde</label>
+  <input type="color" id="cardBorderColor" value="#ffffff">
+  <label>Espacio entre tarjetas</label>
+  <input type="number" id="cardGap" value="20">
+
+  <div class="settings-group">Degradado sobre foto</div>
+  <label>Color</label>
+  <input type="color" id="gradColor" value="#012476">
+  <div class="settings-row">
+    <div><label>Opacidad (%)</label><input type="number" id="gradOpacity" value="100"></div>
+  </div>
+  <div class="settings-row">
+    <div><label>Inicio (%)</label><input type="number" id="gradStart" value="0"></div>
+    <div><label>Fin (%)</label><input type="number" id="gradEnd" value="40"></div>
+  </div>
+
+  <div class="settings-group">Foto dentro de la tarjeta</div>
+  <label>Tamaño (escala)</label>
+  <input type="number" id="photoScale" value="1.4" step="0.05">
+  <div class="settings-row">
+    <div><label>Posición X (px)</label><input type="number" id="photoX" value="-5"></div>
+    <div><label>Posición Y (px)</label><input type="number" id="photoY" value="100"></div>
+  </div>
+
+  <div class="settings-group">Texto "CONVOCATORIA"</div>
+  <div class="settings-row">
+    <div><label>Tamaño</label><input type="number" id="titleSize" value="230"></div>
+    <div><label>Espacio letras</label><input type="number" id="titleSpacing" value="0"></div>
+  </div>
+  <div class="settings-row">
+    <div><label>Posición arriba</label><input type="number" id="titleTop" value="60"></div>
+  </div>
+  <label>Color</label>
+  <input type="color" id="titleColor" value="#e0b570">
+
+  <div class="settings-group">Textos de línea (PORTEROS, DEFENSAS...)</div>
+  <div class="settings-row">
+    <div><label>Tamaño</label><input type="number" id="lineTitleSize" value="30"></div>
+    <div><label>Espacio letras</label><input type="number" id="lineTitleSpacing" value="4"></div>
+  </div>
+
+  <div class="settings-group">Nombres de jugador</div>
+  <label>Tamaño texto</label>
+  <input type="number" id="pnameSize" value="70">
+
+  <div class="settings-group">Posición vertical de cada línea</div>
+  <p class="small">Espacio extra antes de cada bloque (px). Sirve para subir/bajar el comienzo de porteros, defensas, etc. individualmente.</p>
+  <div id="lineOffsetsList"></div>
+
+  <div class="settings-group">Línea divisoria</div>
+  <div class="settings-row">
+    <div><label>Longitud (%)</label><input type="number" id="dividerWidth" value="23"></div>
+    <div><label>Grosor (px)</label><input type="number" id="dividerThickness" value="5"></div>
+  </div>
+
+  <div class="settings-group">Escudos</div>
+  <div class="settings-row">
+    <div><label>Tamaño</label><input type="number" id="crestSize" value="128"></div>
+    <div><label>Separación</label><input type="number" id="crestGap" value="20"></div>
+  </div>
+  <div class="settings-row">
+    <div><label>Desde arriba</label><input type="number" id="crestTop" value="44"></div>
+    <div><label>Desde la derecha</label><input type="number" id="crestRight" value="48"></div>
+  </div>
+
+  <div class="settings-group">Capa superior temporal</div>
+  <label>Opacidad (%)</label>
+  <input type="number" id="overlayOpacity" value="0">
+
+  <div class="settings-group">Copiar ajustes</div>
+  <p class="small">Copia los valores actuales para pegarlos en el chat y que los deje fijos en el código.</p>
+  <button id="copySettingsBtn" style="width:100%">📋 Copiar ajustes</button>
+  <div id="copySettingsStatus" class="small" style="min-height:14px;"></div>
 
   <h2>Descargar</h2>
   <button id="downloadBtn">📥 Descargar imagen</button>
@@ -336,62 +393,122 @@ button.danger{background:#7a2b2b;}
         <img id="crest2" src="" alt="escudo 2">
       </div>
       <div id="lines"></div>
+      <div id="tempOverlay"></div>
     </div>
    </div>
   </div>
 </div>
 
 <script>
-/* ============================================================
-   CONSTS — todos los datos según lo pedido ("todos los datos
-   deberán estar en un const"). Edítalos aquí.
-   ============================================================ */
-
-// Las 4 líneas. La key es el id interno, "title" es lo que se
-// ve encima de la línea (editable SOLO desde código, tal como
-// se pidió).
 const LINES_CONFIG = [
-  { key: "porteros",         title: "PORTEROS" },
-  { key: "defensas",         title: "DEFENSAS" },
-  { key: "centrocampistas",  title: "CENTROCAMPISTAS" },
-  { key: "delanteros",       title: "DELANTEROS" }
+  { key: "porteros",         title: "PORTEROS",         offsetTop: 140 },
+  { key: "defensas",         title: "DEFENSAS",         offsetTop: 16 },
+  { key: "centrocampistas",  title: "CENTROCAMPISTAS",  offsetTop: 16 },
+  { key: "delanteros",       title: "DELANTEROS",       offsetTop: 16 }
 ];
 
-// Plantel por defecto, sacado de la imagen que subiste.
 const SQUAD = {
   porteros: ["MAIGNAN", "RESTES", "RISSER"],
-  defensas: ["DIOUF", "UPAMECANO", "KALULU", "KOUNDE", "JACQUET", "LACROIX", "KONATE", "TRUFFERT"],
+  defensas: ["DIOUF", "UPAMECANO", "KALULU", "KOUNDE", "JACQUET", "LACROIX", "KONATE", "Marín"],
   centrocampistas: ["CAMAVINGA", "DA CUNHA", "CHERKI", "KONE", "ZAIRE-EMERY", "RABIOT"],
   delanteros: ["DEMBELE", "MBAPPE", "BARCOLA", "OLISE", "DOUE", "LEPAUL"]
 };
 
-// Fondo: patrón de URL fijo, solo cambia el número (1 o 2).
 const BG_BASE_URL = "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/convocatoria/fondo/";
 function getBgUrl(n){
   return `${BG_BASE_URL}${n}.png`;
 }
 
-// Escudos: se buscan por nombre de equipo escrito en el editor.
-// Rellena este diccionario con los equipos que quieras soportar.
-const CREST_URLS = {
-  "real sociedad": "https://upload.wikimedia.org/wikipedia/en/f/f1/Real_Sociedad_logo.svg"
-};
-const CREST_FALLBACK = "https://placehold.co/120x120/1a1e24/ffffff?text=%3F"; // escudo no encontrado
+const CREST_BASE_URL = "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/escudos/BN/";
+function getCrestUrl(name){
+  if(!name) return CREST_FALLBACK;
+  return `${CREST_BASE_URL}${encodeURIComponent(name)}.png`;
+}
+const CREST_FALLBACK = "https://placehold.co/120x120/1a1e24/ffffff?text=%3F";
 
-// Foto de cada jugador: función que construye la URL a partir del nombre.
-// AHORA MISMO usa un generador de avatares de relleno porque no me
-// pasaste el enlace real de las fotos. Cambia esta función cuando
-// tengas el patrón definitivo (por ejemplo BASE_URL + slug(nombre) + ".jpg").
-function getPlayerImgUrl(name){
-  const encoded = encodeURIComponent(name);
-  return `https://ui-avatars.com/api/?name=${encoded}&background=1a2a4a&color=fff&size=256&bold=true`;
+// Aspecto de las tarjetas de jugador — editable temporalmente desde
+// el menú (ver sección "Ajustes avanzados").
+const CARD_CONFIG = {
+  width: 190,
+  height: 410,
+  borderWidth: 2,
+  borderColor: "#ffffff",
+  radius: 2
+};
+
+// Línea divisoria bajo cada título de línea — editable temporalmente
+// desde el menú.
+// width: longitud de la línea (%). thickness: grosor en px.
+const DIVIDER_CONFIG = {
+  width: "23%",
+  thickness: 5
+};
+
+function applyDividerVars(){
+  const w = typeof DIVIDER_CONFIG.width === "number" ? DIVIDER_CONFIG.width + "px" : DIVIDER_CONFIG.width;
+  document.documentElement.style.setProperty("--divider-width", w);
+  document.documentElement.style.setProperty("--divider-thickness", DIVIDER_CONFIG.thickness + "px");
 }
 
-/* ============================================================
-   ESTADO
-   ============================================================ */
+// Foto del jugador dentro de la tarjeta — editable temporalmente
+// desde el menú. Se aplica igual a todas las tarjetas.
+// scale: 1 = tamaño normal, 1.2 = 20% más grande, etc.
+// offsetX / offsetY: desplazamiento en px (positivo = derecha/abajo).
+const PHOTO_CONFIG = {
+  scale: 1.4,
+  offsetX: -5,
+  offsetY: 100
+};
+
+function applyPhotoVars(){
+  document.documentElement.style.setProperty("--photo-scale", PHOTO_CONFIG.scale);
+  document.documentElement.style.setProperty("--photo-x", PHOTO_CONFIG.offsetX + "px");
+  document.documentElement.style.setProperty("--photo-y", PHOTO_CONFIG.offsetY + "px");
+}
+
+// Capa de imagen TEMPORAL por delante de todo (mientras se termina
+// de decidir el diseño final). Pon enabled:false para quitarla.
+const TEMP_OVERLAY_CONFIG = {
+  enabled: true,
+  url: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/A479F0F0-2CE8-4DEE-8978-9A7B32673710.jpeg",
+  opacity: 0
+};
+
+function applyTempOverlay(){
+  const el = document.getElementById("tempOverlay");
+  if(!TEMP_OVERLAY_CONFIG.enabled){
+    el.style.display = "none";
+    return;
+  }
+  el.style.display = "block";
+  el.style.backgroundImage = `url("${TEMP_OVERLAY_CONFIG.url}")`;
+  el.style.opacity = TEMP_OVERLAY_CONFIG.opacity;
+}
+
+// Degradado sobre la foto — editable temporalmente desde el menú
+// (ver sección "Ajustes avanzados"). Siempre vertical.
+const GRADIENT_CONFIG = {
+  color: "#012476",
+  opacity: 100,
+  start: 0,
+  end: 40
+};
+
+function stripAccents(str){
+  return str.normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+}
+function toPoseFileName(name){
+  const clean = stripAccents(name.trim());
+  return clean.charAt(0).toUpperCase() + clean.slice(1).toLowerCase();
+}
+const POSES_BASE_URL = "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/";
+function getPlayerImgUrl(name){
+  const fileName = toPoseFileName(name);
+  return `${POSES_BASE_URL}${currentBg}/${encodeURIComponent(fileName)}.PNG`;
+}
+
 let idCounter = 0;
-const players = []; // {id, name, line, state: 'normal'|'bw'|'hidden'}
+const players = [];
 
 LINES_CONFIG.forEach(line=>{
   (SQUAD[line.key] || []).forEach(name=>{
@@ -399,22 +516,17 @@ LINES_CONFIG.forEach(line=>{
   });
 });
 
-/* ============================================================
-   RENDER
-   ============================================================ */
 const linesEl = document.getElementById("lines");
 const playersListEl = document.getElementById("playersList");
-const newLineSelect = document.getElementById("newLine");
 
 function currentGradientCSS(){
-  const color = document.getElementById("gradColor").value;
-  const opacity = document.getElementById("gradOpacity").value / 100;
-  const start = document.getElementById("gradStart").value;
-  const end = document.getElementById("gradEnd").value;
+  const color = GRADIENT_CONFIG.color;
+  const opacity = GRADIENT_CONFIG.opacity / 100;
+  const start = GRADIENT_CONFIG.start;
+  const end = GRADIENT_CONFIG.end;
   const r = parseInt(color.slice(1,3),16), g = parseInt(color.slice(3,5),16), b = parseInt(color.slice(5,7),16);
   const rgba = `rgba(${r},${g},${b},${opacity})`;
   const transparent = `rgba(${r},${g},${b},0)`;
-  // vertical, de abajo (0%) hacia arriba (100%)
   return `linear-gradient(to top, ${rgba} ${start}%, ${transparent} ${end}%)`;
 }
 
@@ -423,6 +535,7 @@ function renderLines(){
   LINES_CONFIG.forEach(lineCfg=>{
     const lineWrap = document.createElement("div");
     lineWrap.className = "line";
+    lineWrap.style.marginTop = (lineCfg.offsetTop || 0) + "px";
 
     const title = document.createElement("div");
     title.className = "line-title";
@@ -439,6 +552,11 @@ function renderLines(){
     players.filter(p=>p.line===lineCfg.key && p.state!=="hidden").forEach(p=>{
       const card = document.createElement("div");
       card.className = "card";
+      card.addEventListener("click", ()=>{
+        p.state = p.state === "bw" ? "normal" : "bw";
+        renderLines();
+        renderPlayerList();
+      });
 
       const img = document.createElement("img");
       img.className = "photo" + (p.state==="bw" ? " bw" : "");
@@ -501,32 +619,21 @@ function renderPlayerList(){
   });
 }
 
-function populateNewLineSelect(){
-  newLineSelect.innerHTML = "";
-  LINES_CONFIG.forEach(lineCfg=>{
-    const opt = document.createElement("option");
-    opt.value = lineCfg.key;
-    opt.textContent = lineCfg.title;
-    newLineSelect.appendChild(opt);
-  });
-}
-
 function applyCardSizeVars(){
-  const w = document.getElementById("cardW").value + "px";
-  const h = document.getElementById("cardH").value + "px";
-  const bw = document.getElementById("borderW").value + "px";
-  const bc = document.getElementById("borderC").value;
+  const w = CARD_CONFIG.width + "px";
+  const h = CARD_CONFIG.height + "px";
+  const bw = CARD_CONFIG.borderWidth + "px";
+  const bc = CARD_CONFIG.borderColor;
+  const br = CARD_CONFIG.radius + "px";
   document.querySelectorAll(".card").forEach(c=>{
     c.style.setProperty("--card-w", w);
     c.style.setProperty("--card-h", h);
     c.style.setProperty("--card-border-w", bw);
     c.style.setProperty("--card-border-c", bc);
+    c.style.setProperty("--card-radius", br);
   });
 }
 
-/* ============================================================
-   EVENTOS DEL EDITOR
-   ============================================================ */
 let currentBg = 1;
 const bgToggleBtn = document.getElementById("bgToggleBtn");
 function applyBg(){
@@ -536,37 +643,16 @@ function applyBg(){
 bgToggleBtn.addEventListener("click", ()=>{
   currentBg = currentBg === 1 ? 2 : 1;
   applyBg();
+  renderLines();
 });
 
 function applyCrest(inputId, imgId){
-  const name = document.getElementById(inputId).value.trim().toLowerCase();
-  const url = CREST_URLS[name] || CREST_FALLBACK;
-  document.getElementById(imgId).src = url;
+  const name = document.getElementById(inputId).value.trim();
+  document.getElementById(imgId).src = getCrestUrl(name);
 }
 document.getElementById("crestNameLocal").addEventListener("input", ()=>applyCrest("crestNameLocal","crest1"));
 document.getElementById("crestNameVisitante").addEventListener("input", ()=>applyCrest("crestNameVisitante","crest2"));
 
-["cardW","cardH","borderW","borderC"].forEach(id=>{
-  document.getElementById(id).addEventListener("input", applyCardSizeVars);
-});
-["gradColor","gradOpacity","gradStart","gradEnd"].forEach(id=>{
-  document.getElementById(id).addEventListener("input", renderLines);
-});
-
-document.getElementById("addPlayerBtn").addEventListener("click", ()=>{
-  const name = document.getElementById("newName").value.trim().toUpperCase();
-  if(!name) return;
-  const line = newLineSelect.value;
-  players.push({ id: idCounter++, name, line, state: "normal" });
-  document.getElementById("newName").value = "";
-  renderPlayerList();
-  renderLines();
-});
-
-/* ============================================================
-   RESPONSIVE: reescalar el póster (2000x2500 fijo por dentro)
-   para que quepa en pantallas de móvil
-   ============================================================ */
 const posterScale = document.getElementById("posterScale");
 const posterFrame = document.getElementById("posterFrame");
 const stageWrap = document.getElementById("stage-wrap");
@@ -578,15 +664,12 @@ function fitPoster(){
   const availableH = window.innerHeight - (window.innerWidth<=900 ? 40 : 60);
   const scale = Math.min(1, availableW / POSTER_W, availableH / POSTER_H);
   posterScale.style.transform = `scale(${scale})`;
-  // El frame reserva exactamente el espacio ya escalado, para que
-  // no quede hueco en blanco alrededor del póster.
   posterFrame.style.width = (POSTER_W*scale) + "px";
   posterFrame.style.height = (POSTER_H*scale) + "px";
 }
 window.addEventListener("resize", fitPoster);
 window.addEventListener("orientationchange", ()=>setTimeout(fitPoster,150));
 
-/* ---------------- Toggle del panel en móvil ---------------- */
 const panel = document.getElementById("panel");
 const panelToggle = document.getElementById("panelToggle");
 panelToggle.addEventListener("click", ()=>{
@@ -595,16 +678,6 @@ panelToggle.addEventListener("click", ()=>{
   setTimeout(fitPoster,50);
 });
 
-/* ============================================================
-   DESCARGA DE LA IMAGEN (incluye iPhone / Safari)
-   Usa html2canvas para "fotografiar" el póster a resolución
-   completa (2000x2500, ignorando el zoom de pantalla) y luego:
-     1) si la capability "downloads" del artifact está disponible,
-        la usamos (en la app de Claude en iPhone abre la hoja
-        nativa de compartir -> "Guardar en Fotos").
-     2) si no, abrimos la imagen en una pestaña nueva para que en
-        Safari se pueda mantener pulsado -> "Añadir a Fotos".
-   ============================================================ */
 const downloadBtn = document.getElementById("downloadBtn");
 const downloadStatus = document.getElementById("downloadStatus");
 
@@ -614,7 +687,7 @@ async function capturePoster(){
     height: POSTER_H,
     useCORS: true,
     backgroundColor: null,
-    scale: 1 // el póster ya se genera a 2000x2500, no hace falta más escala
+    scale: 1
   });
 }
 
@@ -639,20 +712,15 @@ downloadBtn.addEventListener("click", async ()=>{
           savedByCapability = true;
         }
       }catch(err){
-        // "declined" = el usuario canceló el diálogo; no reintentamos.
         if(err && err.code === "declined"){
           downloadStatus.textContent = "Descarga cancelada.";
           savedByCapability = true;
         }
       }
       if(!savedByCapability){
-        // Fallback (fuera de la app de Claude): abrir en pestaña nueva
-        // para poder mantener pulsado y "Añadir a Fotos" en iPhone,
-        // o hacer clic derecho > Guardar imagen en escritorio.
         const url = URL.createObjectURL(blob);
         const win = window.open(url, "_blank");
         if(!win){
-          // si el navegador bloquea el popup, ofrecemos un enlace normal
           const a = document.createElement("a");
           a.href = url; a.download = filename;
           document.body.appendChild(a); a.click(); a.remove();
@@ -667,13 +735,137 @@ downloadBtn.addEventListener("click", async ()=>{
   }
 });
 
-/* ============================================================
-   INICIALIZACIÓN
-   ============================================================ */
+function renderLineOffsetControls(){
+  const wrap = document.getElementById("lineOffsetsList");
+  wrap.innerHTML = "";
+  LINES_CONFIG.forEach(lineCfg=>{
+    const label = document.createElement("label");
+    label.textContent = lineCfg.title;
+    wrap.appendChild(label);
+
+    const input = document.createElement("input");
+    input.type = "number";
+    input.value = lineCfg.offsetTop || 0;
+    input.addEventListener("input", ()=>{
+      lineCfg.offsetTop = parseFloat(input.value) || 0;
+      renderLines();
+    });
+    wrap.appendChild(input);
+  });
+}
+
+function setupAdvancedSettings(){
+  function bindNum(id, fn){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("input", ()=>fn(parseFloat(el.value)));
+  }
+  function bindColor(id, fn){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.addEventListener("input", ()=>fn(el.value));
+  }
+
+  // Tarjeta
+  bindNum("cardWidth", v=>{ CARD_CONFIG.width = v; renderLines(); });
+  bindNum("cardHeight", v=>{ CARD_CONFIG.height = v; renderLines(); });
+  bindNum("cardBorderWidth", v=>{ CARD_CONFIG.borderWidth = v; renderLines(); });
+  bindNum("cardRadius", v=>{ CARD_CONFIG.radius = v; renderLines(); });
+  bindColor("cardBorderColor", v=>{ CARD_CONFIG.borderColor = v; renderLines(); });
+  bindNum("cardGap", v=>document.documentElement.style.setProperty("--card-gap", v+"px"));
+
+  // Degradado
+  bindColor("gradColor", v=>{ GRADIENT_CONFIG.color = v; renderLines(); });
+  bindNum("gradOpacity", v=>{ GRADIENT_CONFIG.opacity = v; renderLines(); });
+  bindNum("gradStart", v=>{ GRADIENT_CONFIG.start = v; renderLines(); });
+  bindNum("gradEnd", v=>{ GRADIENT_CONFIG.end = v; renderLines(); });
+
+  // Foto dentro de la tarjeta
+  bindNum("photoScale", v=>{ PHOTO_CONFIG.scale = v; applyPhotoVars(); });
+  bindNum("photoX", v=>{ PHOTO_CONFIG.offsetX = v; applyPhotoVars(); });
+  bindNum("photoY", v=>{ PHOTO_CONFIG.offsetY = v; applyPhotoVars(); });
+
+  // Texto CONVOCATORIA
+  bindNum("titleSize", v=>document.documentElement.style.setProperty("--title-size", v+"px"));
+  bindNum("titleSpacing", v=>document.documentElement.style.setProperty("--title-letter-spacing", v+"px"));
+  bindNum("titleTop", v=>document.documentElement.style.setProperty("--title-top", v+"px"));
+  bindColor("titleColor", v=>document.documentElement.style.setProperty("--title-color", v));
+
+  // Textos de línea
+  bindNum("lineTitleSize", v=>document.documentElement.style.setProperty("--line-title-size", v+"px"));
+  bindNum("lineTitleSpacing", v=>document.documentElement.style.setProperty("--line-title-spacing", v+"px"));
+
+  // Nombres de jugador
+  bindNum("pnameSize", v=>document.documentElement.style.setProperty("--pname-size", v+"px"));
+
+  // Línea divisoria
+  bindNum("dividerWidth", v=>{ DIVIDER_CONFIG.width = v+"%"; applyDividerVars(); });
+  bindNum("dividerThickness", v=>{ DIVIDER_CONFIG.thickness = v; applyDividerVars(); });
+
+  // Escudos
+  bindNum("crestSize", v=>document.documentElement.style.setProperty("--crest-size", v+"px"));
+  bindNum("crestGap", v=>document.documentElement.style.setProperty("--crest-gap", v+"px"));
+  bindNum("crestTop", v=>document.documentElement.style.setProperty("--crest-top", v+"px"));
+  bindNum("crestRight", v=>document.documentElement.style.setProperty("--crest-right", v+"px"));
+
+  // Capa superior temporal
+  bindNum("overlayOpacity", v=>{ TEMP_OVERLAY_CONFIG.opacity = v/100; applyTempOverlay(); });
+
+  const copyBtn = document.getElementById("copySettingsBtn");
+  const copyStatus = document.getElementById("copySettingsStatus");
+  copyBtn.addEventListener("click", async ()=>{
+    const cs = getComputedStyle(document.documentElement);
+    const gv = name => cs.getPropertyValue(name).trim();
+    const text = [
+      "CARD_CONFIG = " + JSON.stringify(CARD_CONFIG),
+      "GRADIENT_CONFIG = " + JSON.stringify(GRADIENT_CONFIG),
+      "PHOTO_CONFIG = " + JSON.stringify(PHOTO_CONFIG),
+      "DIVIDER_CONFIG = " + JSON.stringify(DIVIDER_CONFIG),
+      "TEMP_OVERLAY_CONFIG.opacity = " + TEMP_OVERLAY_CONFIG.opacity,
+      "LINES_CONFIG offsetTop = " + JSON.stringify(LINES_CONFIG.map(l=>({key:l.key, offsetTop:l.offsetTop||0}))),
+      "--title-size: " + gv("--title-size"),
+      "--title-letter-spacing: " + gv("--title-letter-spacing"),
+      "--title-top: " + gv("--title-top"),
+      "--title-color: " + gv("--title-color"),
+      "--line-title-size: " + gv("--line-title-size"),
+      "--line-title-spacing: " + gv("--line-title-spacing"),
+      "--pname-size: " + gv("--pname-size"),
+      "--crest-size: " + gv("--crest-size"),
+      "--crest-gap: " + gv("--crest-gap"),
+      "--crest-top: " + gv("--crest-top"),
+      "--crest-right: " + gv("--crest-right"),
+      "--card-gap: " + gv("--card-gap")
+    ].join("\n");
+
+    try{
+      await navigator.clipboard.writeText(text);
+      copyStatus.textContent = "Copiado. Pégalo en el chat.";
+    }catch(err){
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.opacity = "0";
+      document.body.appendChild(ta);
+      ta.select();
+      try{
+        document.execCommand("copy");
+        copyStatus.textContent = "Copiado. Pégalo en el chat.";
+      }catch(err2){
+        copyStatus.textContent = "No se pudo copiar. Valores: " + text;
+      }
+      ta.remove();
+    }
+  });
+}
+
 applyBg();
 applyCrest("crestNameLocal","crest1");
 applyCrest("crestNameVisitante","crest2");
-populateNewLineSelect();
+applyDividerVars();
+applyPhotoVars();
+applyTempOverlay();
+setupAdvancedSettings();
+renderLineOffsetControls();
 renderPlayerList();
 renderLines();
 fitPoster();
