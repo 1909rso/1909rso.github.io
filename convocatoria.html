@@ -1,0 +1,682 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>Editor de Convocatoria</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<style>
+/* ============================================================
+   ZONA DE CONFIGURACIÓN "SOLO DESDE CÓDIGO"
+   Todo lo que el usuario pidió que NO fuera editable desde el
+   editor (posición/tamaño de escudos, títulos de línea, etc.)
+   vive aquí arriba, en variables CSS y consts JS, para que sea
+   fácil de tocar sin usar el menú.
+   ============================================================ */
+:root{
+  /* --- Escudos (arriba a la derecha) --- */
+  --crest-top: 44px;
+  --crest-right: 48px;
+  --crest-size: 128px;      /* tamaño de cada escudo */
+  --crest-max-size: 180px;  /* tamaño máximo permitido si se reescala por código */
+  --crest-gap: 20px;       /* separación entre los dos escudos */
+
+  /* --- Título "CONVOCATORIA" --- */
+  --title-top: 56px;
+  --title-size: 84px;
+  --title-color: #ffffff;
+  --title-letter-spacing: 12px;
+
+  /* --- Tarjetas de jugador (valores por defecto; ancho/alto/borde
+         SÍ son editables desde el menú con los sliders) --- */
+  --card-radius: 8px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+html,body{overflow-x:hidden;}
+body{
+  margin:0;
+  font-family:-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+  background:#111418;
+  color:#eee;
+  display:flex;
+  min-height:100vh;
+  min-height:100dvh;
+}
+
+/* ---------------- Panel editor ---------------- */
+#panel{
+  width:360px;
+  min-width:300px;
+  background:#1a1e24;
+  padding:18px;
+  overflow-y:auto;
+  height:100vh;
+  height:100dvh;
+  border-right:1px solid #2a2f37;
+}
+#downloadBtn{
+  width:100%;
+  padding:12px 10px;
+  font-size:14px;
+  margin-bottom:6px;
+}
+#downloadStatus{font-size:11px;color:#7a828d;min-height:14px;}
+#panelToggle{
+  display:none;
+}
+#panel h2{font-size:15px;text-transform:uppercase;letter-spacing:1px;color:#8fb8ff;margin:22px 0 10px;}
+#panel h2:first-child{margin-top:0;}
+#panel label{display:block;font-size:12px;color:#aab2bd;margin:10px 0 4px;}
+#panel select, #panel input[type=text]{
+  width:100%;padding:6px 8px;border-radius:6px;border:1px solid #333a44;
+  background:#0f1216;color:#eee;font-size:13px;
+}
+#panel input[type=range]{width:100%;}
+.row{display:flex;gap:8px;align-items:center;}
+.row > *{flex:1;}
+.small{font-size:11px;color:#7a828d;}
+button{
+  cursor:pointer;border:none;border-radius:6px;padding:7px 10px;
+  background:#2f6fed;color:#fff;font-size:12px;font-weight:600;
+}
+button.secondary{background:#333a44;}
+button.danger{background:#7a2b2b;}
+.player-row{
+  display:flex;align-items:center;gap:6px;padding:5px 0;
+  border-bottom:1px solid #23272e;font-size:12.5px;
+}
+.player-row span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.player-row select{width:120px;flex:none;padding:3px 4px;font-size:11px;}
+.line-block{margin-bottom:8px;}
+.line-block h3{font-size:12px;color:#ffd479;margin:12px 0 4px;text-transform:uppercase;}
+.swatch{width:28px;height:28px;padding:0;border:1px solid #444;border-radius:6px;}
+.add-form{background:#0f1216;padding:10px;border-radius:8px;margin-top:8px;}
+.add-form input, .add-form select{margin-bottom:6px;}
+
+/* ---------------- Escenario / póster ---------------- */
+#stage-wrap{
+  flex:1;
+  display:flex;
+  align-items:flex-start;
+  justify-content:center;
+  padding:30px;
+  overflow:auto;
+}
+/* #posterScale se reescala con transform para que el póster (que
+   internamente siempre mide 2000x2500, así las posiciones en px
+   funcionan igual) quepa en pantallas de móvil */
+#posterFrame{
+  overflow:hidden;
+  flex-shrink:0;
+}
+#posterScale{
+  width:2000px;
+  height:2500px;
+  transform-origin:top left;
+}
+#poster{
+  position:relative;
+  width:2000px;
+  height:2500px;
+  background-size:cover;
+  background-position:center;
+  overflow:hidden;
+  box-shadow:0 10px 40px rgba(0,0,0,.6);
+}
+
+/* ---------------- Móvil ---------------- */
+@media (max-width:900px){
+  body{flex-direction:column;}
+  #panel{
+    width:100%;
+    min-width:0;
+    height:auto;
+    max-height:46vh;
+    border-right:none;
+    border-bottom:1px solid #2a2f37;
+  }
+  #panelToggle{
+    display:block;
+    width:100%;
+    padding:10px;
+    margin-bottom:10px;
+    background:#333a44;
+  }
+  #panel.collapsed > *:not(#panelToggle){display:none;}
+  #panel.collapsed{max-height:none;}
+  #stage-wrap{
+    padding:14px;
+    flex:none;
+  }
+}
+#poster::after{
+  /* leve viñeta para legibilidad, puramente decorativa */
+  content:"";position:absolute;inset:0;pointer-events:none;
+  background:linear-gradient(180deg,rgba(0,0,0,.15),rgba(0,0,0,0) 20%);
+}
+
+#titleText{
+  position:absolute;
+  top:var(--title-top);
+  left:0;right:0;
+  text-align:center;
+  font-size:var(--title-size);
+  font-weight:800;
+  letter-spacing:var(--title-letter-spacing);
+  color:var(--title-color);
+  text-shadow:0 2px 10px rgba(0,0,0,.6);
+  z-index:5;
+}
+
+#crests{
+  position:absolute;
+  top:var(--crest-top);
+  right:var(--crest-right);
+  display:flex;
+  gap:var(--crest-gap);
+  z-index:6;
+}
+#crests img{
+  width:var(--crest-size);
+  height:var(--crest-size);
+  max-width:var(--crest-max-size);
+  max-height:var(--crest-max-size);
+  object-fit:contain;
+  filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));
+}
+
+#lines{
+  position:absolute;
+  top:240px;left:0;right:0;bottom:40px;
+  padding:0 60px;
+  display:flex;
+  flex-direction:column;
+  z-index:4;
+}
+.line{
+  margin-bottom:20px;
+}
+.line-title{
+  color:#fff;
+  font-weight:700;
+  font-size:30px;
+  letter-spacing:4px;
+  text-transform:uppercase;
+  margin-bottom:8px;
+  text-shadow:0 1px 4px rgba(0,0,0,.6);
+}
+.line-divider{
+  height:4px;
+  background:rgba(255,255,255,.55);
+  margin-bottom:20px;
+}
+.cards{
+  display:flex;
+  flex-wrap:wrap;
+  gap:20px;
+}
+.card{
+  position:relative;
+  overflow:hidden;
+  background:#000;
+  flex-shrink:0;
+  /* width/height/border se fijan desde JS con variables --card-w/--card-h/--card-border */
+  width:var(--card-w,180px);
+  height:var(--card-h,220px);
+  border-radius:var(--card-radius);
+  border:var(--card-border-w,4px) solid var(--card-border-c,#ffffff);
+}
+.card img.photo{
+  position:absolute;inset:0;
+  width:100%;height:100%;object-fit:cover;
+  z-index:1;
+}
+.card img.photo.bw{filter:grayscale(1);}
+.card .gradient{
+  position:absolute;inset:0;
+  z-index:2;
+  pointer-events:none;
+}
+.card .pname{
+  position:absolute;
+  left:0;right:0;bottom:8px;
+  z-index:3;
+  text-align:center;
+  color:#fff;
+  font-size:21px;
+  font-weight:700;
+  line-height:1.1;
+  padding:0 4px;
+  text-transform:uppercase;
+}
+</style>
+</head>
+<body>
+
+<div id="panel">
+  <button id="panelToggle">Ocultar editor ▲</button>
+  <h2>Fondo</h2>
+  <button id="bgToggleBtn" style="width:100%">Cambiar fondo (actual: 1)</button>
+  <p class="small">Solo hay dos fondos (1.png y 2.png en la carpeta /convocatoria/fondo/). El botón alterna entre ambos.</p>
+
+  <h2>Escudos</h2>
+  <label>Equipo local</label>
+  <input type="text" id="crestNameLocal" value="Real Sociedad">
+  <label>Equipo visitante</label>
+  <input type="text" id="crestNameVisitante" value="">
+  <p class="small">Tamaño, posición y máximo se ajustan solo en el CSS (:root, sección Escudos).</p>
+
+  <h2>Aspecto de las tarjetas</h2>
+  <div class="row">
+    <div>
+      <label>Ancho (px)</label>
+      <input type="range" id="cardW" min="120" max="320" value="180">
+    </div>
+    <div>
+      <label>Alto (px)</label>
+      <input type="range" id="cardH" min="140" max="400" value="220">
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label>Grosor borde (px)</label>
+      <input type="range" id="borderW" min="0" max="16" value="4">
+    </div>
+    <div>
+      <label>Color borde</label>
+      <input type="color" class="swatch" id="borderC" value="#ffffff">
+    </div>
+  </div>
+
+  <h2>Degradado (sobre la foto)</h2>
+  <div class="row">
+    <div>
+      <label>Color</label>
+      <input type="color" class="swatch" id="gradColor" value="#000000">
+    </div>
+    <div>
+      <label>Opacidad (%)</label>
+      <input type="range" id="gradOpacity" min="0" max="100" value="75">
+    </div>
+  </div>
+  <div class="row">
+    <div>
+      <label>Inicio (% desde abajo)</label>
+      <input type="range" id="gradStart" min="0" max="100" value="0">
+    </div>
+    <div>
+      <label>Fin (% desde abajo)</label>
+      <input type="range" id="gradEnd" min="0" max="100" value="60">
+    </div>
+  </div>
+  <p class="small">El degradado es siempre vertical (de abajo hacia arriba).</p>
+
+  <h2>Jugadores</h2>
+  <div id="playersList"></div>
+
+  <div class="add-form">
+    <label>Añadir jugador extra</label>
+    <input type="text" id="newName" placeholder="Nombre del jugador">
+    <select id="newLine"></select>
+    <button id="addPlayerBtn" style="width:100%">Añadir</button>
+  </div>
+
+  <h2>Descargar</h2>
+  <button id="downloadBtn">📥 Descargar imagen</button>
+  <div id="downloadStatus"></div>
+</div>
+
+<div id="stage-wrap">
+  <div id="posterFrame">
+   <div id="posterScale">
+    <div id="poster">
+      <div id="titleText">CONVOCATORIA</div>
+      <div id="crests">
+        <img id="crest1" src="" alt="escudo 1">
+        <img id="crest2" src="" alt="escudo 2">
+      </div>
+      <div id="lines"></div>
+    </div>
+   </div>
+  </div>
+</div>
+
+<script>
+/* ============================================================
+   CONSTS — todos los datos según lo pedido ("todos los datos
+   deberán estar en un const"). Edítalos aquí.
+   ============================================================ */
+
+// Las 4 líneas. La key es el id interno, "title" es lo que se
+// ve encima de la línea (editable SOLO desde código, tal como
+// se pidió).
+const LINES_CONFIG = [
+  { key: "porteros",         title: "PORTEROS" },
+  { key: "defensas",         title: "DEFENSAS" },
+  { key: "centrocampistas",  title: "CENTROCAMPISTAS" },
+  { key: "delanteros",       title: "DELANTEROS" }
+];
+
+// Plantel por defecto, sacado de la imagen que subiste.
+const SQUAD = {
+  porteros: ["MAIGNAN", "RESTES", "RISSER"],
+  defensas: ["DIOUF", "UPAMECANO", "KALULU", "KOUNDE", "JACQUET", "LACROIX", "KONATE", "TRUFFERT"],
+  centrocampistas: ["CAMAVINGA", "DA CUNHA", "CHERKI", "KONE", "ZAIRE-EMERY", "RABIOT"],
+  delanteros: ["DEMBELE", "MBAPPE", "BARCOLA", "OLISE", "DOUE", "LEPAUL"]
+};
+
+// Fondo: patrón de URL fijo, solo cambia el número (1 o 2).
+const BG_BASE_URL = "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/convocatoria/fondo/";
+function getBgUrl(n){
+  return `${BG_BASE_URL}${n}.png`;
+}
+
+// Escudos: se buscan por nombre de equipo escrito en el editor.
+// Rellena este diccionario con los equipos que quieras soportar.
+const CREST_URLS = {
+  "real sociedad": "https://upload.wikimedia.org/wikipedia/en/f/f1/Real_Sociedad_logo.svg"
+};
+const CREST_FALLBACK = "https://placehold.co/120x120/1a1e24/ffffff?text=%3F"; // escudo no encontrado
+
+// Foto de cada jugador: función que construye la URL a partir del nombre.
+// AHORA MISMO usa un generador de avatares de relleno porque no me
+// pasaste el enlace real de las fotos. Cambia esta función cuando
+// tengas el patrón definitivo (por ejemplo BASE_URL + slug(nombre) + ".jpg").
+function getPlayerImgUrl(name){
+  const encoded = encodeURIComponent(name);
+  return `https://ui-avatars.com/api/?name=${encoded}&background=1a2a4a&color=fff&size=256&bold=true`;
+}
+
+/* ============================================================
+   ESTADO
+   ============================================================ */
+let idCounter = 0;
+const players = []; // {id, name, line, state: 'normal'|'bw'|'hidden'}
+
+LINES_CONFIG.forEach(line=>{
+  (SQUAD[line.key] || []).forEach(name=>{
+    players.push({ id: idCounter++, name, line: line.key, state: "normal" });
+  });
+});
+
+/* ============================================================
+   RENDER
+   ============================================================ */
+const linesEl = document.getElementById("lines");
+const playersListEl = document.getElementById("playersList");
+const newLineSelect = document.getElementById("newLine");
+
+function currentGradientCSS(){
+  const color = document.getElementById("gradColor").value;
+  const opacity = document.getElementById("gradOpacity").value / 100;
+  const start = document.getElementById("gradStart").value;
+  const end = document.getElementById("gradEnd").value;
+  const r = parseInt(color.slice(1,3),16), g = parseInt(color.slice(3,5),16), b = parseInt(color.slice(5,7),16);
+  const rgba = `rgba(${r},${g},${b},${opacity})`;
+  const transparent = `rgba(${r},${g},${b},0)`;
+  // vertical, de abajo (0%) hacia arriba (100%)
+  return `linear-gradient(to top, ${rgba} ${start}%, ${transparent} ${end}%)`;
+}
+
+function renderLines(){
+  linesEl.innerHTML = "";
+  LINES_CONFIG.forEach(lineCfg=>{
+    const lineWrap = document.createElement("div");
+    lineWrap.className = "line";
+
+    const title = document.createElement("div");
+    title.className = "line-title";
+    title.textContent = lineCfg.title;
+    lineWrap.appendChild(title);
+
+    const divider = document.createElement("div");
+    divider.className = "line-divider";
+    lineWrap.appendChild(divider);
+
+    const cardsWrap = document.createElement("div");
+    cardsWrap.className = "cards";
+
+    players.filter(p=>p.line===lineCfg.key && p.state!=="hidden").forEach(p=>{
+      const card = document.createElement("div");
+      card.className = "card";
+
+      const img = document.createElement("img");
+      img.className = "photo" + (p.state==="bw" ? " bw" : "");
+      img.src = getPlayerImgUrl(p.name);
+      card.appendChild(img);
+
+      const grad = document.createElement("div");
+      grad.className = "gradient";
+      grad.style.background = currentGradientCSS();
+      card.appendChild(grad);
+
+      const name = document.createElement("div");
+      name.className = "pname";
+      name.textContent = p.name;
+      card.appendChild(name);
+
+      cardsWrap.appendChild(card);
+    });
+
+    lineWrap.appendChild(cardsWrap);
+    linesEl.appendChild(lineWrap);
+  });
+  applyCardSizeVars();
+}
+
+function renderPlayerList(){
+  playersListEl.innerHTML = "";
+  LINES_CONFIG.forEach(lineCfg=>{
+    const block = document.createElement("div");
+    block.className = "line-block";
+    const h3 = document.createElement("h3");
+    h3.textContent = lineCfg.title;
+    block.appendChild(h3);
+
+    players.filter(p=>p.line===lineCfg.key).forEach(p=>{
+      const row = document.createElement("div");
+      row.className = "player-row";
+
+      const span = document.createElement("span");
+      span.textContent = p.name;
+      row.appendChild(span);
+
+      const select = document.createElement("select");
+      ["normal","bw","hidden"].forEach(st=>{
+        const opt = document.createElement("option");
+        opt.value = st;
+        opt.textContent = st==="normal" ? "Normal" : st==="bw" ? "Blanco y negro" : "Ocultar";
+        if(st===p.state) opt.selected = true;
+        select.appendChild(opt);
+      });
+      select.addEventListener("change", ()=>{
+        p.state = select.value;
+        renderLines();
+      });
+      row.appendChild(select);
+
+      block.appendChild(row);
+    });
+    playersListEl.appendChild(block);
+  });
+}
+
+function populateNewLineSelect(){
+  newLineSelect.innerHTML = "";
+  LINES_CONFIG.forEach(lineCfg=>{
+    const opt = document.createElement("option");
+    opt.value = lineCfg.key;
+    opt.textContent = lineCfg.title;
+    newLineSelect.appendChild(opt);
+  });
+}
+
+function applyCardSizeVars(){
+  const w = document.getElementById("cardW").value + "px";
+  const h = document.getElementById("cardH").value + "px";
+  const bw = document.getElementById("borderW").value + "px";
+  const bc = document.getElementById("borderC").value;
+  document.querySelectorAll(".card").forEach(c=>{
+    c.style.setProperty("--card-w", w);
+    c.style.setProperty("--card-h", h);
+    c.style.setProperty("--card-border-w", bw);
+    c.style.setProperty("--card-border-c", bc);
+  });
+}
+
+/* ============================================================
+   EVENTOS DEL EDITOR
+   ============================================================ */
+let currentBg = 1;
+const bgToggleBtn = document.getElementById("bgToggleBtn");
+function applyBg(){
+  document.getElementById("poster").style.backgroundImage = `url("${getBgUrl(currentBg)}")`;
+  bgToggleBtn.textContent = `Cambiar fondo (actual: ${currentBg})`;
+}
+bgToggleBtn.addEventListener("click", ()=>{
+  currentBg = currentBg === 1 ? 2 : 1;
+  applyBg();
+});
+
+function applyCrest(inputId, imgId){
+  const name = document.getElementById(inputId).value.trim().toLowerCase();
+  const url = CREST_URLS[name] || CREST_FALLBACK;
+  document.getElementById(imgId).src = url;
+}
+document.getElementById("crestNameLocal").addEventListener("input", ()=>applyCrest("crestNameLocal","crest1"));
+document.getElementById("crestNameVisitante").addEventListener("input", ()=>applyCrest("crestNameVisitante","crest2"));
+
+["cardW","cardH","borderW","borderC"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", applyCardSizeVars);
+});
+["gradColor","gradOpacity","gradStart","gradEnd"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", renderLines);
+});
+
+document.getElementById("addPlayerBtn").addEventListener("click", ()=>{
+  const name = document.getElementById("newName").value.trim().toUpperCase();
+  if(!name) return;
+  const line = newLineSelect.value;
+  players.push({ id: idCounter++, name, line, state: "normal" });
+  document.getElementById("newName").value = "";
+  renderPlayerList();
+  renderLines();
+});
+
+/* ============================================================
+   RESPONSIVE: reescalar el póster (2000x2500 fijo por dentro)
+   para que quepa en pantallas de móvil
+   ============================================================ */
+const posterScale = document.getElementById("posterScale");
+const posterFrame = document.getElementById("posterFrame");
+const stageWrap = document.getElementById("stage-wrap");
+const POSTER_W = 2000, POSTER_H = 2500;
+
+function fitPoster(){
+  const padding = window.innerWidth <= 900 ? 28 : 60;
+  const availableW = stageWrap.clientWidth - padding;
+  const availableH = window.innerHeight - (window.innerWidth<=900 ? 40 : 60);
+  const scale = Math.min(1, availableW / POSTER_W, availableH / POSTER_H);
+  posterScale.style.transform = `scale(${scale})`;
+  // El frame reserva exactamente el espacio ya escalado, para que
+  // no quede hueco en blanco alrededor del póster.
+  posterFrame.style.width = (POSTER_W*scale) + "px";
+  posterFrame.style.height = (POSTER_H*scale) + "px";
+}
+window.addEventListener("resize", fitPoster);
+window.addEventListener("orientationchange", ()=>setTimeout(fitPoster,150));
+
+/* ---------------- Toggle del panel en móvil ---------------- */
+const panel = document.getElementById("panel");
+const panelToggle = document.getElementById("panelToggle");
+panelToggle.addEventListener("click", ()=>{
+  panel.classList.toggle("collapsed");
+  panelToggle.textContent = panel.classList.contains("collapsed") ? "Mostrar editor ▼" : "Ocultar editor ▲";
+  setTimeout(fitPoster,50);
+});
+
+/* ============================================================
+   DESCARGA DE LA IMAGEN (incluye iPhone / Safari)
+   Usa html2canvas para "fotografiar" el póster a resolución
+   completa (2000x2500, ignorando el zoom de pantalla) y luego:
+     1) si la capability "downloads" del artifact está disponible,
+        la usamos (en la app de Claude en iPhone abre la hoja
+        nativa de compartir -> "Guardar en Fotos").
+     2) si no, abrimos la imagen en una pestaña nueva para que en
+        Safari se pueda mantener pulsado -> "Añadir a Fotos".
+   ============================================================ */
+const downloadBtn = document.getElementById("downloadBtn");
+const downloadStatus = document.getElementById("downloadStatus");
+
+async function capturePoster(){
+  return await html2canvas(document.getElementById("poster"), {
+    width: POSTER_W,
+    height: POSTER_H,
+    useCORS: true,
+    backgroundColor: null,
+    scale: 1 // el póster ya se genera a 2000x2500, no hace falta más escala
+  });
+}
+
+downloadBtn.addEventListener("click", async ()=>{
+  downloadStatus.textContent = "Generando imagen...";
+  downloadBtn.disabled = true;
+  try{
+    const canvas = await capturePoster();
+    canvas.toBlob(async (blob)=>{
+      if(!blob){
+        downloadStatus.textContent = "No se pudo generar la imagen.";
+        downloadBtn.disabled = false;
+        return;
+      }
+      const filename = "convocatoria.png";
+      let savedByCapability = false;
+      try{
+        const downloads = await claude.use("downloads");
+        if(downloads){
+          const res = await downloads.save({ filename, data: blob });
+          downloadStatus.textContent = res.status === "saved" ? "Imagen guardada." : "Imagen enviada.";
+          savedByCapability = true;
+        }
+      }catch(err){
+        // "declined" = el usuario canceló el diálogo; no reintentamos.
+        if(err && err.code === "declined"){
+          downloadStatus.textContent = "Descarga cancelada.";
+          savedByCapability = true;
+        }
+      }
+      if(!savedByCapability){
+        // Fallback (fuera de la app de Claude): abrir en pestaña nueva
+        // para poder mantener pulsado y "Añadir a Fotos" en iPhone,
+        // o hacer clic derecho > Guardar imagen en escritorio.
+        const url = URL.createObjectURL(blob);
+        const win = window.open(url, "_blank");
+        if(!win){
+          // si el navegador bloquea el popup, ofrecemos un enlace normal
+          const a = document.createElement("a");
+          a.href = url; a.download = filename;
+          document.body.appendChild(a); a.click(); a.remove();
+        }
+        downloadStatus.textContent = "Imagen abierta: mantén pulsado y elige \"Añadir a Fotos\".";
+      }
+      downloadBtn.disabled = false;
+    }, "image/png");
+  }catch(err){
+    downloadStatus.textContent = "Error generando la imagen.";
+    downloadBtn.disabled = false;
+  }
+});
+
+/* ============================================================
+   INICIALIZACIÓN
+   ============================================================ */
+applyBg();
+applyCrest("crestNameLocal","crest1");
+applyCrest("crestNameVisitante","crest2");
+populateNewLineSelect();
+renderPlayerList();
+renderLines();
+fitPoster();
+</script>
+</body>
+</html>
