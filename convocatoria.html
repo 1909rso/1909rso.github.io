@@ -8,21 +8,21 @@
 <style>
 @font-face{
   font-family:"Gulams Condensed";
-  src:url("https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/fonts/Gulams-Condensed-BF69599692a9bc1.otf") format("opentype");
+  src:url("https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/fonts/Gulams-Condensed-BF69599692a9bc1.otf") format("opentype");
   font-weight:normal;
   font-style:normal;
   font-display:swap;
 }
 @font-face{
   font-family:"Pelinka Expanded Bold";
-  src:url("https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/fonts/Pelinka-ExpandedBold.otf") format("opentype");
-  font-weight:bold;
+  src:url("https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/fonts/Pelinka-ExpandedBold.otf") format("opentype");
+  font-weight:400;
   font-style:normal;
   font-display:swap;
 }
 @font-face{
   font-family:"Steelfish Eb";
-  src:url("https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/fonts/Steelfish%20Eb.otf") format("opentype");
+  src:url("https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/fonts/Steelfish%20Eb.otf") format("opentype");
   font-weight:normal;
   font-style:normal;
   font-display:swap;
@@ -101,7 +101,9 @@ button{
   border-bottom:1px solid #23272e;font-size:12.5px;
 }
 .player-row span{flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.player-row select{width:120px;flex:none;padding:3px 4px;font-size:11px;}
+#panel .player-row select{width:120px;flex:none;padding:3px 4px;font-size:11px;}
+.player-row.extra{opacity:.8;}
+.extra-label{font-size:10.5px;color:#ffd479;text-transform:uppercase;letter-spacing:.5px;margin:6px 0 2px;}
 .line-block{margin-bottom:8px;}
 .line-block h3{font-size:12px;color:#ffd479;margin:12px 0 4px;text-transform:uppercase;}
 
@@ -138,7 +140,7 @@ button{
     width:100%;
     min-width:0;
     height:auto;
-    max-height:46vh;
+    max-height:60vh;
     border-right:none;
     border-bottom:1px solid #2a2f37;
   }
@@ -177,11 +179,11 @@ button{
   text-align:center;
   font-family:"Gulams Condensed",-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   font-size:var(--title-size);
-  font-weight:800;
+  font-weight:normal;
   letter-spacing:var(--title-letter-spacing);
   color:var(--title-color);
-  text-shadow:0 2px 10px rgba(0,0,0,.6);
   z-index:5;
+  text-shadow:none;
 }
 
 #crests{
@@ -192,12 +194,14 @@ button{
   gap:var(--crest-gap);
   z-index:6;
 }
-#crests img{
+#crests .crest-img{
   width:var(--crest-size);
   height:var(--crest-size);
   max-width:var(--crest-max-size);
   max-height:var(--crest-max-size);
-  object-fit:contain;
+  background-size:contain;
+  background-position:center;
+  background-repeat:no-repeat;
   filter:drop-shadow(0 2px 6px rgba(0,0,0,.5));
 }
 
@@ -215,7 +219,7 @@ button{
 .line-title{
   color:#fff;
   font-family:"Pelinka Expanded Bold",-apple-system,Segoe UI,Roboto,Arial,sans-serif;
-  font-weight:700;
+  font-weight:400;
   font-size:var(--line-title-size, 30px);
   letter-spacing:var(--line-title-spacing, 4px);
   text-transform:uppercase;
@@ -238,21 +242,22 @@ button{
 .card{
   position:relative;
   overflow:hidden;
-  background:#000;
+  background:var(--card-bg, #ffffff);
   flex-shrink:0;
   width:var(--card-w,180px);
   height:var(--card-h,220px);
   border-radius:var(--card-radius);
   border:var(--card-border-w,4px) solid var(--card-border-c,#ffffff);
 }
-.card img.photo{
+.card .photo{
   position:absolute;inset:0;
-  width:100%;height:100%;object-fit:cover;
+  width:100%;height:100%;
+  background-size:cover;
+  background-position:center;
   z-index:1;
   transform:translate(var(--photo-x, 0px), var(--photo-y, 0px)) scale(var(--photo-scale, 1));
   transform-origin:center;
 }
-.card img.photo.bw{filter:grayscale(1);}
 .card{cursor:pointer;}
 .card .gradient{
   position:absolute;inset:0;
@@ -267,12 +272,61 @@ button{
   color:#fff;
   font-family:"Steelfish Eb",-apple-system,Segoe UI,Roboto,Arial,sans-serif;
   font-size:var(--pname-size, 21px);
-  font-weight:700;
+  font-weight:400;
   line-height:1.1;
   padding:0 4px;
   text-transform:uppercase;
 }
+
+
+/* iPhone / iPad */
+@media (max-width:900px){
+  html,body{
+    width:100%;
+    min-width:0;
+  }
+
+  body{
+    display:block;
+    overflow-x:hidden;
+  }
+
+  #panel{
+    width:100%;
+    max-height:60dvh;
+    height:auto;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    padding:14px;
+  }
+
+  #stage-wrap{
+    width:100%;
+    height:auto;
+    min-height:0;
+    padding:12px;
+    overflow:hidden;
+    display:flex;
+    justify-content:center;
+    align-items:flex-start;
+  }
+
+  #posterFrame{
+    margin:0 auto;
+  }
+
+  button,
+  input,
+  select{
+    touch-action:manipulation;
+  }
+}
+
 </style>
+
+<link rel="preload" as="font" href="https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/fonts/Gulams-Condensed-BF69599692a9bc1.otf" type="font/otf" crossorigin>
+<link rel="preload" as="font" href="https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/fonts/Pelinka-ExpandedBold.otf" type="font/otf" crossorigin>
+<link rel="preload" as="font" href="https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/fonts/Steelfish%20Eb.otf" type="font/otf" crossorigin>
 </head>
 <body>
 
@@ -292,94 +346,8 @@ button{
   <h2>Jugadores</h2>
   <div id="playersList"></div>
 
-  <h2>Ajustes avanzados (temporal)</h2>
-  <p class="small">Estos controles son temporales para probar valores; luego se quitarán del menú.</p>
-
-  <div class="settings-group">Tarjeta</div>
-  <div class="settings-row">
-    <div><label>Ancho</label><input type="number" id="cardWidth" value="190"></div>
-    <div><label>Alto</label><input type="number" id="cardHeight" value="410"></div>
-  </div>
-  <div class="settings-row">
-    <div><label>Grosor borde</label><input type="number" id="cardBorderWidth" value="2"></div>
-    <div><label>Radio borde</label><input type="number" id="cardRadius" value="2"></div>
-  </div>
-  <label>Color borde</label>
-  <input type="color" id="cardBorderColor" value="#ffffff">
-  <label>Espacio entre tarjetas</label>
-  <input type="number" id="cardGap" value="20">
-
-  <div class="settings-group">Degradado sobre foto</div>
-  <label>Color</label>
-  <input type="color" id="gradColor" value="#012476">
-  <div class="settings-row">
-    <div><label>Opacidad (%)</label><input type="number" id="gradOpacity" value="100"></div>
-  </div>
-  <div class="settings-row">
-    <div><label>Inicio (%)</label><input type="number" id="gradStart" value="0"></div>
-    <div><label>Fin (%)</label><input type="number" id="gradEnd" value="40"></div>
-  </div>
-
-  <div class="settings-group">Foto dentro de la tarjeta</div>
-  <label>Tamaño (escala)</label>
-  <input type="number" id="photoScale" value="1.4" step="0.05">
-  <div class="settings-row">
-    <div><label>Posición X (px)</label><input type="number" id="photoX" value="-5"></div>
-    <div><label>Posición Y (px)</label><input type="number" id="photoY" value="100"></div>
-  </div>
-
-  <div class="settings-group">Texto "CONVOCATORIA"</div>
-  <div class="settings-row">
-    <div><label>Tamaño</label><input type="number" id="titleSize" value="230"></div>
-    <div><label>Espacio letras</label><input type="number" id="titleSpacing" value="0"></div>
-  </div>
-  <div class="settings-row">
-    <div><label>Posición arriba</label><input type="number" id="titleTop" value="60"></div>
-  </div>
-  <label>Color</label>
-  <input type="color" id="titleColor" value="#e0b570">
-
-  <div class="settings-group">Textos de línea (PORTEROS, DEFENSAS...)</div>
-  <div class="settings-row">
-    <div><label>Tamaño</label><input type="number" id="lineTitleSize" value="30"></div>
-    <div><label>Espacio letras</label><input type="number" id="lineTitleSpacing" value="4"></div>
-  </div>
-
-  <div class="settings-group">Nombres de jugador</div>
-  <label>Tamaño texto</label>
-  <input type="number" id="pnameSize" value="70">
-
-  <div class="settings-group">Posición vertical de cada línea</div>
-  <p class="small">Espacio extra antes de cada bloque (px). Sirve para subir/bajar el comienzo de porteros, defensas, etc. individualmente.</p>
-  <div id="lineOffsetsList"></div>
-
-  <div class="settings-group">Línea divisoria</div>
-  <div class="settings-row">
-    <div><label>Longitud (%)</label><input type="number" id="dividerWidth" value="23"></div>
-    <div><label>Grosor (px)</label><input type="number" id="dividerThickness" value="5"></div>
-  </div>
-
-  <div class="settings-group">Escudos</div>
-  <div class="settings-row">
-    <div><label>Tamaño</label><input type="number" id="crestSize" value="128"></div>
-    <div><label>Separación</label><input type="number" id="crestGap" value="20"></div>
-  </div>
-  <div class="settings-row">
-    <div><label>Desde arriba</label><input type="number" id="crestTop" value="44"></div>
-    <div><label>Desde la derecha</label><input type="number" id="crestRight" value="48"></div>
-  </div>
-
-  <div class="settings-group">Capa superior temporal</div>
-  <label>Opacidad (%)</label>
-  <input type="number" id="overlayOpacity" value="0">
-
-  <div class="settings-group">Copiar ajustes</div>
-  <p class="small">Copia los valores actuales para pegarlos en el chat y que los deje fijos en el código.</p>
-  <button id="copySettingsBtn" style="width:100%">📋 Copiar ajustes</button>
-  <div id="copySettingsStatus" class="small" style="min-height:14px;"></div>
-
   <h2>Descargar</h2>
-  <button id="downloadBtn">📥 Descargar imagen</button>
+  <button id="downloadBtn">📤 Compartir / guardar imagen</button>
   <div id="downloadStatus"></div>
 </div>
 
@@ -389,8 +357,8 @@ button{
     <div id="poster">
       <div id="titleText">CONVOCATORIA</div>
       <div id="crests">
-        <img id="crest1" src="" alt="escudo 1">
-        <img id="crest2" src="" alt="escudo 2">
+        <div id="crest1" class="crest-img" role="img" aria-label="escudo 1"></div>
+        <div id="crest2" class="crest-img" role="img" aria-label="escudo 2"></div>
       </div>
       <div id="lines"></div>
       <div id="tempOverlay"></div>
@@ -411,7 +379,20 @@ const SQUAD = {
   porteros: ["MAIGNAN", "RESTES", "RISSER"],
   defensas: ["DIOUF", "UPAMECANO", "KALULU", "KOUNDE", "JACQUET", "LACROIX", "KONATE", "Marín"],
   centrocampistas: ["CAMAVINGA", "DA CUNHA", "CHERKI", "KONE", "ZAIRE-EMERY", "RABIOT"],
-  delanteros: ["DEMBELE", "MBAPPE", "BARCOLA", "OLISE", "DOUE", "LEPAUL"]
+  delanteros: ["DEMBELE", "MBAPPE", "BARCOLA", "OLISE", "DOUE", "LEPAUL", "BARRENE"]
+};
+
+// Jugadores extra: no aparecen en el cartel por defecto (estado "hidden").
+// Se pueden añadir varios por línea, no hay límite. Desde el menú
+// (sección "Jugadores"), en el desplegable de cada uno de estos nombres,
+// se elige "Normal" para incluirlo en la convocatoria o "No incluir"
+// para quitarlo de nuevo. Igual que con los jugadores base, hace falta
+// subir su foto a poses/1/ y poses/2/ con el nombre correspondiente.
+const SQUAD_EXTRA = {
+  porteros: ["SUPLENTE1", "SUPLENTE2"],
+  defensas: ["FRAGA", "SUPLENTE2", "SUPLENTE3"],
+  centrocampistas: ["FOLGADO", "SUPLENTE2", "SUPLENTE3"],
+  delanteros: ["SUPLENTE2", "SUPLENTE3", "SUPLENTE4"]
 };
 
 const BG_BASE_URL = "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/convocatoria/fondo/";
@@ -507,12 +488,83 @@ function getPlayerImgUrl(name){
   return `${POSES_BASE_URL}${currentBg}/${encodeURIComponent(fileName)}.PNG`;
 }
 
+// --- Carga de imágenes de jugador -----------------------------------
+// html2canvas (la librería que genera el PNG final) NO soporta la
+// propiedad CSS "object-fit" en <img>, así que en la exportación la
+// foto se estiraba para rellenar la tarjeta en vez de recortarse
+// (esto era la "deformación"). Para evitarlo, la foto se pinta como
+// fondo (background-image + background-size:cover) de un <div>, que
+// sí se exporta igual que se ve en el lienzo.
+//
+// Por el mismo motivo, html2canvas tampoco soporta la propiedad CSS
+// "filter" (el blanco y negro no se veía en la exportación). Para que
+// el efecto B/N sea idéntico dentro y fuera, se convierte la imagen a
+// gris de verdad (pixel a pixel) con un <canvas> oculto, en vez de
+// aplicar un filtro CSS.
+const imageLoadCache = new Map(); // url -> Promise<HTMLImageElement|null>
+function loadImageEl(url){
+  if(imageLoadCache.has(url)) return imageLoadCache.get(url);
+  const p = new Promise(resolve=>{
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.addEventListener("load", ()=>resolve(img), { once:true });
+    img.addEventListener("error", ()=>resolve(null), { once:true });
+    img.src = url;
+  });
+  imageLoadCache.set(url, p);
+  return p;
+}
+
+const grayscaleUrlCache = new Map(); // url -> Promise<string|null>
+function getGrayscaleUrl(url){
+  if(grayscaleUrlCache.has(url)) return grayscaleUrlCache.get(url);
+  const p = loadImageEl(url).then(img=>{
+    if(!img) return null;
+    try{
+      const canvas = document.createElement("canvas");
+      canvas.width = img.naturalWidth || 1;
+      canvas.height = img.naturalHeight || 1;
+      const ctx = canvas.getContext("2d");
+      ctx.drawImage(img, 0, 0);
+      const data = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const d = data.data;
+      for(let i = 0; i < d.length; i += 4){
+        const gray = d[i]*0.299 + d[i+1]*0.587 + d[i+2]*0.114;
+        d[i] = d[i+1] = d[i+2] = gray;
+      }
+      ctx.putImageData(data, 0, 0);
+      return canvas.toDataURL("image/png");
+    }catch(err){
+      return null; // si falla (p.ej. CORS), se usa la foto en color
+    }
+  });
+  grayscaleUrlCache.set(url, p);
+  return p;
+}
+
+function applyPlayerPhoto(photoEl, name, state){
+  const url = getPlayerImgUrl(name);
+  if(state === "bw"){
+    getGrayscaleUrl(url).then(grayUrl=>{
+      photoEl.style.backgroundImage = `url("${grayUrl || url}")`;
+    });
+  }else{
+    loadImageEl(url).then(img=>{
+      if(!img){ photoEl.style.display = "none"; return; }
+      photoEl.style.backgroundImage = `url("${url}")`;
+    });
+  }
+}
+
 let idCounter = 0;
 const players = [];
 
 LINES_CONFIG.forEach(line=>{
   (SQUAD[line.key] || []).forEach(name=>{
-    players.push({ id: idCounter++, name, line: line.key, state: "normal" });
+    players.push({ id: idCounter++, name, line: line.key, state: "normal", extra: false });
+  });
+  (SQUAD_EXTRA[line.key] || []).forEach(name=>{
+    players.push({ id: idCounter++, name, line: line.key, state: "hidden", extra: true });
   });
 });
 
@@ -558,10 +610,10 @@ function renderLines(){
         renderPlayerList();
       });
 
-      const img = document.createElement("img");
-      img.className = "photo" + (p.state==="bw" ? " bw" : "");
-      img.src = getPlayerImgUrl(p.name);
-      card.appendChild(img);
+      const photo = document.createElement("div");
+      photo.className = "photo";
+      applyPlayerPhoto(photo, p.name, p.state);
+      card.appendChild(photo);
 
       const grad = document.createElement("div");
       grad.className = "gradient";
@@ -582,6 +634,31 @@ function renderLines(){
   applyCardSizeVars();
 }
 
+function addPlayerRow(container, p){
+  const row = document.createElement("div");
+  row.className = "player-row" + (p.extra ? " extra" : "");
+
+  const span = document.createElement("span");
+  span.textContent = p.extra ? p.name + " (extra)" : p.name;
+  row.appendChild(span);
+
+  const select = document.createElement("select");
+  ["normal","bw","hidden"].forEach(st=>{
+    const opt = document.createElement("option");
+    opt.value = st;
+    opt.textContent = st==="normal" ? "Normal" : st==="bw" ? "Blanco y negro" : (p.extra ? "No incluir" : "Ocultar");
+    if(st===p.state) opt.selected = true;
+    select.appendChild(opt);
+  });
+  select.addEventListener("change", ()=>{
+    p.state = select.value;
+    renderLines();
+  });
+  row.appendChild(select);
+
+  container.appendChild(row);
+}
+
 function renderPlayerList(){
   playersListEl.innerHTML = "";
   LINES_CONFIG.forEach(lineCfg=>{
@@ -591,30 +668,20 @@ function renderPlayerList(){
     h3.textContent = lineCfg.title;
     block.appendChild(h3);
 
-    players.filter(p=>p.line===lineCfg.key).forEach(p=>{
-      const row = document.createElement("div");
-      row.className = "player-row";
+    const basePlayers = players.filter(p=>p.line===lineCfg.key && !p.extra);
+    const extraPlayers = players.filter(p=>p.line===lineCfg.key && p.extra);
 
-      const span = document.createElement("span");
-      span.textContent = p.name;
-      row.appendChild(span);
+    basePlayers.forEach(p=>addPlayerRow(block, p));
 
-      const select = document.createElement("select");
-      ["normal","bw","hidden"].forEach(st=>{
-        const opt = document.createElement("option");
-        opt.value = st;
-        opt.textContent = st==="normal" ? "Normal" : st==="bw" ? "Blanco y negro" : "Ocultar";
-        if(st===p.state) opt.selected = true;
-        select.appendChild(opt);
-      });
-      select.addEventListener("change", ()=>{
-        p.state = select.value;
-        renderLines();
-      });
-      row.appendChild(select);
+    if(extraPlayers.length){
+      const extraLabel = document.createElement("div");
+      extraLabel.className = "extra-label";
+      extraLabel.textContent = "Extra (opcionales)";
+      block.appendChild(extraLabel);
 
-      block.appendChild(row);
-    });
+      extraPlayers.forEach(p=>addPlayerRow(block, p));
+    }
+
     playersListEl.appendChild(block);
   });
 }
@@ -639,6 +706,8 @@ const bgToggleBtn = document.getElementById("bgToggleBtn");
 function applyBg(){
   document.getElementById("poster").style.backgroundImage = `url("${getBgUrl(currentBg)}")`;
   bgToggleBtn.textContent = `Cambiar fondo (actual: ${currentBg})`;
+  document.documentElement.style.setProperty("--card-bg", currentBg === 2 ? "#161616" : "#00195F");
+  GRADIENT_CONFIG.color = currentBg === 2 ? "#2e2e2e" : "#012476";
 }
 bgToggleBtn.addEventListener("click", ()=>{
   currentBg = currentBg === 1 ? 2 : 1;
@@ -646,9 +715,16 @@ bgToggleBtn.addEventListener("click", ()=>{
   renderLines();
 });
 
-function applyCrest(inputId, imgId){
+function applyCrest(inputId, elId){
   const name = document.getElementById(inputId).value.trim();
-  document.getElementById(imgId).src = getCrestUrl(name);
+  const el = document.getElementById(elId);
+  const url = getCrestUrl(name);
+  // Igual que las fotos de jugador: se pinta como fondo (background-image)
+  // en vez de <img src> para que la exportación no estire el escudo fuera
+  // de su proporción (object-fit tampoco lo soporta html2canvas).
+  loadImageEl(url).then(img=>{
+    el.style.backgroundImage = `url("${img ? url : CREST_FALLBACK}")`;
+  });
 }
 document.getElementById("crestNameLocal").addEventListener("input", ()=>applyCrest("crestNameLocal","crest1"));
 document.getElementById("crestNameVisitante").addEventListener("input", ()=>applyCrest("crestNameVisitante","crest2"));
@@ -681,182 +757,213 @@ panelToggle.addEventListener("click", ()=>{
 const downloadBtn = document.getElementById("downloadBtn");
 const downloadStatus = document.getElementById("downloadStatus");
 
-async function capturePoster(){
-  return await html2canvas(document.getElementById("poster"), {
-    width: POSTER_W,
-    height: POSTER_H,
-    useCORS: true,
-    backgroundColor: null,
-    scale: 1
-  });
+function withTimeout(promise, ms, fallback=null){
+  return Promise.race([
+    promise,
+    new Promise(resolve => setTimeout(() => resolve(fallback), ms))
+  ]);
 }
 
-downloadBtn.addEventListener("click", async ()=>{
-  downloadStatus.textContent = "Generando imagen...";
-  downloadBtn.disabled = true;
-  try{
-    const canvas = await capturePoster();
-    canvas.toBlob(async (blob)=>{
-      if(!blob){
-        downloadStatus.textContent = "No se pudo generar la imagen.";
-        downloadBtn.disabled = false;
-        return;
-      }
-      const filename = "convocatoria.png";
-      let savedByCapability = false;
-      try{
-        const downloads = await claude.use("downloads");
-        if(downloads){
-          const res = await downloads.save({ filename, data: blob });
-          downloadStatus.textContent = res.status === "saved" ? "Imagen guardada." : "Imagen enviada.";
-          savedByCapability = true;
-        }
-      }catch(err){
-        if(err && err.code === "declined"){
-          downloadStatus.textContent = "Descarga cancelada.";
-          savedByCapability = true;
-        }
-      }
-      if(!savedByCapability){
-        const url = URL.createObjectURL(blob);
-        const win = window.open(url, "_blank");
-        if(!win){
-          const a = document.createElement("a");
-          a.href = url; a.download = filename;
-          document.body.appendChild(a); a.click(); a.remove();
-        }
-        downloadStatus.textContent = "Imagen abierta: mantén pulsado y elige \"Añadir a Fotos\".";
-      }
-      downloadBtn.disabled = false;
-    }, "image/png");
-  }catch(err){
-    downloadStatus.textContent = "Error generando la imagen.";
-    downloadBtn.disabled = false;
-  }
-});
+async function waitForFonts(){
+  if(!document.fonts) return;
 
-function renderLineOffsetControls(){
-  const wrap = document.getElementById("lineOffsetsList");
-  wrap.innerHTML = "";
-  LINES_CONFIG.forEach(lineCfg=>{
-    const label = document.createElement("label");
-    label.textContent = lineCfg.title;
-    wrap.appendChild(label);
+  // Las fuentes se definen como 400 porque cada archivo contiene una sola variante.
+  // Esto evita que Safari/iOS intente resolver un peso inexistente.
+  const loads = [
+    document.fonts.load('400 230px "Gulams Condensed"', 'CONVOCATORIA'),
+    document.fonts.load('400 30px "Pelinka Expanded Bold"', 'PORTEROS DEFENSAS CENTROCAMPISTAS DELANTEROS'),
+    document.fonts.load('400 70px "Steelfish Eb"', 'MAIGNAN RESTES RISSER UPAMECANO')
+  ];
 
-    const input = document.createElement("input");
-    input.type = "number";
-    input.value = lineCfg.offsetTop || 0;
-    input.addEventListener("input", ()=>{
-      lineCfg.offsetTop = parseFloat(input.value) || 0;
-      renderLines();
+  await withTimeout(Promise.allSettled(loads), 10000);
+  await withTimeout(document.fonts.ready, 5000);
+}
+
+async function waitForImages(){
+  // Escudos: ahora son fondos (background-image) de un <div>, igual que
+  // las fotos de jugador; se espera su carga con el mismo helper.
+  const crestLocal = getCrestUrl(document.getElementById("crestNameLocal").value.trim());
+  const crestVisitante = getCrestUrl(document.getElementById("crestNameVisitante").value.trim());
+  const crestPromises = [loadImageEl(crestLocal), loadImageEl(crestVisitante)];
+
+  // Fotos de jugador (fondo del div .photo) y fondo del cartel: hay que
+  // esperar a que el background-image (o su versión en gris) esté listo
+  // antes de capturar, si no la tarjeta sale en blanco en la exportación.
+  const photoPromises = players
+    .filter(p => p.state !== "hidden")
+    .map(p => {
+      const url = getPlayerImgUrl(p.name);
+      return p.state === "bw" ? getGrayscaleUrl(url) : loadImageEl(url);
     });
-    wrap.appendChild(input);
-  });
+
+  const bgPromise = loadImageEl(getBgUrl(currentBg));
+
+  await withTimeout(Promise.all([...crestPromises, ...photoPromises, bgPromise]), 15000);
 }
 
-function setupAdvancedSettings(){
-  function bindNum(id, fn){
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.addEventListener("input", ()=>fn(parseFloat(el.value)));
-  }
-  function bindColor(id, fn){
-    const el = document.getElementById(id);
-    if(!el) return;
-    el.addEventListener("input", ()=>fn(el.value));
-  }
+async function waitForExportAssets(){
+  await waitForFonts();
+  await waitForImages();
 
-  // Tarjeta
-  bindNum("cardWidth", v=>{ CARD_CONFIG.width = v; renderLines(); });
-  bindNum("cardHeight", v=>{ CARD_CONFIG.height = v; renderLines(); });
-  bindNum("cardBorderWidth", v=>{ CARD_CONFIG.borderWidth = v; renderLines(); });
-  bindNum("cardRadius", v=>{ CARD_CONFIG.radius = v; renderLines(); });
-  bindColor("cardBorderColor", v=>{ CARD_CONFIG.borderColor = v; renderLines(); });
-  bindNum("cardGap", v=>document.documentElement.style.setProperty("--card-gap", v+"px"));
+  // Dejamos que Safari/iOS pinte la fuente antes de leer el DOM con html2canvas.
+  await new Promise(resolve => requestAnimationFrame(() => resolve()));
+  await new Promise(resolve => requestAnimationFrame(() => resolve()));
+}
 
-  // Degradado
-  bindColor("gradColor", v=>{ GRADIENT_CONFIG.color = v; renderLines(); });
-  bindNum("gradOpacity", v=>{ GRADIENT_CONFIG.opacity = v; renderLines(); });
-  bindNum("gradStart", v=>{ GRADIENT_CONFIG.start = v; renderLines(); });
-  bindNum("gradEnd", v=>{ GRADIENT_CONFIG.end = v; renderLines(); });
+async function capturePoster(){
+  const poster = document.getElementById('poster');
+  const prevTransform = posterScale.style.transform;
+  const prevFrameWidth = posterFrame.style.width;
+  const prevFrameHeight = posterFrame.style.height;
+  const prevFrameOverflow = posterFrame.style.overflow;
+  const prevBoxShadow = poster.style.boxShadow;
 
-  // Foto dentro de la tarjeta
-  bindNum("photoScale", v=>{ PHOTO_CONFIG.scale = v; applyPhotoVars(); });
-  bindNum("photoX", v=>{ PHOTO_CONFIG.offsetX = v; applyPhotoVars(); });
-  bindNum("photoY", v=>{ PHOTO_CONFIG.offsetY = v; applyPhotoVars(); });
+  // La previsualización puede estar reducida, pero la exportación NO.
+  posterScale.style.transform = 'none';
+  posterFrame.style.width = POSTER_W + 'px';
+  posterFrame.style.height = POSTER_H + 'px';
+  posterFrame.style.overflow = 'visible';
 
-  // Texto CONVOCATORIA
-  bindNum("titleSize", v=>document.documentElement.style.setProperty("--title-size", v+"px"));
-  bindNum("titleSpacing", v=>document.documentElement.style.setProperty("--title-letter-spacing", v+"px"));
-  bindNum("titleTop", v=>document.documentElement.style.setProperty("--title-top", v+"px"));
-  bindColor("titleColor", v=>document.documentElement.style.setProperty("--title-color", v));
+  // La sombra alrededor del cartel es solo un adorno del editor (para que
+  // "flote" sobre el fondo oscuro de la página); no forma parte del
+  // diseño y sobresale del recuadro de 2000x2500, así que en la
+  // exportación se quita para que no aparezca como un borde/efecto
+  // extraño que no está en el lienzo.
+  poster.style.boxShadow = 'none';
 
-  // Textos de línea
-  bindNum("lineTitleSize", v=>document.documentElement.style.setProperty("--line-title-size", v+"px"));
-  bindNum("lineTitleSpacing", v=>document.documentElement.style.setProperty("--line-title-spacing", v+"px"));
+  try{
+    await waitForExportAssets();
 
-  // Nombres de jugador
-  bindNum("pnameSize", v=>document.documentElement.style.setProperty("--pname-size", v+"px"));
-
-  // Línea divisoria
-  bindNum("dividerWidth", v=>{ DIVIDER_CONFIG.width = v+"%"; applyDividerVars(); });
-  bindNum("dividerThickness", v=>{ DIVIDER_CONFIG.thickness = v; applyDividerVars(); });
-
-  // Escudos
-  bindNum("crestSize", v=>document.documentElement.style.setProperty("--crest-size", v+"px"));
-  bindNum("crestGap", v=>document.documentElement.style.setProperty("--crest-gap", v+"px"));
-  bindNum("crestTop", v=>document.documentElement.style.setProperty("--crest-top", v+"px"));
-  bindNum("crestRight", v=>document.documentElement.style.setProperty("--crest-right", v+"px"));
-
-  // Capa superior temporal
-  bindNum("overlayOpacity", v=>{ TEMP_OVERLAY_CONFIG.opacity = v/100; applyTempOverlay(); });
-
-  const copyBtn = document.getElementById("copySettingsBtn");
-  const copyStatus = document.getElementById("copySettingsStatus");
-  copyBtn.addEventListener("click", async ()=>{
-    const cs = getComputedStyle(document.documentElement);
-    const gv = name => cs.getPropertyValue(name).trim();
-    const text = [
-      "CARD_CONFIG = " + JSON.stringify(CARD_CONFIG),
-      "GRADIENT_CONFIG = " + JSON.stringify(GRADIENT_CONFIG),
-      "PHOTO_CONFIG = " + JSON.stringify(PHOTO_CONFIG),
-      "DIVIDER_CONFIG = " + JSON.stringify(DIVIDER_CONFIG),
-      "TEMP_OVERLAY_CONFIG.opacity = " + TEMP_OVERLAY_CONFIG.opacity,
-      "LINES_CONFIG offsetTop = " + JSON.stringify(LINES_CONFIG.map(l=>({key:l.key, offsetTop:l.offsetTop||0}))),
-      "--title-size: " + gv("--title-size"),
-      "--title-letter-spacing: " + gv("--title-letter-spacing"),
-      "--title-top: " + gv("--title-top"),
-      "--title-color: " + gv("--title-color"),
-      "--line-title-size: " + gv("--line-title-size"),
-      "--line-title-spacing: " + gv("--line-title-spacing"),
-      "--pname-size: " + gv("--pname-size"),
-      "--crest-size: " + gv("--crest-size"),
-      "--crest-gap: " + gv("--crest-gap"),
-      "--crest-top: " + gv("--crest-top"),
-      "--crest-right: " + gv("--crest-right"),
-      "--card-gap: " + gv("--card-gap")
-    ].join("\n");
-
-    try{
-      await navigator.clipboard.writeText(text);
-      copyStatus.textContent = "Copiado. Pégalo en el chat.";
-    }catch(err){
-      const ta = document.createElement("textarea");
-      ta.value = text;
-      ta.style.position = "fixed";
-      ta.style.opacity = "0";
-      document.body.appendChild(ta);
-      ta.select();
-      try{
-        document.execCommand("copy");
-        copyStatus.textContent = "Copiado. Pégalo en el chat.";
-      }catch(err2){
-        copyStatus.textContent = "No se pudo copiar. Valores: " + text;
+    const capturePromise = html2canvas(poster, {
+      width: POSTER_W,
+      height: POSTER_H,
+      windowWidth: POSTER_W,
+      windowHeight: POSTER_H,
+      x: 0,
+      y: 0,
+      scrollX: 0,
+      scrollY: 0,
+      scale: 1,
+      useCORS: true,
+      allowTaint: false,
+      backgroundColor: null,
+      logging: false,
+      imageTimeout: 8000,
+      removeContainer: true,
+      // La capa "temporal" (tempOverlay) solo debe salir en la exportación
+      // si de verdad se ve en el lienzo (opacidad > 0). Si está a 0 se
+      // excluye del todo de la captura, para que nunca pueda colarse como
+      // un efecto/imagen añadida que no se ve en la previsualización.
+      ignoreElements: (el) => {
+        if(el && el.id === 'tempOverlay'){
+          const opacity = parseFloat(getComputedStyle(el).opacity || '0');
+          return opacity <= 0;
+        }
+        return false;
       }
-      ta.remove();
+    });
+
+    // Evita que un recurso externo deje el botón bloqueado indefinidamente.
+    const canvas = await withTimeout(capturePromise, 60000, null);
+
+    if(!canvas){
+      throw new Error('La exportación tardó demasiado.');
+    }
+
+    return canvas;
+  }finally{
+    posterScale.style.transform = prevTransform;
+    posterFrame.style.width = prevFrameWidth;
+    posterFrame.style.height = prevFrameHeight;
+    posterFrame.style.overflow = prevFrameOverflow;
+    poster.style.boxShadow = prevBoxShadow;
+    fitPoster();
+  }
+}
+
+function canvasToBlob(canvas){
+  return new Promise((resolve, reject) => {
+    try{
+      canvas.toBlob(blob => {
+        if(blob) resolve(blob);
+        else reject(new Error('No se pudo crear el PNG.'));
+      }, 'image/png');
+    }catch(error){
+      reject(error);
     }
   });
 }
+
+async function shareOrSaveOnIPhone(blob){
+  const filename = 'convocatoria.png';
+  const file = new File([blob], filename, {type:'image/png'});
+
+  // iPhone/iPad: abre la hoja nativa de compartir.
+  // Desde ella el usuario puede elegir Guardar imagen/Fotos,
+  // Guardar en Archivos, AirDrop, Mensajes, etc., según las apps instaladas.
+  if(navigator.share){
+    try{
+      if(!navigator.canShare || navigator.canShare({files:[file]})){
+        await navigator.share({
+          files:[file],
+          title:'Convocatoria',
+          text:'Imagen de convocatoria'
+        });
+        return {ok:true, cancelled:false, mode:'share'};
+      }
+    }catch(error){
+      if(error && error.name === 'AbortError'){
+        return {ok:true, cancelled:true, mode:'share'};
+      }
+    }
+  }
+
+  // Fallback Safari/otros navegadores: abrir el PNG en una pestaña.
+  // En iPhone se puede mantener pulsada la imagen para guardarla.
+  const url = URL.createObjectURL(blob);
+  const win = window.open(url, '_blank');
+
+  if(!win){
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.rel = 'noopener';
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+  }
+
+  setTimeout(() => URL.revokeObjectURL(url), 120000);
+  return {ok:true, cancelled:false, mode:'fallback'};
+}
+
+downloadBtn.addEventListener('click', async () => {
+  if(downloadBtn.disabled) return;
+
+  downloadBtn.disabled = true;
+  downloadStatus.textContent = 'Preparando imagen...';
+
+  try{
+    const canvas = await capturePoster();
+    downloadStatus.textContent = 'Creando PNG...';
+
+    const blob = await canvasToBlob(canvas);
+    const result = await shareOrSaveOnIPhone(blob);
+
+    if(result.cancelled){
+      downloadStatus.textContent = 'Compartir cancelado.';
+    }else if(result.mode === 'share'){
+      downloadStatus.textContent = 'Se ha abierto el menú de compartir.';
+    }else{
+      downloadStatus.textContent = 'Imagen abierta. Puedes guardarla en Fotos.';
+    }
+  }catch(error){
+    console.error(error);
+    downloadStatus.textContent = 'No se pudo exportar. Vuelve a intentarlo.';
+  }finally{
+    downloadBtn.disabled = false;
+  }
+});
 
 applyBg();
 applyCrest("crestNameLocal","crest1");
@@ -864,8 +971,6 @@ applyCrest("crestNameVisitante","crest2");
 applyDividerVars();
 applyPhotoVars();
 applyTempOverlay();
-setupAdvancedSettings();
-renderLineOffsetControls();
 renderPlayerList();
 renderLines();
 fitPoster();
