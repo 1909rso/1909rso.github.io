@@ -276,6 +276,9 @@ button{
   line-height:1.1;
   padding:0 4px;
   text-transform:uppercase;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
 }
 
 
@@ -632,6 +635,22 @@ function renderLines(){
     linesEl.appendChild(lineWrap);
   });
   applyCardSizeVars();
+  fitAllPlayerNames();
+}
+
+// Tamaño normal = --pname-size (el máximo). Si un nombre no cabe en el
+// ancho de la tarjeta, se reduce solo el de ese nombre, poco a poco,
+// hasta que cabe entero en una línea.
+function fitAllPlayerNames(){
+  const maxSize = parseFloat(getComputedStyle(document.documentElement).getPropertyValue("--pname-size")) || 21;
+  linesEl.querySelectorAll(".pname").forEach(el=>{
+    let size = maxSize;
+    el.style.fontSize = size + "px";
+    while(el.scrollWidth > el.clientWidth && size > 10){
+      size--;
+      el.style.fontSize = size + "px";
+    }
+  });
 }
 
 function addPlayerRow(container, p){
@@ -972,8 +991,17 @@ applyDividerVars();
 applyPhotoVars();
 applyTempOverlay();
 renderPlayerList();
-renderLines();
-fitPoster();
+
+(async ()=>{
+  // Espera a que la tipografía de los nombres esté cargada antes de medir
+  // y ajustar tamaños, para no calcularlo con una fuente de reserva
+  // provisional. Si tarda demasiado o falla, se sigue igualmente.
+  if(document.fonts){
+    try{ await Promise.race([document.fonts.ready, new Promise(r=>setTimeout(r,3000))]); }catch(e){}
+  }
+  renderLines();
+  fitPoster();
+})();
 </script>
 </body>
 </html>
