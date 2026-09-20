@@ -6,7 +6,7 @@
 <style>
   @font-face {
     font-family: 'LaLiga';
-    src: url('https://github.com/1909rso/1909rso.github.io/raw/refs/heads/main/alineacion/escudo/LaLiga.woff2') format('woff2');
+    src: url('https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/alineacion/escudo/LaLiga.woff2') format('woff2');
     font-weight: normal;
     font-style: normal;
   }
@@ -170,6 +170,34 @@
     font-size: 12px;
     opacity: 0.6;
   }
+
+  /* ===== TEMPORAL: mover escudos (borrar este CSS, su HTML y su JS al terminar) ===== */
+  body { padding-bottom: 42vh; }
+  #tmpMover {
+    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
+    max-height: 40vh; overflow-y: auto;
+    background: #14213dee; border-top: 2px solid #ffffff44;
+    font-family: Arial, sans-serif; font-size: 14px;
+  }
+  #tmpMover summary { padding: 10px 14px; font-weight: 700; cursor: pointer; }
+  #tmpMover .tmpFila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 4px 14px; }
+  #tmpMover button, #tmpMover select {
+    font-size: 16px; padding: 8px 14px; border-radius: 6px; border: none;
+    background: #0047ab; color: #fff; cursor: pointer;
+  }
+  #tmpMover button.flecha { background: #444; min-width: 46px; padding: 8px 0; }
+  #tmpMover select { background: #444; }
+  #tmpMover #tmpModo.activo { background: #d99a00; }
+  #tmpSalida {
+    display: block; width: calc(100% - 28px); margin: 8px 14px 12px; box-sizing: border-box;
+    font-size: 11px; background: #0b1428; color: #fff;
+    border: 1px solid #ffffff33; border-radius: 6px; padding: 6px;
+  }
+  canvas.tmpMoviendo {
+    touch-action: none; cursor: move; outline: 4px dashed #ffcc00; outline-offset: -4px;
+    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
+  }
+  /* ===== FIN TEMPORAL ===== */
 </style>
 </head>
 <body>
@@ -199,6 +227,31 @@
     </div>
   </div>
 
+  <!-- ===== TEMPORAL: mover escudos (borrar este bloque, su CSS y su JS al terminar) ===== -->
+  <details id="tmpMover" open>
+    <summary>Mover escudos (temporal)</summary>
+    <div class="tmpFila">
+      <button id="tmpModo">Modo mover: NO</button>
+      <button id="tmpCopiar">Copiar posiciones</button>
+      <span id="tmpEstado"></span>
+    </div>
+    <div class="tmpFila"><span id="tmpSel">Activa el modo mover y arrastra un escudo</span></div>
+    <div class="tmpFila">
+      <button class="flecha" data-mov="-1,0">◀</button>
+      <button class="flecha" data-mov="0,-1">▲</button>
+      <button class="flecha" data-mov="0,1">▼</button>
+      <button class="flecha" data-mov="1,0">▶</button>
+      <select id="tmpPaso">
+        <option value="1">1 px</option>
+        <option value="5" selected>5 px</option>
+        <option value="10">10 px</option>
+      </select>
+      <button id="tmpReset">Restablecer formación</button>
+    </div>
+    <textarea id="tmpSalida" readonly rows="5"></textarea>
+  </details>
+  <!-- ===== FIN TEMPORAL ===== -->
+
 <script>
   // ============================
   // DATOS FIJOS (editar solo una vez al año)
@@ -212,11 +265,21 @@
   // izquierda del escudo (para número y texto) o respecto al centro,
   // debajo del escudo (para el nombre). Cambia estos valores para mover
   // o agrandar/achicar cada texto.
+  //
+  // El nombre además se puede curvar con "curvatura": grados que se dobla
+  // el texto por cada 100 px de longitud. 0 = recto; positivo = los
+  // extremos suben (forma de sonrisa, como el fondo del escudo); negativo
+  // = los extremos bajan. Todos los nombres usan el mismo radio de curva.
   const TEXTO_CONFIG = {
     numero:  { dx: 15, dy: 120, tamano: 50 },
     texto:   { dx: 15, dy: 170, tamano: 16 },   // el texto pequeño (DEF/MED/DEL) bajo el número
-    nombre:  { dx: 0,  dy: -70, tamano: 34 }    // debajo del escudo, centrado
+    nombre:  { dx: 9,  dy: -84, tamano: 35, curvatura: 21 }    // sobre la parte baja del escudo, centrado y curvado
   };
+
+  // Título de la imagen ("11 POSIBLE"), arriba a la izquierda.
+  // x/y: esquina superior izquierda del texto (en píxeles del lienzo).
+  // tamano: tamaño de letra. curvatura: igual que en el nombre (0 = recto).
+  const TITULO_CONFIG = { texto: '11 POSIBLE', x: 129, y: 7, tamano: 216, curvatura: 0 };
 
   // Tamaño y borde de TODOS los escudos a la vez.
   // escala: 1 = tamaño normal, 1.2 = un 20% más grandes, 0.8 = un 20% más pequeños.
@@ -251,7 +314,7 @@
   // Si "desvanecido" es 0, el degradado corta en seco sin transición.
   // Si "solido" es 0, empieza a desvanecerse ya desde abajo del todo.
   const DEGRADADO_CONFIG = {
-    color: '#000000',
+    color: '#071f52',   // azul un poco más oscuro que COLOR_ESCUDO (#0a2a6b)
     solido: 0.15,
     desvanecido: 0.3
   };
@@ -401,6 +464,34 @@
     });
   }
 
+  // Dibuja texto siguiendo un arco de circunferencia.
+  // anclaje: 'centro' (x = centro del texto) o 'izquierda' (x = borde izquierdo).
+  // curvatura: grados por cada 100 px de texto (0 = recto, + = sonrisa, - = al revés).
+  // Usa la fuente y el color que ya estén puestos en ctx.
+  function dibujarTextoCurvo(texto, x, y, curvatura, anclaje) {
+    const total = ctx.measureText(texto).width;
+    const cx = anclaje === 'izquierda' ? x + total / 2 : x;
+    ctx.textBaseline = 'top';
+    ctx.textAlign = 'center';
+    if (!curvatura) {
+      ctx.fillText(texto, cx, y);
+      return;
+    }
+    const k = (curvatura * Math.PI / 180) / 100; // radianes de giro por píxel de texto
+    let prefijo = '';
+    for (const ch of Array.from(texto)) {
+      // posición del centro de la letra medida desde el centro del texto
+      const s = ctx.measureText(prefijo).width + ctx.measureText(ch).width / 2 - total / 2;
+      const ang = s * k;
+      ctx.save();
+      ctx.translate(cx + Math.sin(ang) / k, y - (1 - Math.cos(ang)) / k);
+      ctx.rotate(-ang);
+      ctx.fillText(ch, 0, 0);
+      ctx.restore();
+      prefijo += ch;
+    }
+  }
+
   function dibujarJugador(jugador, cx, cy, ancho, alto, img) {
     const g = ESCUDO_CONFIG.grosor;
     const tempW = ancho + g * 2;
@@ -475,12 +566,11 @@
     ctx.font = `400 ${TEXTO_CONFIG.texto.tamano}px LaLiga, Arial, sans-serif`;
     ctx.fillText(jugador.texto, x + g + TEXTO_CONFIG.texto.dx, y + g + TEXTO_CONFIG.texto.dy);
 
-    // Nombre, debajo del escudo (posición configurable en TEXTO_CONFIG.nombre)
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.font = `700 ${TEXTO_CONFIG.nombre.tamano}px LaLiga, Arial, sans-serif`;
+    // Nombre, curvado sobre la parte baja del escudo (tamaño, posición y curvatura en TEXTO_CONFIG.nombre)
+    const N = TEXTO_CONFIG.nombre;
+    ctx.font = `700 ${N.tamano}px LaLiga, Arial, sans-serif`;
     ctx.fillStyle = '#ffffff';
-    ctx.fillText(jugador.nombre.toUpperCase(), cx + TEXTO_CONFIG.nombre.dx, y + tempH + TEXTO_CONFIG.nombre.dy);
+    dibujarTextoCurvo(jugador.nombre.toUpperCase(), cx + N.dx, y + tempH + N.dy, N.curvatura, 'centro');
   }
 
   function calcularPosiciones(lineas) {
@@ -537,11 +627,9 @@
     ctx.clearRect(0, 0, CANVAS_W, CANVAS_H);
     if (fondoImg) ctx.drawImage(fondoImg, 0, 0, CANVAS_W, CANVAS_H);
 
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'top';
     ctx.fillStyle = '#ffffff';
-    ctx.font = '700 90px LaLiga, Arial, sans-serif';
-    ctx.fillText('11 POSIBLE', 60, 60);
+    ctx.font = `700 ${TITULO_CONFIG.tamano}px LaLiga, Arial, sans-serif`;
+    dibujarTextoCurvo(TITULO_CONFIG.texto, TITULO_CONFIG.x, TITULO_CONFIG.y, TITULO_CONFIG.curvatura, 'izquierda');
 
     const nuevasHitboxes = [];
     posiciones.forEach((pos, i) => {
@@ -697,12 +785,148 @@
     dibujarAlineacion(selector.value);
   });
 
+  // Espera a que la fuente LaLiga esté cargada antes de dibujar en el canvas
+  // (si no, el canvas usaría Arial en la primera pintada).
+  async function cargarFuente() {
+    const carga = (async () => {
+      await document.fonts.load('700 40px LaLiga', 'MARÍN 11 POSIBLE');
+      await document.fonts.load('400 40px LaLiga', 'DEF 0123456789');
+    })();
+    const limite = new Promise(res => setTimeout(res, 6000));
+    try { await Promise.race([carga, limite]); }
+    catch (e) { console.warn('No se pudo cargar la fuente LaLiga', e); }
+  }
+
   (async () => {
-    await precargarTodo();
+    await Promise.all([precargarTodo(), cargarFuente()]);
     document.getElementById('cargando').style.display = 'none';
     selector.disabled = false;
     dibujarAlineacion(selector.value);
   })();
+
+  // ===== TEMPORAL: mover escudos (borrar todo este bloque, su CSS y su HTML al terminar) =====
+  (function () {
+    const NUM_JUGADORES = 11;
+    const contenedor = document.getElementById('contenedorCanvas');
+    const salida = document.getElementById('tmpSalida');
+    const btnModo = document.getElementById('tmpModo');
+    const etiquetaSel = document.getElementById('tmpSel');
+    let modoMover = false;
+    let arrastre = null;
+    let slotSel = null;
+
+    // Deja la lista de la formación con los 11 jugadores rellenos (0,0 si no había ajuste)
+    function asegurar(f) {
+      const lista = AJUSTES_POSICION[f] || (AJUSTES_POSICION[f] = []);
+      for (let i = 0; i < NUM_JUGADORES; i++) {
+        const a = lista[i] || {};
+        lista[i] = { dx: a.dx || 0, dy: a.dy || 0 };
+      }
+    }
+
+    // Texto listo para pegar en el código: el objeto AJUSTES_POSICION completo
+    function textoPosiciones() {
+      const lineas = Object.keys(FORMACIONES).map(f => {
+        const ajustes = Array.from({ length: NUM_JUGADORES }, (_, i) => obtenerAjuste(f, i));
+        const hay = ajustes.some(a => a.dx || a.dy);
+        const cuerpo = hay ? '[ ' + ajustes.map(a => `{ dx: ${a.dx}, dy: ${a.dy} }`).join(', ') + ' ]' : '[]';
+        return `    "${f}": ${cuerpo}`;
+      });
+      return 'const AJUSTES_POSICION = {\n' + lineas.join(',\n') + '\n  };';
+    }
+
+    let pendiente = false;
+    function pedirRedibujo() {
+      salida.value = textoPosiciones();
+      if (pendiente) return;
+      pendiente = true;
+      requestAnimationFrame(() => { pendiente = false; dibujarAlineacion(selector.value); });
+    }
+
+    function aplicar(f, slot, dx, dy) {
+      asegurar(f);
+      AJUSTES_POSICION[f][slot] = { dx: Math.round(dx), dy: Math.round(dy) };
+      pedirRedibujo();
+    }
+
+    function seleccionar(slot) {
+      slotSel = slot;
+      const j = ALINEACION[slot];
+      etiquetaSel.textContent = 'Escudo seleccionado: ' + (j ? j.nombre : slot);
+    }
+
+    function aCanvas(e) {
+      const rect = canvas.getBoundingClientRect();
+      const escala = CANVAS_W / rect.width;
+      return { x: (e.clientX - rect.left) * escala, y: (e.clientY - rect.top) * escala };
+    }
+
+    // Modo mover: mientras está activo, tocar un escudo NO abre el selector de jugador
+    btnModo.addEventListener('click', () => {
+      modoMover = !modoMover;
+      btnModo.textContent = 'Modo mover: ' + (modoMover ? 'SÍ' : 'NO');
+      btnModo.classList.toggle('activo', modoMover);
+      canvas.classList.toggle('tmpMoviendo', modoMover);
+    });
+    contenedor.addEventListener('click', (e) => { if (modoMover) e.stopPropagation(); }, true);
+
+    canvas.addEventListener('pointerdown', (e) => {
+      if (!modoMover) return;
+      const { x, y } = aCanvas(e);
+      const hit = hitboxes.slice().reverse().find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
+      if (!hit) return;
+      const f = selector.value;
+      arrastre = { f, slot: hit.slot, x0: x, y0: y, base: obtenerAjuste(f, hit.slot) };
+      seleccionar(hit.slot);
+      canvas.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+    canvas.addEventListener('pointermove', (e) => {
+      if (!arrastre) return;
+      const { x, y } = aCanvas(e);
+      aplicar(arrastre.f, arrastre.slot, arrastre.base.dx + (x - arrastre.x0), arrastre.base.dy + (y - arrastre.y0));
+    });
+    const soltar = () => { arrastre = null; };
+    canvas.addEventListener('pointerup', soltar);
+    canvas.addEventListener('pointercancel', soltar);
+
+    // Flechas para afinar el escudo seleccionado
+    document.querySelectorAll('#tmpMover [data-mov]').forEach(b => {
+      b.addEventListener('click', () => {
+        if (slotSel === null) { etiquetaSel.textContent = 'Primero toca un escudo en modo mover'; return; }
+        const paso = parseInt(document.getElementById('tmpPaso').value, 10);
+        const [mx, my] = b.dataset.mov.split(',').map(Number);
+        const f = selector.value;
+        const base = obtenerAjuste(f, slotSel);
+        aplicar(f, slotSel, base.dx + mx * paso, base.dy + my * paso);
+      });
+    });
+
+    document.getElementById('tmpReset').addEventListener('click', () => {
+      const f = selector.value;
+      if (!confirm('¿Restablecer las posiciones de la formación ' + f + '?')) return;
+      AJUSTES_POSICION[f] = [];
+      pedirRedibujo();
+    });
+
+    // Copiar todas las posiciones para pegarlas en el chat
+    const estado = document.getElementById('tmpEstado');
+    document.getElementById('tmpCopiar').addEventListener('click', async () => {
+      const texto = textoPosiciones();
+      try {
+        await navigator.clipboard.writeText(texto);
+      } catch (e) {
+        salida.focus(); salida.select();
+        try { document.execCommand('copy'); } catch (e2) {}
+      }
+      estado.textContent = '¡Copiado!';
+      setTimeout(() => { estado.textContent = ''; }, 1800);
+    });
+
+    salida.value = textoPosiciones();
+  })();
+  // ===== FIN TEMPORAL =====
+
 </script>
 
 </body>
