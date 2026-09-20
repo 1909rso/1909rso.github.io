@@ -917,42 +917,31 @@ async function shareOrSaveOnIPhone(blob){
   const filename = 'convocatoria.png';
   const file = new File([blob], filename, {type:'image/png'});
 
-  // iPhone/iPad: abre la hoja nativa de compartir.
-  // Desde ella el usuario puede elegir Guardar imagen/Fotos,
-  // Guardar en Archivos, AirDrop, Mensajes, etc., según las apps instaladas.
-  if(navigator.share){
-    try{
-      if(!navigator.canShare || navigator.canShare({files:[file]})){
-        await navigator.share({
-          files:[file],
-          title:'Convocatoria',
-          text:'Imagen de convocatoria'
-        });
-        return {ok:true, cancelled:false, mode:'share'};
-      }
-    }catch(error){
-      if(error && error.name === 'AbortError'){
-        return {ok:true, cancelled:true, mode:'share'};
-      }
+  // Web Share API (hoja de compartir nativa, permite "Guardar imagen")
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: filename });
+      return {ok:true, cancelled:false, mode:'share'};
+    } catch (shareErr) {
+      if (shareErr.name === 'AbortError') return {ok:true, cancelled:true, mode:'share'}; // el usuario canceló
     }
   }
 
-  // Fallback Safari/otros navegadores: abrir el PNG en una pestaña.
-  // En iPhone se puede mantener pulsada la imagen para guardarla.
+  // Fallback (desktop / navegadores sin Web Share con archivos):
   const url = URL.createObjectURL(blob);
-  const win = window.open(url, '_blank');
+  const link = document.createElement('a');
+  link.download = filename;
+  link.href = url;
+  link.click();
+  setTimeout(()=>URL.revokeObjectURL(url), 5000);
 
-  if(!win){
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = filename;
-    a.rel = 'noopener';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
+  // En iOS sin soporte de share con files, abrir en pestaña nueva
+  // para poder mantener pulsado y "Guardar imagen".
+  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent);
+  if (isIOS) {
+    window.open(url, '_blank');
   }
 
-  setTimeout(() => URL.revokeObjectURL(url), 120000);
   return {ok:true, cancelled:false, mode:'fallback'};
 }
 
