@@ -231,8 +231,8 @@
   // escala: 1 = ajustada al escudo, >1 la agranda (se recorta igualmente a la
   // forma del escudo), <1 la reduce. dx/dy la desplazan dentro del escudo.
   const FOTO_CONFIG = {
-    escala: 1.1,
-    dx: -10,
+    escala: 1.05,
+    dx:0,
     dy: 50
   };
 
@@ -266,25 +266,25 @@
 
   // Plantilla completa del equipo (todos los jugadores disponibles para elegir)
   const PLANTILLA = [
-    { numero: 1,  nombre: "REMIRO",   texto: "POR", imagen: "https://via.placeholder.com/400x500?text=REMIRO" },
-    { numero: 13, nombre: "MARÍN",  texto: "POR", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/alineacion/jugadored/Marin.PNG" },
-    { numero: 24, nombre: "AIHEN",    texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=AIHEN" },
-    { numero: 5,  nombre: "ZUBELDIA", texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=ZUBELDIA" },
-    { numero: 4,  nombre: "ARETXABALETA", texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=ARETXABALETA" },
-    { numero: 20, nombre: "PACHECO",  texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=PACHECO" },
-    { numero: 3,  nombre: "GOROSABEL", texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=GOROSABEL" },
-    { numero: 15, nombre: "MUNOZ",    texto: "DEF", imagen: "https://via.placeholder.com/400x500?text=MUNOZ" },
-    { numero: 8,  nombre: "ZUBIMENDI", texto: "MED", imagen: "https://via.placeholder.com/400x500?text=ZUBIMENDI" },
-    { numero: 6,  nombre: "MERINO",   texto: "MED", imagen: "https://via.placeholder.com/400x500?text=MERINO" },
-    { numero: 10, nombre: "OYARZABAL", texto: "MED", imagen: "https://via.placeholder.com/400x500?text=OYARZABAL" },
-    { numero: 21, nombre: "SUCIC",    texto: "MED", imagen: "https://via.placeholder.com/400x500?text=SUCIC" },
-    { numero: 14, nombre: "TURRIENTES", texto: "MED", imagen: "https://via.placeholder.com/400x500?text=TURRIENTES" },
-    { numero: 18, nombre: "GUEVARA",  texto: "MED", imagen: "https://via.placeholder.com/400x500?text=GUEVARA" },
-    { numero: 7,  nombre: "KUBO",     texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=KUBO" },
-    { numero: 9,  nombre: "SADIQ",    texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=SADIQ" },
-    { numero: 11, nombre: "SORLOTH",  texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=SORLOTH" },
-    { numero: 17, nombre: "BECKER",   texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=BECKER" },
-    { numero: 19, nombre: "OSKARSSON", texto: "DEL", imagen: "https://via.placeholder.com/400x500?text=OSKARSSON" }
+    { numero: 1,  nombre: "REMIRO",   texto: "POR", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Remiro.PNG" },
+    { numero: 13, nombre: "MARÍN",  texto: "POR", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Marin.PNG" },
+    { numero: 24, nombre: "AIHEN",    texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Aihen.PNG" },
+    { numero: 5,  nombre: "ZUBELDIA", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Zubeldia.PNG" },
+    { numero: 4,  nombre: "ARETXABALETA", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Aretxabaleta.PNG" },
+    { numero: 20, nombre: "PACHECO",  texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Pacheco.PNG" },
+    { numero: 3,  nombre: "GOROSABEL", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Gorosabel.PNG" },
+    { numero: 15, nombre: "MUNOZ",    texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Munoz.PNG" },
+    { numero: 8,  nombre: "ZUBIMENDI", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Zubimendi.PNG" },
+    { numero: 6,  nombre: "MERINO",   texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Merino.PNG" },
+    { numero: 10, nombre: "OYARZABAL", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Oyarzabal.PNG" },
+    { numero: 21, nombre: "SUCIC",    texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Sucic.PNG" },
+    { numero: 14, nombre: "TURRIENTES", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Turrientes.PNG" },
+    { numero: 18, nombre: "GUEVARA",  texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Guevara.PNG" },
+    { numero: 7,  nombre: "KUBO",     texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Kubo.PNG" },
+    { numero: 9,  nombre: "SADIQ",    texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Sadiq.PNG" },
+    { numero: 11, nombre: "SORLOTH",  texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Sorloth.PNG" },
+    { numero: 17, nombre: "BECKER",   texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Becker.PNG" },
+    { numero: 19, nombre: "OSKARSSON", texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Oskarsson.PNG" }
   ];
 
   // Once inicial: el primer jugador es siempre el portero.
