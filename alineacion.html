@@ -171,33 +171,6 @@
     opacity: 0.6;
   }
 
-  /* ===== TEMPORAL: mover escudos (borrar este CSS, su HTML y su JS al terminar) ===== */
-  body { padding-bottom: 42vh; }
-  #tmpMover {
-    position: fixed; left: 0; right: 0; bottom: 0; z-index: 50;
-    max-height: 40vh; overflow-y: auto;
-    background: #14213dee; border-top: 2px solid #ffffff44;
-    font-family: Arial, sans-serif; font-size: 14px;
-  }
-  #tmpMover summary { padding: 10px 14px; font-weight: 700; cursor: pointer; }
-  #tmpMover .tmpFila { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 4px 14px; }
-  #tmpMover button, #tmpMover select {
-    font-size: 16px; padding: 8px 14px; border-radius: 6px; border: none;
-    background: #0047ab; color: #fff; cursor: pointer;
-  }
-  #tmpMover button.flecha { background: #444; min-width: 46px; padding: 8px 0; }
-  #tmpMover select { background: #444; }
-  #tmpMover #tmpModo.activo { background: #d99a00; }
-  #tmpSalida {
-    display: block; width: calc(100% - 28px); margin: 8px 14px 12px; box-sizing: border-box;
-    font-size: 11px; background: #0b1428; color: #fff;
-    border: 1px solid #ffffff33; border-radius: 6px; padding: 6px;
-  }
-  canvas.tmpMoviendo {
-    touch-action: none; cursor: move; outline: 4px dashed #ffcc00; outline-offset: -4px;
-    -webkit-user-select: none; user-select: none; -webkit-touch-callout: none;
-  }
-  /* ===== FIN TEMPORAL ===== */
 </style>
 </head>
 <body>
@@ -227,30 +200,6 @@
     </div>
   </div>
 
-  <!-- ===== TEMPORAL: mover escudos (borrar este bloque, su CSS y su JS al terminar) ===== -->
-  <details id="tmpMover" open>
-    <summary>Mover escudos (temporal)</summary>
-    <div class="tmpFila">
-      <button id="tmpModo">Modo mover: NO</button>
-      <button id="tmpCopiar">Copiar posiciones</button>
-      <span id="tmpEstado"></span>
-    </div>
-    <div class="tmpFila"><span id="tmpSel">Activa el modo mover y arrastra un escudo</span></div>
-    <div class="tmpFila">
-      <button class="flecha" data-mov="-1,0">◀</button>
-      <button class="flecha" data-mov="0,-1">▲</button>
-      <button class="flecha" data-mov="0,1">▼</button>
-      <button class="flecha" data-mov="1,0">▶</button>
-      <select id="tmpPaso">
-        <option value="1">1 px</option>
-        <option value="5" selected>5 px</option>
-        <option value="10">10 px</option>
-      </select>
-      <button id="tmpReset">Restablecer formación</button>
-    </div>
-    <textarea id="tmpSalida" readonly rows="5"></textarea>
-  </details>
-  <!-- ===== FIN TEMPORAL ===== -->
 
 <script>
   // ============================
@@ -279,7 +228,7 @@
   // Título de la imagen ("11 POSIBLE"), arriba a la izquierda.
   // x/y: esquina superior izquierda del texto (en píxeles del lienzo).
   // tamano: tamaño de letra. curvatura: igual que en el nombre (0 = recto).
-  const TITULO_CONFIG = { texto: '11 POSIBLE', x: 129, y: 7, tamano: 216, curvatura: 0 };
+  const TITULO_CONFIG = { texto: '11 POSIBLE', x: 129, y: 37, tamano: 216, curvatura: 0 };
 
   // Tamaño y borde de TODOS los escudos a la vez.
   // escala: 1 = tamaño normal, 1.2 = un 20% más grandes, 0.8 = un 20% más pequeños.
@@ -287,7 +236,7 @@
   // Ambos afectan a las 11 fichas por igual.
   const ESCUDO_CONFIG = {
     escala: 1.35,
-    grosor: 5
+    grosor: 4
   };
 
   // Posición y tamaño de la FOTO dentro de cada escudo (aplica a las 11 fichas).
@@ -296,7 +245,7 @@
   const FOTO_CONFIG = {
     escala: 1.05,
     dx:0,
-    dy: 50
+    dy: 42
   };
 
   // Capa superior opcional (imagen subida desde el móvil), por encima de todo lo demás
@@ -327,36 +276,51 @@
     return `rgba(${r}, ${g}, ${b}, ${alpha})`;
   }
 
-  // Plantilla completa del equipo (todos los jugadores disponibles para elegir)
+  // Plantilla = convocatoria (mismas líneas y nombres que convocatoria.html).
+  // Beitia y Marchal no tienen dorsal todavía: se muestran con "-".
   const PLANTILLA = [
-    { numero: 1,  nombre: "REMIRO",   texto: "POR", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Remiro.PNG" },
-    { numero: 13, nombre: "MARÍN",  texto: "POR", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Marin.PNG" },
-    { numero: 24, nombre: "AIHEN",    texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Aihen.PNG" },
-    { numero: 5,  nombre: "ZUBELDIA", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Zubeldia.PNG" },
-    { numero: 4,  nombre: "ARETXABALETA", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Aretxabaleta.PNG" },
-    { numero: 20, nombre: "PACHECO",  texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Pacheco.PNG" },
-    { numero: 3,  nombre: "GOROSABEL", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Gorosabel.PNG" },
-    { numero: 15, nombre: "MUNOZ",    texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Munoz.PNG" },
-    { numero: 8,  nombre: "ZUBIMENDI", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Zubimendi.PNG" },
-    { numero: 6,  nombre: "MERINO",   texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Merino.PNG" },
-    { numero: 10, nombre: "OYARZABAL", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Oyarzabal.PNG" },
-    { numero: 21, nombre: "SUCIC",    texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Sucic.PNG" },
-    { numero: 14, nombre: "TURRIENTES", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Turrientes.PNG" },
-    { numero: 18, nombre: "GUEVARA",  texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Guevara.PNG" },
-    { numero: 7,  nombre: "KUBO",     texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Kubo.PNG" },
-    { numero: 9,  nombre: "SADIQ",    texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Sadiq.PNG" },
-    { numero: 11, nombre: "SORLOTH",  texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Sorloth.PNG" },
-    { numero: 17, nombre: "BECKER",   texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Becker.PNG" },
-    { numero: 19, nombre: "OSKARSSON", texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Oskarsson.PNG" }
+    { numero: 1, nombre: "REMIRO", texto: "POR", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Remiro.PNG" },
+    { numero: 13, nombre: "MARRERO", texto: "POR", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Marrero.PNG" },
+    { numero: 2, nombre: "ARAMBURU", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Aramburu.PNG" },
+    { numero: 20, nombre: "ODRIOZOLA", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Odriozola.PNG" },
+    { numero: 22, nombre: "FORT", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Fort.PNG" },
+    { numero: 19, nombre: "SARR", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Sarr.PNG" },
+    { numero: 5, nombre: "ZUBELDIA", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Zubeldia.PNG" },
+    { numero: 6, nombre: "MARTIN", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Martin.PNG" },
+    { numero: 16, nombre: "PACHECO", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Pacheco.PNG" },
+    { numero: 17, nombre: "SERGIO", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Sergio.PNG" },
+    { numero: 3, nombre: "AIHEN", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Aihen.PNG" },
+    { numero: "-", nombre: "BEITIA", texto: "DEF", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Beitia.PNG" },
+    { numero: 21, nombre: "HERRERA", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Herrera.PNG" },
+    { numero: 8, nombre: "TURRIENTES", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Turrientes.PNG" },
+    { numero: 4, nombre: "GORROTXA", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Gorrotxa.PNG" },
+    { numero: 18, nombre: "SOLER", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Soler.PNG" },
+    { numero: 23, nombre: "ZAKHARYAN", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Zakharyan.PNG" },
+    { numero: 24, nombre: "SUCIC", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Sucic.PNG" },
+    { numero: 15, nombre: "MARÍN", texto: "MED", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Marin.PNG" },
+    { numero: 14, nombre: "KUBO", texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Kubo.PNG" },
+    { numero: 11, nombre: "GUEDES", texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Guedes.PNG" },
+    { numero: 12, nombre: "OCHIENG", texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Ochieng.PNG" },
+    { numero: 10, nombre: "OYARZABAL", texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Oyarzabal.PNG" },
+    { numero: 9, nombre: "OSKARSSON", texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Oskarsson.PNG" },
+    { numero: 7, nombre: "BARRENE", texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Barrene.PNG" },
+    { numero: "-", nombre: "MARCHAL", texto: "DEL", imagen: "https://raw.githubusercontent.com/1909rso/1909rso.github.io/refs/heads/main/poses/1/Marchal.PNG" }
   ];
 
   // Once inicial: el primer jugador es siempre el portero.
   // Se puede cambiar cada jugador haciendo clic sobre su ficha.
   let ALINEACION = [
-    PLANTILLA[1],  // POR — Marín
-    PLANTILLA[2], PLANTILLA[3], PLANTILLA[4], PLANTILLA[5], // DEF
-    PLANTILLA[8], PLANTILLA[9], PLANTILLA[10], // MED
-    PLANTILLA[14], PLANTILLA[15], PLANTILLA[16] // DEL
+    PLANTILLA[0],  // POR — Remiro
+    PLANTILLA[9],  // DEF — Sergio
+    PLANTILLA[7],  // DEF — Martin
+    PLANTILLA[6],  // DEF — Zubeldia
+    PLANTILLA[2],  // DEF — Aramburu
+    PLANTILLA[13],  // MED — Turrientes
+    PLANTILLA[14],  // MED — Gorrotxa
+    PLANTILLA[17],  // MED — Sucic
+    PLANTILLA[24],  // DEL — Barrene
+    PLANTILLA[22],  // DEL — Oyarzabal
+    PLANTILLA[19]  // DEL — Kubo
   ];
 
   // Formaciones más usadas (estilo FIFA / EA FC), de defensa a ataque.
@@ -404,6 +368,7 @@
     "5-4-1":     [],
     "4-5-1":     []
   };
+
 
   function obtenerAjuste(formacionKey, indice) {
     const lista = AJUSTES_POSICION[formacionKey];
@@ -573,25 +538,76 @@
     dibujarTextoCurvo(jugador.nombre.toUpperCase(), cx + N.dx, y + tempH + N.dy, N.curvatura, 'centro');
   }
 
-  function calcularPosiciones(lineas) {
-    const totalFilas = lineas.length + 1;
-    const altoDisponible = CANVAS_H - HEADER_H - 60;
-    const altoFila = altoDisponible / totalFilas;
+  // ---- Rejilla base de posiciones (orientada a tus ajustes anteriores) ----
+  // Todo se define por "rol" y por número de jugadores de la línea, así que
+  // formaciones distintas con la misma línea comparten exactamente las mismas
+  // posiciones. Los jugadores de una línea van centrados y equidistantes.
+  const POS_PORTERO = { x: CANVAS_W / 2, y: 1775 };
+  const POS_X_CENTRO = CANVAS_W / 2;
+  // Semiancho: distancia del centro al jugador más exterior, según nº de jugadores.
+  const SEMIANCHO = {
+    defensa:  { 3: 380, 4: 600, 5: 580 },
+    medio:    { 1: 0, 2: 270, 3: 420, 4: 520, 5: 600 },
+    delantera:{ 1: 0, 2: 270, 3: 540 }
+  };
+  // Alturas (y) de cada línea según cuántas líneas tiene la formación.
+  // La defensa siempre está a la misma altura; la delantera depende de cuántos
+  // delanteros hay (más delanteros = algo más abajo).
+  const Y_DEFENSA = 1458;
+  const Y_DELANTERA = { 1: 480, 2: 495, 3: 550 };
+  const Y_MEDIOS = {
+    3: [970],              // def, medio, del
+    4: [1120, 800],        // def, medio, medio, del
+    5: [1250, 1050, 790]   // def, medio, medio, medio, del
+  };
 
-    const posiciones = [];
-    const yPortero = HEADER_H + altoDisponible - altoFila / 2;
-    posiciones.push({ x: CANVAS_W / 2, y: yPortero });
+  // Desnivel vertical de cada jugador respecto a la altura base de su línea,
+  // por formación. Cada array es una línea (la 0 es la defensa y no se toca);
+  // dentro, un valor por jugador de izquierda a derecha (positivo = más abajo,
+  // negativo = más arriba). Así en una misma línea hay jugadores a distinta altura
+  // sin tocar la separación lateral.
+  const DESNIVEL_Y = {
+    "4-3-3":     [null, [0, 150, 0], [25, -45, 25]],
+    "4-4-2":     [null, [-90, 40, 40, -90], [0, 0]],
+    "4-2-3-1":   [null, [0, 0], [10, -10, 10], [0]],
+    "4-1-4-1":   [null, [25], [5, 5, 5, 5], [0]],
+    "4-3-1-2":   [null, [-140, 20, -140], [-30], [-10, -10]],
+    "4-1-2-1-2": [],
+    "3-5-2":     [null, [-25, -30, 90, -30, -25], [20, 20]],
+    "3-4-3":     [null, [45, 60, 60, 45], [45, -45, 45]],
+    "3-4-1-2":   [null, [-170, 15, 15, -170], [-13], [-20, -20]],
+    "5-3-2":     [null, [-45, -30, -45], [25, 25]],
+    "5-4-1":     [null, [-110, 15, 15, -110], [20]],
+    "4-5-1":     [null, [-120, 100, 100, 100, -120], [20]]
+  };
+
+  function calcularPosiciones(lineas, formacionKey) {
+    const desnivel = DESNIVEL_Y[formacionKey] || [];
+    const posiciones = [{ x: POS_PORTERO.x, y: POS_PORTERO.y }];
+    const nLineas = lineas.length;
 
     lineas.forEach((cantidad, idxLinea) => {
-      // idxLinea=0 es la línea más defensiva (va justo encima del portero, abajo);
-      // la última línea del array (delantera) queda arriba, cerca del título.
-      const filaDesdeAbajo = idxLinea + 1;
-      const y = HEADER_H + altoDisponible - altoFila * (filaDesdeAbajo + 0.5);
-      const margen = 160;
-      const anchoUtil = CANVAS_W - margen * 2;
+      const esDefensa = idxLinea === 0;
+      const esDelantera = idxLinea === nLineas - 1;
+      const rol = esDefensa ? 'defensa' : (esDelantera ? 'delantera' : 'medio');
+
+      let y;
+      if (esDefensa) y = Y_DEFENSA;
+      else if (esDelantera) y = Y_DELANTERA[cantidad] || 500;
+      else {
+        const lista = Y_MEDIOS[nLineas];
+        const yDel = Y_DELANTERA[lineas[nLineas - 1]] || 500;
+        y = lista ? lista[idxLinea - 1]
+                  : Y_DEFENSA + (yDel - Y_DEFENSA) * (idxLinea / (nLineas - 1));
+      }
+
+      const semi = SEMIANCHO[rol][cantidad] ?? 0;
       for (let i = 0; i < cantidad; i++) {
-        const x = margen + (anchoUtil / (cantidad + 1)) * (i + 1);
-        posiciones.push({ x, y });
+        const x = cantidad === 1
+          ? POS_X_CENTRO
+          : POS_X_CENTRO - semi + (2 * semi / (cantidad - 1)) * i;
+        const dy = (desnivel[idxLinea] && desnivel[idxLinea][i]) || 0;
+        posiciones.push({ x, y: y + dy });
       }
     });
 
@@ -617,7 +633,7 @@
   async function dibujarAlineacion(formacionKey) {
     const miToken = ++renderToken; // identifica esta llamada
     const lineas = FORMACIONES[formacionKey];
-    const posiciones = calcularPosiciones(lineas);
+    const posiciones = calcularPosiciones(lineas, formacionKey);
 
     // Como las imágenes ya están precargadas, esto es prácticamente instantáneo,
     // pero por seguridad seguimos comprobando el token tras cada await.
@@ -804,128 +820,6 @@
     dibujarAlineacion(selector.value);
   })();
 
-  // ===== TEMPORAL: mover escudos (borrar todo este bloque, su CSS y su HTML al terminar) =====
-  (function () {
-    const NUM_JUGADORES = 11;
-    const contenedor = document.getElementById('contenedorCanvas');
-    const salida = document.getElementById('tmpSalida');
-    const btnModo = document.getElementById('tmpModo');
-    const etiquetaSel = document.getElementById('tmpSel');
-    let modoMover = false;
-    let arrastre = null;
-    let slotSel = null;
-
-    // Deja la lista de la formación con los 11 jugadores rellenos (0,0 si no había ajuste)
-    function asegurar(f) {
-      const lista = AJUSTES_POSICION[f] || (AJUSTES_POSICION[f] = []);
-      for (let i = 0; i < NUM_JUGADORES; i++) {
-        const a = lista[i] || {};
-        lista[i] = { dx: a.dx || 0, dy: a.dy || 0 };
-      }
-    }
-
-    // Texto listo para pegar en el código: el objeto AJUSTES_POSICION completo
-    function textoPosiciones() {
-      const lineas = Object.keys(FORMACIONES).map(f => {
-        const ajustes = Array.from({ length: NUM_JUGADORES }, (_, i) => obtenerAjuste(f, i));
-        const hay = ajustes.some(a => a.dx || a.dy);
-        const cuerpo = hay ? '[ ' + ajustes.map(a => `{ dx: ${a.dx}, dy: ${a.dy} }`).join(', ') + ' ]' : '[]';
-        return `    "${f}": ${cuerpo}`;
-      });
-      return 'const AJUSTES_POSICION = {\n' + lineas.join(',\n') + '\n  };';
-    }
-
-    let pendiente = false;
-    function pedirRedibujo() {
-      salida.value = textoPosiciones();
-      if (pendiente) return;
-      pendiente = true;
-      requestAnimationFrame(() => { pendiente = false; dibujarAlineacion(selector.value); });
-    }
-
-    function aplicar(f, slot, dx, dy) {
-      asegurar(f);
-      AJUSTES_POSICION[f][slot] = { dx: Math.round(dx), dy: Math.round(dy) };
-      pedirRedibujo();
-    }
-
-    function seleccionar(slot) {
-      slotSel = slot;
-      const j = ALINEACION[slot];
-      etiquetaSel.textContent = 'Escudo seleccionado: ' + (j ? j.nombre : slot);
-    }
-
-    function aCanvas(e) {
-      const rect = canvas.getBoundingClientRect();
-      const escala = CANVAS_W / rect.width;
-      return { x: (e.clientX - rect.left) * escala, y: (e.clientY - rect.top) * escala };
-    }
-
-    // Modo mover: mientras está activo, tocar un escudo NO abre el selector de jugador
-    btnModo.addEventListener('click', () => {
-      modoMover = !modoMover;
-      btnModo.textContent = 'Modo mover: ' + (modoMover ? 'SÍ' : 'NO');
-      btnModo.classList.toggle('activo', modoMover);
-      canvas.classList.toggle('tmpMoviendo', modoMover);
-    });
-    contenedor.addEventListener('click', (e) => { if (modoMover) e.stopPropagation(); }, true);
-
-    canvas.addEventListener('pointerdown', (e) => {
-      if (!modoMover) return;
-      const { x, y } = aCanvas(e);
-      const hit = hitboxes.slice().reverse().find(h => x >= h.x && x <= h.x + h.w && y >= h.y && y <= h.y + h.h);
-      if (!hit) return;
-      const f = selector.value;
-      arrastre = { f, slot: hit.slot, x0: x, y0: y, base: obtenerAjuste(f, hit.slot) };
-      seleccionar(hit.slot);
-      canvas.setPointerCapture(e.pointerId);
-      e.preventDefault();
-    });
-    canvas.addEventListener('pointermove', (e) => {
-      if (!arrastre) return;
-      const { x, y } = aCanvas(e);
-      aplicar(arrastre.f, arrastre.slot, arrastre.base.dx + (x - arrastre.x0), arrastre.base.dy + (y - arrastre.y0));
-    });
-    const soltar = () => { arrastre = null; };
-    canvas.addEventListener('pointerup', soltar);
-    canvas.addEventListener('pointercancel', soltar);
-
-    // Flechas para afinar el escudo seleccionado
-    document.querySelectorAll('#tmpMover [data-mov]').forEach(b => {
-      b.addEventListener('click', () => {
-        if (slotSel === null) { etiquetaSel.textContent = 'Primero toca un escudo en modo mover'; return; }
-        const paso = parseInt(document.getElementById('tmpPaso').value, 10);
-        const [mx, my] = b.dataset.mov.split(',').map(Number);
-        const f = selector.value;
-        const base = obtenerAjuste(f, slotSel);
-        aplicar(f, slotSel, base.dx + mx * paso, base.dy + my * paso);
-      });
-    });
-
-    document.getElementById('tmpReset').addEventListener('click', () => {
-      const f = selector.value;
-      if (!confirm('¿Restablecer las posiciones de la formación ' + f + '?')) return;
-      AJUSTES_POSICION[f] = [];
-      pedirRedibujo();
-    });
-
-    // Copiar todas las posiciones para pegarlas en el chat
-    const estado = document.getElementById('tmpEstado');
-    document.getElementById('tmpCopiar').addEventListener('click', async () => {
-      const texto = textoPosiciones();
-      try {
-        await navigator.clipboard.writeText(texto);
-      } catch (e) {
-        salida.focus(); salida.select();
-        try { document.execCommand('copy'); } catch (e2) {}
-      }
-      estado.textContent = '¡Copiado!';
-      setTimeout(() => { estado.textContent = ''; }, 1800);
-    });
-
-    salida.value = textoPosiciones();
-  })();
-  // ===== FIN TEMPORAL =====
 
 </script>
 
