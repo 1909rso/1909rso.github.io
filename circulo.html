@@ -1,0 +1,766 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<title>1909 RSO — Editor (fondo y círculos)</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: #0b0d12; color: #eef2f6; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+  #app { display: flex; flex-direction: column; min-height: 100vh; }
+  #topbar { background: linear-gradient(180deg,#141821,#0f1218); border-bottom: 1px solid #232a36; padding: 14px 18px; display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; position: sticky; top: 0; z-index: 10; }
+  .brand { display: flex; flex-direction: column; margin-right: 8px; }
+  .brand b { font-size: 14px; letter-spacing: .04em; color: #fefefe; }
+  .brand span { font-size: 11px; color: #7c8698; }
+  .field { display: flex; flex-direction: column; gap: 4px; min-width: 120px; }
+  .field label { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: #8a93a6; }
+  .btn { background: #232b3a; border: 1px solid #313b4e; color: #eef2f6; padding: 9px 14px; border-radius: 7px; font-size: 12.5px; cursor: pointer; font-weight: 600; letter-spacing: .02em; transition: background .15s ease; white-space: nowrap; }
+  .btn:hover { background: #2c3648; }
+  .btn.primary { background: #3457d5; border-color: #4a6bea; }
+  .btn.primary:hover { background: #3d63ec; }
+  .btn.toggle-on { background: #1e7a4d; border-color: #269a61; }
+  .btn.subtle { background: #1a2029; border-color: #2a3140; font-weight: 500; }
+  .filebtn { position: relative; overflow: hidden; }
+  .filebtn input[type=file] { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+  #stage-wrap { flex: 1; display: flex; align-items: flex-start; justify-content: center; padding: 26px 16px 60px; overflow: auto; }
+  #stage { position: relative; box-shadow: 0 20px 60px rgba(0,0,0,.55); border: 1px solid #232a36; background: #000; width: min(640px, 92vw); }
+  #stage canvas { display: block; width: 100%; height: auto; touch-action: manipulation; }
+  .divider { width: 1px; align-self: stretch; background: #232a36; margin: 0 2px; }
+  #hint { font-size: 11px; color: #5b6579; margin-top: 6px; padding: 0 4px; }
+
+  @media (max-width: 640px) {
+    #topbar { flex-direction: column; align-items: stretch; padding: 12px; gap: 10px; position: static; }
+    #downloadBtn { position: fixed; left: 12px; right: 12px; bottom: max(12px, env(safe-area-inset-bottom)); z-index: 50; box-shadow: 0 6px 24px rgba(0,0,0,.55); }
+    .brand { margin-right: 0; }
+    .divider { display: none; }
+    .field { min-width: 0 !important; width: 100%; }
+    .btn { width: 100%; text-align: center; }
+    .filebtn { width: 100%; }
+    #stage-wrap { padding: 16px 10px 100px; }
+    #stage { width: 100%; }
+  }
+
+  /* ---- Quitar fondo ---- */
+  #cutModal{position:fixed;inset:0;z-index:1000;background:rgba(5,7,10,.88);display:none;overflow:auto;padding:max(12px,env(safe-area-inset-top)) 12px max(12px,env(safe-area-inset-bottom))}
+  #cutModal.open{display:block}
+  .cut-card{max-width:760px;margin:0 auto;background:#141821;border:1px solid #2a3140;border-radius:14px;padding:14px;color:#e6e9f0;font-size:14px}
+  .cut-card h2{margin:0 0 10px;font-size:17px}
+  .cut-row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:8px 0}
+  .cut-row .btn{width:auto}
+  .cut-card select{background:#1a2029;color:#e6e9f0;border:1px solid #2a3140;border-radius:8px;padding:8px;max-width:100%;font-size:16px}
+  .cut-card input[type=range]{width:100%;height:30px}
+  .cut-ctl{display:grid;grid-template-columns:140px 1fr;gap:2px 10px;align-items:center}
+  @media (max-width:520px){.cut-ctl{grid-template-columns:1fr}}
+  #cutStage{position:relative;display:block;width:fit-content;max-width:100%;margin:10px auto;line-height:0;border-radius:8px;overflow:hidden;background-color:#2a3140;background-image:linear-gradient(45deg,#1f2530 25%,transparent 25%,transparent 75%,#1f2530 75%),linear-gradient(45deg,#1f2530 25%,transparent 25%,transparent 75%,#1f2530 75%);background-size:20px 20px;background-position:0 0,10px 10px;-webkit-touch-callout:none;user-select:none;-webkit-user-select:none}
+  #cutCv{display:block;max-width:100%;max-height:52vh;width:auto;height:auto;touch-action:none;cursor:crosshair}
+  #cutOrig{position:absolute;inset:0;width:100%;height:100%;display:none;pointer-events:none}
+  #cutBar{height:6px;background:#2a3140;border-radius:99px;overflow:hidden;display:none;margin:8px 0}
+  #cutBar i{display:block;height:100%;width:0;background:#4a6bea;transition:width .2s}
+  #cutStatus{color:#9aa4b5;min-height:1.3em;margin:6px 0}
+  #cutStatus.err{color:#ff6b78}
+
+  /* ---- Círculo ---- */
+  #circPanel{display:none;background:#141821;border-bottom:1px solid #2a3140;padding:10px 14px;color:#e6e9f0;font-size:13px}
+  .cp-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:6px 14px}
+  .cp-grid label{display:flex;flex-direction:column;gap:2px;color:#9aa4b5}
+  .cp-row{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin-top:10px}
+  .cp-row label{display:flex;align-items:center;gap:6px;color:#9aa4b5}
+  .cp-row .btn{width:auto}
+  #circPanel input[type=range]{width:100%}
+  #circPanel select{background:#1a2029;color:#e6e9f0;border:1px solid #2a3140;border-radius:8px;padding:6px;font-size:16px}
+
+  .stage-tools{display:flex;gap:8px;margin-top:8px;flex-wrap:wrap}
+  .stage-tools .btn{width:auto}
+</style>
+</head>
+<body>
+<div id="app">
+
+  <div id="topbar">
+    <div class="brand"><b>1909 RSO</b><span>Editor · fondo y círculos · 2000×2500</span></div>
+
+    <div class="divider"></div>
+
+    <div class="field">
+      <label>Fondo</label>
+      <button class="btn filebtn">Subir imagen
+        <input type="file" id="bgInput" accept="image/*">
+      </button>
+    </div>
+
+    <div class="field" id="cutField" style="display:none;">
+      <label>Recorte</label>
+      <button class="btn" id="cutOpen">Editar recorte</button>
+      <button class="btn subtle" id="cutRestore">Restaurar original</button>
+      <span id="cutColorWrap" style="display:none;align-items:center;gap:8px;">
+        <input type="color" id="cutColor" value="#111318">
+        <label style="display:flex;gap:4px;align-items:center;"><input type="checkbox" id="cutTrans"> Transparente</label>
+      </span>
+    </div>
+
+    <div class="field">
+      <label>Círculo</label>
+      <button class="btn filebtn">Añadir círculo
+        <input type="file" id="circInput" accept="image/*">
+      </button>
+    </div>
+
+    <div class="divider"></div>
+
+    <button class="btn primary" id="downloadBtn">Descargar PNG</button>
+  </div>
+
+  <div id="circPanel">
+    <div class="cp-grid">
+      <label>Grosor del contorno <input type="range" id="cpW" min="0" max="60" value="14"></label>
+      <label>Altura desde la que sobresale <input type="range" id="cpP" min="0" max="100" value="50"></label>
+    </div>
+    <div class="cp-row" id="cpModes">
+      <span style="color:#9aa4b5">Editar en el lienzo:</span>
+      <button class="btn toggle-on" data-m="circle">Mover y tamaño</button>
+      <button class="btn" data-m="photo">Ajustar foto</button>
+      <button class="btn" data-m="pop">Lo que sobresale</button>
+      <button class="btn" id="cpDrag">Tocar el lienzo: sí</button>
+    </div>
+    <div class="cp-row">
+      <label>Contorno <input type="color" id="cpC" value="#ffffff"></label>
+      <label><input type="checkbox" id="cpPop" checked> Que sobresalga la cabeza</label>
+      <label>Orden
+        <select id="cpOrder">
+          <option value="auto">Automático</option>
+          <option value="behind">Detrás de la foto principal</option>
+          <option value="front">Delante de la foto principal</option>
+        </select>
+      </label>
+      <button class="btn" id="cpCut">Quitar fondo a esta foto</button>
+      <button class="btn subtle" id="cpDel">Quitar círculo</button>
+    </div>
+  </div>
+
+  <div id="stage-wrap">
+    <div>
+      <div id="stage">
+        <canvas id="canvas" width="2000" height="2500"></canvas>
+        <canvas id="circOv" width="2000" height="2500" style="position:absolute;left:0;top:0;width:100%;height:100%;pointer-events:none;"></canvas>
+      </div>
+      <div class="stage-tools">
+        <button class="btn subtle toggle-on" id="touchBtn">Tocar el lienzo: sí</button>
+        <button class="btn subtle" id="photoLockBtn">🔓 Foto del círculo: editable</button>
+        <button class="btn subtle" id="bgReset">↺ Restablecer fondo</button>
+      </div>
+      <div id="hint">Sube un fondo y añade círculos con foto. Arrastra, pellizca y gira directamente sobre el lienzo. Doble toque sobre el círculo para mover la foto de dentro.</div>
+    </div>
+  </div>
+
+</div>
+
+<div id="cutModal" role="dialog" aria-modal="true" aria-label="Quitar fondo">
+  <div class="cut-card">
+    <h2>Quitar fondo</h2>
+    <div class="cut-row">
+      <label for="cutEngine">Motor</label>
+      <select id="cutEngine">
+        <option value="rmbg">Alta calidad · RMBG 1.4 (176 MB)</option>
+        <option value="rmbg_q8">Alta calidad comprimida (44 MB, móviles)</option>
+        <option value="isnet">ISNet máxima</option>
+        <option value="isnet_quint8">ISNet rápida</option>
+      </select>
+    </div>
+    <div id="cutBar"><i id="cutFill"></i></div>
+    <div id="cutStatus"></div>
+    <div id="cutStage"><canvas id="cutCv"></canvas><img id="cutOrig" alt="Original"></div>
+    <div class="cut-row">
+      <button class="btn toggle-on" id="cutErase">Borrar</button>
+      <button class="btn" id="cutRest">Restaurar</button>
+      <button class="btn" id="cutUndoBtn" disabled>Deshacer</button>
+      <button class="btn" id="cutHold">Mantén para ver original</button>
+    </div>
+    <div class="cut-ctl"><span>Tamaño del pincel</span><input type="range" id="cutBrush" min="1" max="40" value="10"></div>
+    <div class="cut-ctl"><span>Recorte del borde</span><input type="range" id="cutThr" min="-60" max="60" value="0"></div>
+    <div class="cut-ctl"><span>Nitidez del borde</span><input type="range" id="cutHard" min="10" max="60" value="10"></div>
+    <div class="cut-row" style="margin-top:12px">
+      <button class="btn primary" id="cutApply" disabled>Aplicar</button>
+      <button class="btn subtle" id="cutCancel">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const CONFIG = { canvasW: 2000, canvasH: 2500 };
+
+const canvas = document.getElementById('canvas');
+const ctx = canvas.getContext('2d');
+let bgImage = null;
+
+const bgInput = document.getElementById('bgInput');
+const downloadBtn = document.getElementById('downloadBtn');
+
+bgInput.addEventListener('change', (e) => {
+  const file = e.target.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = (ev) => {
+    const img = new Image();
+    img.onload = () => { bgImage = img; window.__origBg = img; window.__cutFill = null; window.dispatchEvent(new CustomEvent('bgloaded', { detail: img })); redraw(); };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+});
+
+downloadBtn.addEventListener('click', () => {
+  downloadBtn.disabled = true;
+  const originalLabel = downloadBtn.textContent;
+  downloadBtn.textContent = 'Generando…';
+
+  canvas.toBlob(async (blob) => {
+    downloadBtn.disabled = false;
+    downloadBtn.textContent = originalLabel;
+    if (!blob) return;
+
+    const fileName = 'renovado_1909rso.png';
+    const file = new File([blob], fileName, { type: 'image/png' });
+
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      try {
+        await navigator.share({ files: [file], title: '1909 RSO' });
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') return;
+      }
+    }
+
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.download = fileName;
+    link.href = url;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+
+    setTimeout(() => {
+      window.open(url, '_blank');
+      URL.revokeObjectURL(url);
+    }, 300);
+  }, 'image/png');
+});
+
+function redraw() {
+  ctx.clearRect(0, 0, CONFIG.canvasW, CONFIG.canvasH);
+  const circ = window.__circ;
+  ctx.fillStyle = '#111318';
+  ctx.fillRect(0, 0, CONFIG.canvasW, CONFIG.canvasH);
+  if (bgImage) {
+    if (window.__cutApplied && window.__origBg) drawCover(window.__origBg);
+    const behind = circ && circ.active() && circ.behind();
+    if (behind) circ.draw(ctx);
+    drawCover(bgImage);
+    if (circ && circ.active() && !behind) circ.draw(ctx);
+  } else {
+    if (circ && circ.active()) circ.draw(ctx);
+  }
+}
+
+function drawCover(img) {
+  const cw = CONFIG.canvasW, ch = CONFIG.canvasH;
+  const ir = img.width / img.height, cr = cw / ch;
+  let dw, dh;
+  if (ir > cr) { dh = ch; dw = ch * ir; } else { dw = cw; dh = cw / ir; }
+  const T = window.__bgT || { ox: 0, oy: 0, z: 1, rot: 0 };
+  dw *= T.z; dh *= T.z;
+  ctx.save();
+  ctx.translate(cw / 2 + T.ox, ch / 2 + T.oy);
+  ctx.rotate(T.rot || 0);
+  ctx.drawImage(img, -dw / 2, -dh / 2, dw, dh);
+  ctx.restore();
+}
+
+redraw();
+window.__redraw = redraw;
+window.__bgRect = () => {
+  const im = window.__origBg; if (!im) return null;
+  const cw = CONFIG.canvasW, ch = CONFIG.canvasH, ir = im.width / im.height, cr = cw / ch;
+  const T = window.__bgT || { ox: 0, oy: 0, z: 1, rot: 0 };
+  let dw = ir > cr ? ch * ir : cw, dh = ir > cr ? ch : cw / ir; dw *= T.z; dh *= T.z;
+  return { cx: cw / 2 + T.ox, cy: ch / 2 + T.oy, dw, dh, rot: T.rot || 0 };
+};
+window.__bg = { get: () => bgImage, set: (i) => { bgImage = i; redraw(); } };
+</script>
+<script type="module">
+const $ = id => document.getElementById(id);
+const MAX_SIDE = 2800;
+const IMGLY = ['https://cdn.jsdelivr.net/npm/@imgly/background-removal@1.5.5/+esm', 'https://esm.sh/@imgly/background-removal@1.5.5'];
+const TRANS = ['https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2', 'https://esm.sh/@huggingface/transformers@3.0.2'];
+const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) || (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+$('cutEngine').value = isIOS ? 'rmbg_q8' : 'rmbg';
+
+const cv = $('cutCv'), ctx = cv.getContext('2d');
+const S = { w: 0, h: 0, out: null, base: null, edit: null, lut: new Uint8Array(256), undo: [] };
+let origImg = null, imgly = null, tf = null, rm = null, busy = false, origUrl = null, cutApplied = false, curImg = null, curApply = null, curDone = null;
+const saved = new Map();
+
+const setStatus = (m, err = false) => { $('cutStatus').textContent = m; $('cutStatus').classList.toggle('err', err); };
+const setProgress = p => { $('cutBar').style.display = p == null ? 'none' : 'block'; if (p != null) $('cutFill').style.width = Math.round(p * 100) + '%'; };
+async function imp(list){ let e; for (const s of list){ try { return await import(s); } catch(x){ e = x; } } throw e || new Error('No se pudo cargar la librería'); }
+
+window.addEventListener('bgloaded', e => { origImg = e.detail; cutApplied = false; window.__cutApplied = false; $('cutField').style.display = 'none'; $('cutColorWrap').style.display = 'none'; });
+
+function prepare(img){
+  const w0 = img.naturalWidth || img.width, h0 = img.naturalHeight || img.height, k = Math.min(1, MAX_SIDE / Math.max(w0, h0));
+  const c = document.createElement('canvas'); c.width = Math.round(w0 * k); c.height = Math.round(h0 * k);
+  c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+  return new Promise((ok, ko) => c.toBlob(b => b ? ok({ c, blob: b }) : ko(new Error('No se pudo preparar la imagen')), 'image/png'));
+}
+async function runImgly(blob, model){
+  if (!imgly) imgly = await imp(IMGLY);
+  const out = await imgly.removeBackground(blob, { device: 'cpu', model, output: { format: 'image/png', quality: 1 },
+    progress: (key, cur, tot) => { const p = tot ? cur / tot : 0;
+      if (key.startsWith('fetch')) { setStatus('Descargando el modelo (solo la primera vez)… ' + Math.round(p * 100) + '%'); setProgress(.05 + p * .6); }
+      else { setStatus('Quitando el fondo…'); setProgress(.7 + p * .28); } } });
+  const bmp = await createImageBitmap(out), c = document.createElement('canvas'); c.width = S.w; c.height = S.h;
+  const x = c.getContext('2d'); x.drawImage(bmp, 0, 0, S.w, S.h);
+  const d = x.getImageData(0, 0, S.w, S.h).data, m = new Uint8Array(S.w * S.h);
+  for (let i = 0; i < m.length; i++) m[i] = d[i * 4 + 3];
+  return m;
+}
+async function runRMBG(blob, dtype){
+  if (!tf) { tf = await imp(TRANS); tf.env.allowLocalModels = false; }
+  if (!rm || rm.dtype !== dtype){
+    const cb = p => { if (p.status === 'progress' && p.progress != null){ setStatus('Descargando el modelo (solo la primera vez)… ' + Math.round(p.progress) + '%'); setProgress(.05 + p.progress / 100 * .6); } };
+    const model = await tf.AutoModel.from_pretrained('briaai/RMBG-1.4', { config: { model_type: 'custom' }, dtype, progress_callback: cb });
+    const processor = await tf.AutoProcessor.from_pretrained('briaai/RMBG-1.4', { config: { do_normalize: true, do_pad: false, do_rescale: true, do_resize: true, image_mean: [.5, .5, .5], feature_extractor_type: 'ImageFeatureExtractor', image_std: [1, 1, 1], resample: 2, rescale_factor: 1 / 255, size: { width: 1024, height: 1024 } } });
+    rm = { model, processor, dtype };
+  }
+  setStatus('Quitando el fondo…'); setProgress(.7);
+  await new Promise(r => setTimeout(r, 30));
+  const image = await tf.RawImage.fromBlob(blob);
+  const { pixel_values } = await rm.processor(image);
+  const { output } = await rm.model({ input: pixel_values });
+  const mask = await tf.RawImage.fromTensor(output[0].mul(255).to('uint8')).resize(image.width, image.height);
+  return Uint8Array.from(mask.data);
+}
+const segment = (blob, e) => e === 'rmbg' ? runRMBG(blob, 'fp32') : e === 'rmbg_q8' ? runRMBG(blob, 'q8') : runImgly(blob, e);
+
+function buildLut(){
+  const t = +$('cutThr').value, k = +$('cutHard').value / 10;
+  for (let a = 0; a < 256; a++) S.lut[a] = (k === 1 && t === 0) ? a : Math.max(0, Math.min(255, (a - (128 + t)) * k + 128));
+}
+function composite(x0 = 0, y0 = 0, x1 = S.w, y1 = S.h){
+  const d = S.out.data, b = S.base, e = S.edit, l = S.lut, w = S.w;
+  for (let y = y0; y < y1; y++) for (let x = x0, i = y * w + x; x < x1; x++, i++){ const v = e[i]; d[i * 4 + 3] = v === 1 ? 0 : v === 2 ? 255 : l[b[i]]; }
+  ctx.putImageData(S.out, 0, 0, x0, y0, x1 - x0, y1 - y0);
+}
+let raf = 0;
+['cutThr', 'cutHard'].forEach(id => $(id).addEventListener('input', () => { buildLut(); cancelAnimationFrame(raf); raf = requestAnimationFrame(() => composite()); }));
+
+async function start(){
+  if (!curImg || busy) return;
+  busy = true; $('cutApply').disabled = true; $('cutEngine').disabled = true;
+  try{
+    setStatus('Preparando la imagen…'); setProgress(.02);
+    const { c, blob } = await prepare(curImg);
+    S.w = c.width; S.h = c.height; cv.width = S.w; cv.height = S.h;
+    origUrl = URL.createObjectURL(blob); $('cutOrig').src = origUrl;
+    let engine = $('cutEngine').value, mask;
+    try { mask = await segment(blob, engine); }
+    catch(e){
+      console.warn('Falló el motor', engine, e);
+      if (!engine.startsWith('rmbg')) throw e;
+      setStatus('El motor de alta calidad no funcionó en este dispositivo. Probando ISNet…'); setProgress(.05);
+      mask = await segment(blob, 'isnet');
+    }
+    S.out = c.getContext('2d').getImageData(0, 0, S.w, S.h);
+    S.base = mask; S.edit = new Uint8Array(S.w * S.h); S.undo = []; $('cutUndoBtn').disabled = true;
+    $('cutThr').value = 0; $('cutHard').value = 10; buildLut(); composite();
+    setProgress(null); setStatus('Listo. Retoca con el pincel si hace falta y pulsa «Aplicar».');
+    $('cutApply').disabled = false;
+  } catch(e){
+    console.error(e); setProgress(null);
+    setStatus('No se pudo quitar el fondo. Prueba con otro motor o una foto más pequeña. (' + (e && e.message || e) + ')', true);
+  } finally { busy = false; $('cutEngine').disabled = false; }
+}
+
+function restoreSaved(sv, img){
+  S.src = img; S.w = sv.w; S.h = sv.h; cv.width = S.w; cv.height = S.h;
+  S.out = new ImageData(new Uint8ClampedArray(sv.out.data), sv.w, sv.h); S.base = sv.base; S.edit = sv.edit.slice(); S.undo = []; $('cutUndoBtn').disabled = true;
+  $('cutThr').value = sv.thr; $('cutHard').value = sv.hard; $('cutOrig').src = sv.url; buildLut(); composite();
+  $('cutApply').disabled = false; setProgress(null); setStatus('Editando el recorte guardado.');
+}
+const openModal = (img, apply, done) => {
+  curImg = img; curApply = apply; curDone = done || null;
+  $('cutModal').classList.add('open'); document.body.style.overflow = 'hidden';
+  const sv = saved.get(img);
+  if (sv && S.src !== img) restoreSaved(sv, img);
+  else if (!S.base || S.src !== img){ S.src = img; S.base = null; start(); }
+};
+function applyToBg(o){ cutApplied = true; window.__cutApplied = true; applyFill(); window.__bg.set(o); $('cutField').style.display = ''; }
+$('cutOpen').onclick = () => openModal(origImg, applyToBg);
+window.__openCut = openModal;
+window.__autoBgCut = next => openModal(origImg, applyToBg, next);
+const close = () => { $('cutModal').classList.remove('open'); document.body.style.overflow = ''; };
+const finish = () => { const d = curDone; curDone = null; close(); if (d) d(); };
+$('cutCancel').onclick = finish;
+$('cutEngine').onchange = () => { S.base = null; start(); };
+
+$('cutApply').onclick = () => {
+  if (!S.base) return;
+  const o = document.createElement('canvas'); o.width = S.w; o.height = S.h; o.getContext('2d').drawImage(cv, 0, 0);
+  saved.set(curImg, { w: S.w, h: S.h, out: S.out, base: S.base, edit: S.edit.slice(), thr: +$('cutThr').value, hard: +$('cutHard').value, url: $('cutOrig').src });
+  curApply(o); finish();
+};
+function applyFill(){ window.__cutFill = null; }
+['cutColor', 'cutTrans'].forEach(id => $(id).addEventListener('input', () => { applyFill(); window.__bg.set(window.__bg.get()); }));
+$('cutRestore').onclick = () => { cutApplied = false; window.__cutApplied = false; window.__cutFill = null; window.__bg.set(origImg); $('cutField').style.display = 'none'; $('cutColorWrap').style.display = 'none'; saved.delete(origImg); S.base = null; };
+
+let tool = 1, drawing = false, last = null, bb = null;
+$('cutErase').onclick = () => { tool = 1; $('cutErase').classList.add('toggle-on'); $('cutRest').classList.remove('toggle-on'); };
+$('cutRest').onclick = () => { tool = 2; $('cutRest').classList.add('toggle-on'); $('cutErase').classList.remove('toggle-on'); };
+$('cutUndoBtn').onclick = () => { const p = S.undo.pop(); if (p){ S.edit = p; composite(); } $('cutUndoBtn').disabled = !S.undo.length; };
+const hold = $('cutHold');
+hold.addEventListener('pointerdown', e => { e.preventDefault(); $('cutOrig').style.display = 'block'; });
+['pointerup', 'pointerleave', 'pointercancel'].forEach(t => hold.addEventListener(t, () => { $('cutOrig').style.display = 'none'; }));
+hold.style.touchAction = 'none'; hold.style.webkitUserSelect = 'none';
+
+function pos(e){ const r = cv.getBoundingClientRect(); return [(e.clientX - r.left) * S.w / r.width, (e.clientY - r.top) * S.h / r.height]; }
+function dab(x, y){
+  const r = Math.max(2, +$('cutBrush').value * S.w / 400), r2 = r * r;
+  const x0 = Math.max(0, Math.floor(x - r)), x1 = Math.min(S.w, Math.ceil(x + r) + 1), y0 = Math.max(0, Math.floor(y - r)), y1 = Math.min(S.h, Math.ceil(y + r) + 1);
+  for (let j = y0; j < y1; j++) for (let i = x0; i < x1; i++){ const dx = i - x, dy = j - y; if (dx * dx + dy * dy <= r2) S.edit[j * S.w + i] = tool; }
+  bb = bb ? [Math.min(bb[0], x0), Math.min(bb[1], y0), Math.max(bb[2], x1), Math.max(bb[3], y1)] : [x0, y0, x1, y1];
+}
+function stroke(e){
+  const [x, y] = pos(e);
+  if (last){ const n = Math.ceil(Math.hypot(x - last[0], y - last[1]) / Math.max(1, +$('cutBrush').value * S.w / 800)); for (let k = 1; k <= n; k++) dab(last[0] + (x - last[0]) * k / n, last[1] + (y - last[1]) * k / n); }
+  else dab(x, y);
+  last = [x, y];
+  if (bb){ composite(bb[0], bb[1], bb[2], bb[3]); bb = null; }
+}
+cv.addEventListener('pointerdown', e => {
+  if (!S.base || busy) return;
+  e.preventDefault(); cv.setPointerCapture(e.pointerId);
+  S.undo.push(S.edit.slice()); if (S.undo.length > 6) S.undo.shift(); $('cutUndoBtn').disabled = false;
+  drawing = true; last = null; stroke(e);
+});
+cv.addEventListener('pointermove', e => { if (drawing) stroke(e); });
+['pointerup', 'pointercancel'].forEach(t => cv.addEventListener(t, () => { drawing = false; last = null; }));
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id);
+  const C = { img: null, cut: null, x: 1500, y: 1050, r: 380, z: 1, ox: 0, oy: 0, rot: 0, w: 14, color: '#ffffff', pop: true, popY: 0.5, order: 'auto' };
+  const dims = i => [i.naturalWidth || i.width, i.naturalHeight || i.height];
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+
+  function drawImg(ctx, im){
+    const [iw, ih] = dims(im), s = Math.max(2 * C.r / iw, 2 * C.r / ih) * C.z;
+    const cx = C.x + C.ox * C.r, cy = C.y + C.oy * C.r;
+    ctx.save(); ctx.translate(cx, cy); ctx.rotate(C.rot); ctx.drawImage(im, -iw * s / 2, -ih * s / 2, iw * s, ih * s); ctx.restore();
+  }
+  window.__circ = {
+    active: () => !!C.img,
+    behind: () => C.order === 'behind' || (C.order === 'auto' && !!window.__cutApplied),
+    draw(ctx){
+      const W = ctx.canvas.width;
+      ctx.save(); ctx.beginPath(); ctx.arc(C.x, C.y, C.r, 0, Math.PI * 2); ctx.clip(); drawImg(ctx, C.img); ctx.restore();
+      if (C.w > 0){ ctx.save(); ctx.beginPath(); ctx.arc(C.x, C.y, C.r + C.w / 2, 0, Math.PI * 2); ctx.lineWidth = C.w; ctx.strokeStyle = C.color; ctx.stroke(); ctx.restore(); }
+      if (C.cut && C.pop){
+        ctx.save(); ctx.beginPath();
+        ctx.arc(C.x, C.y, C.r, 0, Math.PI * 2);
+        ctx.rect(0, 0, W, C.y - C.r + C.popY * C.r);
+        ctx.clip(); drawImg(ctx, C.cut); ctx.restore();
+      }
+    }
+  };
+
+  const cvs = $('canvas'), ov = $('circOv'), octx = ov.getContext('2d');
+  let mode = 'circle', editOn = true;
+  let inner = false, photoLock = false;
+  const scale = () => cvs.width / cvs.getBoundingClientRect().width;
+  const popLineY = () => C.y - C.r + C.popY * C.r;
+
+  function drawOverlay(){
+    octx.clearRect(0, 0, ov.width, ov.height);
+    if (window.__bgOv && !inner) window.__bgOv(octx, scale());
+    if (!C.img || !editOn) return;
+    const sc = scale();
+    if (inner){
+      octx.save();
+      octx.beginPath(); octx.rect(0, 0, ov.width, ov.height); octx.arc(C.x, C.y, C.r, 0, Math.PI * 2);
+      octx.clip('evenodd');
+      octx.globalAlpha = 0.6; drawImg(octx, C.img);
+      octx.restore();
+      const [iw, ih] = dims(C.img), s = Math.max(2 * C.r / iw, 2 * C.r / ih) * C.z;
+      octx.save(); octx.translate(C.x + C.ox * C.r, C.y + C.oy * C.r); octx.rotate(C.rot);
+      octx.lineWidth = 3 * sc; octx.strokeStyle = 'rgba(255,255,255,.75)'; octx.setLineDash([14 * sc, 8 * sc]);
+      octx.strokeRect(-iw * s / 2, -ih * s / 2, iw * s, ih * s); octx.restore();
+      octx.save(); octx.beginPath(); octx.arc(C.x, C.y, C.r, 0, Math.PI * 2);
+      octx.lineWidth = 7 * sc; octx.strokeStyle = 'rgba(0,0,0,.65)'; octx.stroke();
+      octx.lineWidth = 3.5 * sc; octx.strokeStyle = '#4a9eff'; octx.stroke(); octx.restore();
+      const rd = C.r + C.w + 60 * sc, rx = C.x + Math.sin(C.rot) * rd, ry = C.y - Math.cos(C.rot) * rd;
+      octx.save(); octx.strokeStyle = '#2ecc71'; octx.lineWidth = 3 * sc;
+      octx.beginPath(); octx.moveTo(C.x + Math.sin(C.rot) * (C.r + C.w + 5 * sc), C.y - Math.cos(C.rot) * (C.r + C.w + 5 * sc)); octx.lineTo(rx, ry); octx.stroke();
+      octx.beginPath(); octx.arc(rx, ry, 15 * sc, 0, Math.PI * 2); octx.fillStyle = '#2ecc71'; octx.fill(); octx.lineWidth = 4 * sc; octx.strokeStyle = '#fff'; octx.stroke(); octx.restore();
+      return;
+    }
+    octx.save(); octx.lineWidth = 3 * sc; octx.strokeStyle = '#4a9eff'; octx.setLineDash([12 * sc, 8 * sc]);
+    octx.beginPath(); octx.arc(C.x, C.y, C.r + C.w + 5 * sc, 0, Math.PI * 2); octx.stroke(); octx.setLineDash([]);
+    if (mode === 'circle'){
+      const hx = C.x + C.r * Math.SQRT1_2, hy = C.y + C.r * Math.SQRT1_2;
+      octx.beginPath(); octx.arc(hx, hy, 15 * sc, 0, Math.PI * 2); octx.fillStyle = '#4a9eff'; octx.fill(); octx.lineWidth = 4 * sc; octx.strokeStyle = '#fff'; octx.stroke();
+    }
+    if (mode === 'photo'){
+      const d = C.r + C.w + 60 * sc, ex = C.x + Math.sin(C.rot) * (C.r + C.w + 5 * sc), ey = C.y - Math.cos(C.rot) * (C.r + C.w + 5 * sc);
+      const hx = C.x + Math.sin(C.rot) * d, hy = C.y - Math.cos(C.rot) * d;
+      octx.strokeStyle = '#2ecc71'; octx.lineWidth = 3 * sc;
+      octx.beginPath(); octx.moveTo(ex, ey); octx.lineTo(hx, hy); octx.stroke();
+      octx.beginPath(); octx.arc(hx, hy, 15 * sc, 0, Math.PI * 2); octx.fillStyle = '#2ecc71'; octx.fill(); octx.lineWidth = 4 * sc; octx.strokeStyle = '#fff'; octx.stroke();
+    }
+    if (mode === 'pop'){
+      const y = popLineY();
+      octx.strokeStyle = '#ff9a2e'; octx.lineWidth = 4 * sc; octx.setLineDash([16 * sc, 10 * sc]);
+      octx.beginPath(); octx.moveTo(C.x - C.r * 1.3, y); octx.lineTo(C.x + C.r * 1.3, y); octx.stroke(); octx.setLineDash([]);
+      octx.beginPath(); octx.arc(C.x, y, 15 * sc, 0, Math.PI * 2); octx.fillStyle = '#ff9a2e'; octx.fill(); octx.lineWidth = 4 * sc; octx.strokeStyle = '#fff'; octx.stroke();
+    }
+    octx.restore();
+  }
+  const redraw = () => { window.__redraw && window.__redraw(); drawOverlay(); };
+  function read(){
+    C.w = +$('cpW').value; C.popY = +$('cpP').value / 100;
+    C.color = $('cpC').value; C.pop = $('cpPop').checked; C.order = $('cpOrder').value;
+    redraw();
+  }
+  function sync(){
+    $('cpP').value = Math.round(C.popY * 100); $('cpPop').checked = C.pop;
+    redraw();
+  }
+  ['cpW','cpP','cpC','cpPop','cpOrder'].forEach(id => $(id).addEventListener('input', read));
+  window.addEventListener('resize', drawOverlay);
+  window.__drawOv = drawOverlay;
+
+  const applyEdit = () => {
+    if (!C.img || !editOn) inner = false;
+    const pl = $('photoLockBtn');
+    if (pl){
+      pl.textContent = photoLock ? '🔒 Foto del círculo: bloqueada' : (inner ? '✋ Moviendo foto · doble toque para salir' : '🔓 Foto del círculo: editable');
+      pl.classList.toggle('toggle-on', inner);
+    }
+    const tb = $('touchBtn');
+    if (tb){ tb.textContent = 'Tocar el lienzo: ' + (editOn ? 'sí' : 'no'); tb.classList.toggle('toggle-on', editOn); }
+    if (window.__updTouch) window.__updTouch(); else cvs.style.touchAction = (C.img && editOn) ? 'none' : '';
+    $('cpDrag').textContent = 'Tocar el lienzo: ' + (editOn ? 'sí' : 'no'); $('cpDrag').classList.toggle('toggle-on', editOn);
+    document.querySelectorAll('#cpModes [data-m]').forEach(b => b.classList.toggle('toggle-on', b.dataset.m === mode));
+    drawOverlay();
+  };
+  document.querySelectorAll('#cpModes [data-m]').forEach(b => b.onclick = () => { mode = b.dataset.m; inner = false; applyEdit(); });
+  $('cpDrag').onclick = () => { editOn = !editOn; applyEdit(); };
+
+  const askCut = () => window.__openCut(C.img, o => { C.cut = o; redraw(); });
+  $('cpCut').onclick = askCut;
+  $('circInput').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    const rd = new FileReader();
+    rd.onload = ev => {
+      const im = new Image();
+      im.onload = () => { C.img = im; C.cut = null; C.z = 1; C.ox = 0; C.oy = 0; C.rot = 0; $('circPanel').style.display = 'block'; read(); applyEdit();
+        if (window.__origBg && !window.__cutApplied && window.__autoBgCut) window.__autoBgCut(askCut); else askCut(); };
+      im.src = ev.target.result;
+    };
+    rd.readAsDataURL(f); e.target.value = '';
+  });
+  $('cpDel').onclick = () => { C.img = null; C.cut = null; $('circPanel').style.display = 'none'; applyEdit(); redraw(); };
+
+  const pts = new Map(); let act = null, pinch = null;
+  window.__circAct = () => !!act; window.__circEditing = () => !!(C.img && editOn);
+  const pt = e => { const r = cvs.getBoundingClientRect(); return [(e.clientX - r.left) * cvs.width / r.width, (e.clientY - r.top) * cvs.height / r.height]; };
+  const setPop = y => { C.popY = clamp((y - (C.y - C.r)) / C.r, 0, 1); C.pop = true; };
+
+  cvs.addEventListener('pointerdown', e => {
+    if (!C.img || !editOn) return;
+    const [x, y] = pt(e), sc = scale();
+    if (pts.size === 0){
+      const inside = Math.hypot(x - C.x, y - C.y) <= C.r + C.w;
+      let a = null;
+      if (inner){
+        const dr = C.r + C.w + 60 * sc, rx = C.x + Math.sin(C.rot) * dr, ry = C.y - Math.cos(C.rot) * dr;
+        if (Math.hypot(x - rx, y - ry) <= 36 * sc) a = { t: 'rotate' };
+        else a = { t: 'pan', x, y, ox: C.ox, oy: C.oy };
+      }
+      else if (mode === 'circle'){
+        const hx = C.x + C.r * Math.SQRT1_2, hy = C.y + C.r * Math.SQRT1_2;
+        if (Math.hypot(x - hx, y - hy) <= 36 * sc) a = { t: 'resize' };
+        else if (inside) a = { t: 'move', dx: x - C.x, dy: y - C.y };
+      } else if (mode === 'photo'){
+        const d = C.r + C.w + 60 * sc, hx = C.x + Math.sin(C.rot) * d, hy = C.y - Math.cos(C.rot) * d;
+        if (Math.hypot(x - hx, y - hy) <= 36 * sc) a = { t: 'rotate' };
+        else if (inside) a = { t: 'pan', x, y, ox: C.ox, oy: C.oy };
+      } else { a = { t: 'pop' }; setPop(y); sync(); }
+      if (!a) return;
+      act = a; e.__claimed = true; pts.set(e.pointerId, [x, y]); cvs.setPointerCapture(e.pointerId); e.preventDefault();
+    } else if (pts.size === 1 && act && (inner || mode !== 'pop')){
+      pts.set(e.pointerId, [x, y]);
+      const [p, q] = [...pts.values()];
+      pinch = { d: Math.hypot(p[0] - q[0], p[1] - q[1]) || 1, r: C.r, z: C.z, a: Math.atan2(q[1] - p[1], q[0] - p[0]), rot: C.rot }; act = { t: 'pinch' }; e.__claimed = true;
+      cvs.setPointerCapture(e.pointerId); e.preventDefault();
+    }
+  });
+  cvs.addEventListener('pointermove', e => {
+    if (!act || !pts.has(e.pointerId)) return;
+    const [x, y] = pt(e); pts.set(e.pointerId, [x, y]);
+    if (act.t === 'move'){ C.x = clamp(x - act.dx, 0, cvs.width); C.y = clamp(y - act.dy, 0, cvs.height); }
+    else if (act.t === 'resize'){ C.r = clamp(Math.hypot(x - C.x, y - C.y), 60, 1000); }
+    else if (act.t === 'pan'){ C.ox = clamp(act.ox + (x - act.x) / C.r, -1, 1); C.oy = clamp(act.oy + (y - act.y) / C.r, -1, 1); }
+    else if (act.t === 'pop'){ setPop(y); }
+    else if (act.t === 'rotate'){ C.rot = Math.atan2(x - C.x, -(y - C.y)); }
+    else if (act.t === 'pinch' && pts.size >= 2){
+      const [p, q] = [...pts.values()], f = Math.hypot(p[0] - q[0], p[1] - q[1]) / pinch.d;
+      if (inner){ C.z = clamp(pinch.z * f, 1, 3); C.rot = pinch.rot + (Math.atan2(q[1] - p[1], q[0] - p[0]) - pinch.a); }
+      else if (mode === 'photo'){ C.z = clamp(pinch.z * f, 1, 3); C.rot = pinch.rot + (Math.atan2(q[1] - p[1], q[0] - p[0]) - pinch.a); }
+      else C.r = clamp(pinch.r * f, 60, 1000);
+    }
+    sync();
+  });
+  const up = e => { pts.delete(e.pointerId); act = null; pinch = null; if (pts.size) pts.clear(); };
+  ['pointerup', 'pointercancel'].forEach(t => cvs.addEventListener(t, up));
+  cvs.addEventListener('wheel', e => {
+    if (!C.img || !editOn) return;
+    const [x, y] = pt(e); if (!inner && Math.hypot(x - C.x, y - C.y) > C.r + C.w) return;
+    e.preventDefault(); const f = Math.exp(-e.deltaY * 0.0015);
+    if (inner || mode === 'photo') C.z = clamp(C.z * f, 1, 3); else C.r = clamp(C.r * f, 60, 1000);
+    sync();
+  }, { passive: false });
+
+  let tapS = null, lastTap = null;
+  cvs.addEventListener('pointerdown', e => {
+    if (!C.img || !editOn) return;
+    if (tapS){ tapS.multi = true; return; }
+    const [x, y] = pt(e); tapS = { id: e.pointerId, x, y, t: performance.now(), multi: false };
+  });
+  cvs.addEventListener('pointerup', e => {
+    if (!tapS || e.pointerId !== tapS.id) return;
+    const s0 = tapS; tapS = null;
+    const [x, y] = pt(e), sc = scale(), now = performance.now();
+    if (s0.multi || Math.hypot(x - s0.x, y - s0.y) > 14 * sc || now - s0.t > 300) { lastTap = null; return; }
+    if (lastTap && now - lastTap.t < 380 && Math.hypot(x - lastTap.x, y - lastTap.y) < 70 * sc){
+      lastTap = null;
+      const inside = Math.hypot(x - C.x, y - C.y) <= C.r + C.w;
+      if (inner) inner = false;
+      else if (inside && !photoLock) inner = true;
+      applyEdit();
+    } else lastTap = { x, y, t: now };
+  });
+  cvs.addEventListener('pointercancel', () => { tapS = null; });
+  $('photoLockBtn').onclick = () => { photoLock = !photoLock; if (photoLock) inner = false; applyEdit(); };
+
+  window.__editOn = () => editOn;
+  $('touchBtn').onclick = () => { editOn = !editOn; applyEdit(); };
+  window.addEventListener('bgloaded', () => {
+    if (C.img) setTimeout(() => window.__autoBgCut && window.__autoBgCut(), 0);
+  });
+  applyEdit();
+})();
+</script>
+<script>
+(function(){
+  const $ = id => document.getElementById(id), cvs = $('canvas');
+  const T = window.__bgT = { ox: 0, oy: 0, z: 1, rot: 0 };
+  const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
+  const ovr = () => window.__drawOv && window.__drawOv();
+  const redraw = () => { window.__redraw && window.__redraw(); ovr(); };
+  const editOn = () => !window.__editOn || window.__editOn();
+  let loaded = false;
+
+  const scale = () => cvs.width / cvs.getBoundingClientRect().width;
+  const rotPt = (r, lx, ly) => { const c = Math.cos(r.rot), s = Math.sin(r.rot); return [r.cx + lx * c - ly * s, r.cy + lx * s + ly * c]; };
+  function handles(sc){
+    const r = window.__bgRect && window.__bgRect(); if (!r) return null;
+    const m = 26 * sc, hw = r.dw / 2, hh = r.dh / 2;
+    const cl = p => [clamp(p[0], m, cvs.width - m), clamp(p[1], m, cvs.height - m)];
+    return {
+      r, hw, hh,
+      corners: [[-hw, -hh], [hw, -hh], [hw, hh], [-hw, hh]].map(([x, y]) => cl(rotPt(r, x, y))),
+      rot: cl(rotPt(r, 0, -hh - 70 * sc)),
+      top: rotPt(r, 0, -hh)
+    };
+  }
+
+  function upd(){
+    cvs.style.touchAction = ((loaded && editOn()) || (window.__circEditing && window.__circEditing())) ? 'none' : '';
+    ovr();
+  }
+  window.__updTouch = upd;
+
+  window.__bgOv = (o, sc) => {
+    if (!loaded || !editOn()) return;
+    const h = handles(sc); if (!h) return;
+    const P = [[-h.hw, -h.hh], [h.hw, -h.hh], [h.hw, h.hh], [-h.hw, h.hh]].map(([x, y]) => rotPt(h.r, x, y));
+    o.save(); o.setLineDash([]); o.strokeStyle = '#fff'; o.lineWidth = 3 * sc;
+    o.beginPath(); P.forEach((p, i) => i ? o.lineTo(p[0], p[1]) : o.moveTo(p[0], p[1])); o.closePath(); o.stroke();
+    o.beginPath(); o.moveTo(h.top[0], h.top[1]); o.lineTo(h.rot[0], h.rot[1]); o.stroke();
+    h.corners.forEach(([x, y]) => { o.fillStyle = '#fff'; o.strokeStyle = '#4a9eff'; o.lineWidth = 4 * sc; o.beginPath(); o.rect(x - 13 * sc, y - 13 * sc, 26 * sc, 26 * sc); o.fill(); o.stroke(); });
+    o.beginPath(); o.arc(h.rot[0], h.rot[1], 15 * sc, 0, Math.PI * 2); o.fillStyle = '#2ecc71'; o.fill(); o.lineWidth = 4 * sc; o.strokeStyle = '#fff'; o.stroke();
+    o.restore();
+  };
+
+  window.addEventListener('bgloaded', () => { loaded = true; T.ox = 0; T.oy = 0; T.z = 1; T.rot = 0; upd(); });
+  $('bgReset').onclick = () => { T.ox = 0; T.oy = 0; T.z = 1; T.rot = 0; redraw(); };
+
+  const pts = new Map(); let g = null;
+  const pt = e => { const r = cvs.getBoundingClientRect(); return [(e.clientX - r.left) * cvs.width / r.width, (e.clientY - r.top) * cvs.height / r.height]; };
+  const snap = () => {
+    const v = [...pts.values()];
+    if (v.length > 1) return { t: 'pinch', c: [(v[0][0] + v[1][0]) / 2, (v[0][1] + v[1][1]) / 2], d: Math.hypot(v[0][0] - v[1][0], v[0][1] - v[1][1]) || 1, a: Math.atan2(v[1][1] - v[0][1], v[1][0] - v[0][0]), ox: T.ox, oy: T.oy, z: T.z, rot: T.rot };
+    return { t: 'drag', c: v[0], ox: T.ox, oy: T.oy };
+  };
+
+  cvs.addEventListener('pointerdown', e => {
+    if (!loaded || e.__claimed || !editOn()) return;
+    if (pts.size === 0 && window.__circAct && window.__circAct()) return;
+    if (pts.size >= 2 || (g && (g.t === 'scale' || g.t === 'rotate'))) return;
+    const [x, y] = pt(e), sc = scale();
+    let rotHit = false, cornerHit = false, h = null;
+    if (pts.size === 0){
+      h = handles(sc);
+      if (h){
+        rotHit = Math.hypot(x - h.rot[0], y - h.rot[1]) <= 38 * sc;
+        cornerHit = !rotHit && h.corners.some(([hx, hy]) => Math.hypot(x - hx, y - hy) <= 34 * sc);
+      }
+    }
+    pts.set(e.pointerId, [x, y]);
+    if (rotHit) g = { t: 'rotate' };
+    else if (cornerHit) g = { t: 'scale', z: T.z, cx: h.r.cx, cy: h.r.cy, d: Math.hypot(x - h.r.cx, y - h.r.cy) || 1 };
+    else g = snap();
+    cvs.setPointerCapture(e.pointerId); e.preventDefault();
+  });
+
+  cvs.addEventListener('pointermove', e => {
+    if (!pts.has(e.pointerId) || !g) return;
+    const p = pt(e); pts.set(e.pointerId, p);
+    if (g.t === 'rotate'){
+      T.rot = Math.atan2(p[0] - (cvs.width / 2 + T.ox), -(p[1] - (cvs.height / 2 + T.oy)));
+      if (Math.abs(T.rot) < 0.035) T.rot = 0;
+    } else if (g.t === 'scale'){
+      T.z = clamp(g.z * Math.hypot(p[0] - g.cx, p[1] - g.cy) / g.d, 0.3, 5);
+    } else {
+      const v = [...pts.values()], two = v.length > 1;
+      const c = two ? [(v[0][0] + v[1][0]) / 2, (v[0][1] + v[1][1]) / 2] : v[0];
+      if (two && g.t === 'pinch'){
+        T.z = clamp(g.z * Math.hypot(v[0][0] - v[1][0], v[0][1] - v[1][1]) / g.d, 0.3, 5);
+        T.rot = g.rot + (Math.atan2(v[1][1] - v[0][1], v[1][0] - v[0][0]) - g.a);
+      }
+      T.ox = g.ox + (c[0] - g.c[0]); T.oy = g.oy + (c[1] - g.c[1]);
+    }
+    redraw();
+  });
+
+  const up = e => { if (!pts.delete(e.pointerId)) return; g = pts.size ? snap() : null; };
+  ['pointerup', 'pointercancel'].forEach(t => cvs.addEventListener(t, up));
+
+  cvs.addEventListener('wheel', e => {
+    if (!loaded || !editOn() || e.defaultPrevented || !(e.ctrlKey || e.altKey || e.metaKey)) return;
+    e.preventDefault(); T.z = clamp(T.z * Math.exp(-e.deltaY * 0.0015), 0.3, 5); redraw();
+  }, { passive: false });
+  upd();
+})();
+</script>
+</body>
+</html>
+
